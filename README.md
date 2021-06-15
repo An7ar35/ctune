@@ -143,7 +143,8 @@ Finally, for both approaches, run `sudo mandb` after to purge the `ctune` entry 
 
 #### Arch AUR (x64)
 
-//TODO
+At the moment this is not yet in AUR but you can just download the PKGBUILD file in the root of the 
+repository into a dedicated folder and run `makepkg -si` from inside. The rest should take care of itself.
 
 ## Platform
 
