@@ -1,4 +1,4 @@
-# Maintainer: E.A.Davison
+# Maintainer: E.A.Davison <eadavison at protonmail dot com>
 
 pkgname=ctune-git
 pkgver=v1.0.0
@@ -12,7 +12,7 @@ depends=('ncurses'
          'curl'
          'ffmpeg'
          'alsa-lib'
-         'pulse')
+         'pulseaudio')
 
 makedepends=('cmake'
              'git')
@@ -23,20 +23,18 @@ optdepends=('sdl2: for SDL2 output plugin support'
 
 conflicts=('ctune')
 provides=('ctune')
-license=('AGPLv3')
+license=('AGPL3')
 source=(git://github.com/An7ar35/ctune)
 sha512sums=('SKIP')
 
-_gitname=ctune
-
-build() { //TODO
-  cd "$_gitname"
-  ./configure prefix=/usr
-  make
+build() {
+    cmake -B ctune_build -S "ctune" \
+          -DCMAKE_BUILD_TYPE='None' \
+          -DCMAKE_INSTALL_PREFIX='/usr' \
+          -Wno-dev
+    cmake --build ctune_build
 }
 
-package() { //TODO
-  cd "$_gitname"
-  make DESTDIR="$pkgdir" install
-  install -Dm644 contrib/ctune.bash-completion "$pkgdir"/usr/share/bash-completion/completions/ctune
+package() {
+    DESTDIR="$pkgdir" cmake --install ctune_build
 }
