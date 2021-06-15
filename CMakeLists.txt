@@ -317,6 +317,7 @@ if(CTUNE_INPUTS_COUNT EQUAL 0)
     message(FATAL_ERROR "no supported input libraries detected")
 else()
     message(NOTICE "Found ${CTUNE_INPUTS_COUNT} supported input libraries for the player.")
+    message(NOTICE "Setting '${CTUNE_PLAYER_PLUGIN_DFLT}' as default player.")
 endif()
 
 #==================================== AUDIO OUTPUT PLUGINS ========================================#
@@ -432,6 +433,7 @@ if(CTUNE_OUTPUTS_COUNT EQUAL 0)
     message(FATAL_ERROR "no supported sound server detected")
 else()
     message(NOTICE "Found ${CTUNE_OUTPUTS_COUNT} supported sound server libraries.")
+    message(NOTICE "Setting '${CTUNE_OUTPUT_PLUGIN_DFLT}' as default sound output.")
 endif()
 
 
@@ -469,11 +471,11 @@ endif()
 
 #======================================== CTUNE EXECUTABLE ========================================#
 #(debuging) prints cmake vars
-get_cmake_property(_variableNames VARIABLES)
-list (SORT _variableNames)
-foreach (_variableName ${_variableNames})
-    message(STATUS "${_variableName}=${${_variableName}}")
-endforeach()
+#get_cmake_property(_variableNames VARIABLES)
+#list (SORT _variableNames)
+#foreach (_variableName ${_variableNames})
+#    message(STATUS "${_variableName}=${${_variableName}}")
+#endforeach()
 
 add_executable(ctune ${SOURCE_FILES})
 add_dependencies(ctune man ctune_logger libjsonc)
@@ -532,18 +534,12 @@ install(TARGETS
 
 install(TARGETS
             ${CTUNE_PLAYER_PLUGIN_TARGETS}
-#            ctune_plugin_in_ffmpeg
-#            ctune_plugin_in_vlc
         DESTINATION
             ${CTUNE_INSTALL_LIBDIR}/${CTUNE_PLAYER_PLUGIN_DIR}
 )
 
 install(TARGETS
             ${CTUNE_OUTPUT_PLUGIN_TARGETS}
-#            ctune_plugin_out_sdl
-#            ctune_plugin_out_pulseaudio
-#            ctune_plugin_out_alsa
-#            ctune_plugin_out_sndio
         DESTINATION
             ${CTUNE_INSTALL_LIBDIR}/${CTUNE_OUTPUT_PLUGIN_DIR}
 )
