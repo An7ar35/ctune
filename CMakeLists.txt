@@ -551,7 +551,7 @@ install(FILES
 )
 
 install(CODE
-            "execute_process(COMMAND ${CMAKE_SOURCE_DIR}/cmake/scripts/update_mandb.sh)"
+            "execute_process(COMMAND ${CMAKE_SOURCE_DIR}/cmake/scripts/update_mandb.sh ARGS ${CMAKE_BUILD_TYPE})"
 )
 
 #========================================== UNINSTALL =============================================#
