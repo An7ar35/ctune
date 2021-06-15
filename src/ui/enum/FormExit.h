@@ -1,0 +1,11 @@
+#ifndef CTUNE_UI_ENUM_FORMEXITSTATE_H
+#define CTUNE_UI_ENUM_FORMEXITSTATE_H
+
+typedef enum ctune_FormExit {
+    CTUNE_UI_FORM_CANCEL = 0,
+    CTUNE_UI_FORM_ESC,
+    CTUNE_UI_FORM_SUBMIT
+
+} ctune_FormExit_e;
+
+#endif //CTUNE_UI_ENUM_FORMEXITSTATE_H

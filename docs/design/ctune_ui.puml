@@ -1,0 +1,98 @@
+@startuml
+skinparam linetype ortho
+'skinparam linetype polyline
+
+package ui #lightgrey {
+    component UI
+    component Resizer
+    interface " " as iResizer #green
+
+    Resizer -- iResizer
+    UI ----> Resizer
+
+'    note top of iResizer : Used by all <b>dialog</b>s and <b>window</b>s
+
+    package definitions #white {
+        component Language
+        component KeyDescription
+        component KeyBinding
+        component Theme
+        interface " " as iLanguage #green
+        interface " " as iTheme #green
+        interface " " as iKeyBinding #green
+
+        Language -down- iLanguage
+        Theme -down- iTheme
+        KeyBinding -down- iKeyBinding
+
+        KeyBinding -> KeyDescription
+        KeyBinding -> Language
+    }
+
+    UI --> KeyBinding
+    UI --> Language
+    UI --> Theme
+
+    package widget #white {
+        component BorderWin
+        component ScrollBar
+        component SlideMenu
+        component Dialog
+        component ScrollWin
+
+        Dialog    *-- ScrollWin
+        Dialog    *-- ScrollBar
+        Dialog    *-- BorderWin
+        SlideMenu *-- ScrollBar
+    }
+
+
+    package window #white {
+
+        component RSListWin
+        component BrowserWin
+
+        BrowserWin *-left- RSListWin
+    }
+
+    package dialog #white {
+        component ContextHelp
+        component RSFind
+        component RSInfo
+        component RSEdit
+        component OptionsMenu
+
+        ContextHelp *-- Dialog
+    }
+
+'    dialog -[#purple]--( iKeyBinding
+'    dialog -[#purple]--( iResizer
+
+
+    BrowserWin  *-- SlideMenu
+    OptionsMenu *-- SlideMenu
+    RSFind      *-- Dialog
+    RSInfo      *-- Dialog
+    RSEdit      *-- Dialog
+    OptionsMenu *-- BorderWin
+
+    UI      --> OptionsMenu
+    UI      --> ContextHelp
+    UI      --> RSFind
+    UI      --> RSInfo
+    UI      --> RSEdit
+    UI      --> RSListWin
+    UI      --> BrowserWin
+
+
+
+    note "**Interface/Callback:**\ngetFieldText( TextID : enum ) : const char *" as LanguageCB #lightblue
+'    note "**Interface/Callback:**\nattribute( RegionID : enum ) : int" as ThemeCB #lightblue
+'    note "**Interface/Callback:**\ngetAction( ContextID: enum, Key: int ) : ActionID" as KeyBindingCB #lightblue
+
+    LanguageCB .[#blue]..> Language
+'    ThemeCB .[#blue].> Theme
+'    KeyBindingCB .[#blue].> KeyBinding
+}
+
+@enduml

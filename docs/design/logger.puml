@@ -1,0 +1,27 @@
+@startuml
+
+component LogQueue
+
+node "thread A" {
+    interface ILogger
+    component Logger
+    ILogger -- Logger
+}
+
+node "thread B" {
+    component LogWriter
+    file Out as "ctune.log"
+
+    LogWriter -left-> Out : write msgs\nto file
+}
+
+
+Logger .right.> LogQueue : enqueue log msgs
+LogQueue <.. LogWriter : dequeue log msgs
+
+note "**Callback:**\n- resume()" as cb1 #lightblue
+LogQueue .. cb1
+cb1 ..> LogWriter
+
+
+@enduml

@@ -1,0 +1,190 @@
+@startuml
+
+'skinparam linetype ortho
+'skinparam linetype polyline
+
+package ctune #lightgrey {
+    package network #white {
+        component                            NetworkUtils
+        component                            RadioBrowser
+        interface "Radio Browser web API" as RadioBrowserAPI
+        interface "OpenSSL lib"           as OpenSSL
+        interface "Sockets lib"           as Sockets
+        interface "libCurl"               as Curl
+
+        [RadioBrowser] -->  [NetworkUtils]
+
+        NetworkUtils --( OpenSSL : "uses"
+        NetworkUtils --( Sockets : "uses"
+        NetworkUtils --( Curl    : "uses"
+        OpenSSL      ..> RadioBrowserAPI : https
+        Sockets      ..> RadioBrowserAPI : http/dns
+    }
+
+    package parser #white {
+        component JSON
+        interface JSONlib as "json-c lib"
+        component KVPairs
+
+        JSON --( JSONlib : uses
+    }
+
+    package fs #white {
+        component PlaybackLog
+        component Settings
+        component Plugin
+
+        package "plugins/player/" as plugins_in #lightgrey {
+            file      ffmpeg.so
+            file      vlc.so
+            interface libffmpeg
+            interface libvlc
+
+            ffmpeg.so -down-( libffmpeg : uses
+            vlc.so    -down-( libvlc : uses
+        }
+
+        package "plugins/output/" as plugins_out #lightgrey {
+            file pulse.so
+            file alsa.so
+            file sdl.so
+            file sndio.so
+
+            interface libalsa
+            interface libpulseaudio
+            interface libsld2
+
+            pulse.so -down-( libpulseaudio : uses
+            alsa.so -down-( libalsa : uses
+            sdl.so -down-( libsld2 : uses
+            sndio.so -down-( libsndio : uses
+        }
+
+        package "config dir" #lightgrey {
+            file cfgfile as "ctune.cfg"
+            file favfile as "ctune.fav"
+        }
+
+        package "log dir" #lightgrey {
+            file playlog as "playlog.txt"
+            file logfile as "ctune.log"
+        }
+
+        Plugin ...> ffmpeg.so
+        Plugin ...> vlc.so
+        Plugin ...> pulse.so
+        Plugin ...> alsa.so
+        Plugin ...> sdl.so
+        Plugin ...> sndio.so
+
+        Settings -down-> cfgfile
+        Settings -down-> favfile
+
+        PlaybackLog -down-> playlog
+    }
+
+    package audio #white {
+        interface AudioOutput
+    }
+
+    AudioOutput -- pulse.so
+    AudioOutput -- alsa.so
+    AudioOutput -- sdl.so
+    AudioOutput -- sndio.so
+
+    package player #white {
+        component RadioPlayer
+        interface Player
+
+        RadioPlayer -down-( Player
+    }
+
+    Player -- ffmpeg.so
+    Player -- vlc.so
+    RadioPlayer --( AudioOutput
+
+    package cli #white {
+        component CLI
+    }
+
+    package ui #white {
+        component UI
+    }
+
+    package logger #white {
+        interface log
+        interface logDbg
+        component Logger
+        component LogQueue
+        component LogWriter
+
+        log .up. Logger
+        logDbg .up. Logger
+
+        Logger -up-> LogQueue : enqueue msg
+        Logger --> LogWriter : spool
+        LogWriter -right-> LogQueue : dequeue msg
+        LogWriter -up--> logfile
+
+        note bottom of log    : Release build\nmessage interface
+        note bottom of logDbg : Debug build\nmessage interface
+
+        note "**Callback:**\n- resume() : void" as LogCB1 #lightblue
+        LogQueue .[#blue].  LogCB1
+        LogCB1   .[#blue].> LogWriter
+    }
+
+    interface "ctune_errno" as iErr1
+    component ctune_err
+    iErr1 - ctune_err
+    note top of ctune_err : global ctune-specific\nerror number
+
+    component Controller
+    component "driver\n(main)" as driver
+
+    note left of driver : Spools up:\n· ctune_err\n· Settings\n· Logger\n· PlaybackLog\n· Controller\n· UI
+
+
+    driver --> CLI
+    driver --> Controller
+    Settings  -->   Plugin
+
+    RadioBrowser -->   JSON
+
+    Controller <--    UI
+    Controller  -->   RadioPlayer
+    Controller  ----> NetworkUtils
+    Controller  -->   RadioBrowser
+    Controller  --->  PlaybackLog
+    Controller  -->   Settings
+
+
+    Settings    ----> JSON
+    Settings    ----> KVPairs
+
+
+    note "**Callbacks:**\n- setCurrStation( RadioStationInfo_t * ) : void\n- printSongInfo( const char * ) : void\n- printVolume( int ) : void\n- printPlaybackState( bool ) : void\n- printSearchingState( bool ) : void" as Callbacks1 #lightblue
+    Controller .[#blue].  Callbacks1
+    Callbacks1 .[#blue].> UI
+
+    note "**Callbacks:**\n- songChangeEvent( const char * ) : void\n- volumeChangeEvent( const int ) : void" as Callbacks2 #lightblue
+    RadioPlayer .[#blue].  Callbacks2
+    Callbacks2  .[#blue].> Controller
+
+    note "**Callbacks:**\n- setSearchState( enum ) : bool" as Callbacks3 #lightblue
+    RadioBrowser .[#blue].  Callbacks3
+    Callbacks3   .[#blue].> Controller
+
+    note "**Callbacks:**\n- modVolume( int ) : int" as Callbacks4 #lightblue
+    UI .[#blue]. Callbacks4
+    Callbacks4 .[#blue].> Settings
+
+    note "**Callback:**\n- printError( const char * ) : void" as Callbacks5 #lightblue
+    ctune_err .[#blue]. Callbacks5
+    Callbacks5 .[#blue].> UI
+
+'    note "**Callback:**\n- playbackCtrl( enum ) : bool\n- songChangeEvent( const char * ) : void" as Callbacks6 #lightblue
+'    AudioOutput .[#blue]. Callbacks6
+'    Callbacks6 .[#blue].> Player
+}
+@enduml
