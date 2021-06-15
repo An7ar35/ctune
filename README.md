@@ -82,7 +82,7 @@ The configuration is generated at first launch in `~/.config/ctune/ctune.cfg`. T
 
 Colour values available: `BLACK`, `RED`, `GREEN`, `YELLOW`, `BLUE`, `MAGENTA`, `CYAN`, `WHITE`
 
-(*) `StreamTimeout` fully works with the `ffmpeg` player currently and only stream testing with `vlc` (LibVLC doesn't have a call to set a custom value on the [player).
+(*) `StreamTimeout` fully works with the `ffmpeg` player currently and only stream testing with `vlc` (LibVLC doesn't have a call to set a custom value on the player).
 
 **Note:** The VLC plugin is more of a fallback in the event that ffmpeg is an unviable option.
 
@@ -117,7 +117,7 @@ Requires the following to be installed on the system first:
 - `sdl2`  or `pulsedaudio` or `alsa` or `sndio` sound library/servers*
 - `pandoc` and `gzip` for the man page
 
-(*) * The relevant plugins will be compiled for whatever libraries can be found on the system.*
+(*) The relevant plugins will be compiled for whatever libraries can be found on the system.*
 
 From there:
 
@@ -125,7 +125,7 @@ From there:
 2. Get in the directory with `cd ctune`
 3. run `cmake . -DCMAKE_BUILD_TYPE=Release` (append ` -DCMAKE_INSTALL_PREFIX=</path/to/directory>` if you want to specify a custom directory for the installation)
 4. run `cmake --build .`
-5. run `sudo cmake --install`  
+5. run `sudo cmake --install .`
 6. Done.
 
 #### To uninstall
