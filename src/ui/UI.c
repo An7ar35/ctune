@@ -390,6 +390,9 @@ static void ctune_UI_syncRemoteStation( ctune_UI_PanelID_e tab ) {
                 ctune_UI_RSListWin.show( &ui.tabs.favourites );
 
                 ctune_UI_writeToMsgLine( ctune_UI_Language.text( CTUNE_UI_TEXT_SYNC_SUCCESS ) );
+
+            } else {
+                ctune_UI_writeToMsgLine( ctune_UI_Language.text( CTUNE_UI_TEXT_SYNC_FAIL_FETCH_REMOTE_NOT_FOUND ) );
             }
 
         } else {

@@ -136,6 +136,7 @@ static const char * field_str[CTUNE_UI_TEXT_ENUM_COUNT] = {
     [CTUNE_UI_TEXT_STATION_NOT_EDITABLE             ] = "Station not editable",
     [CTUNE_UI_TEXT_SYNC_SUCCESS                     ] = "Station synchronised with remote.",
     [CTUNE_UI_TEXT_SYNC_FAIL_FETCH                  ] = "Failed station synchronisation: see log",
+    [CTUNE_UI_TEXT_SYNC_FAIL_FETCH_REMOTE_NOT_FOUND ] = "Failed station synchronisation: remote station does not exist (deleted?)",
     [CTUNE_UI_TEXT_SYNC_FAIL_LOCAL_STATION          ] = "Failed station synchronisation: local stations are not sync-able",
     [CTUNE_UI_TEXT_HELP                             ] = "Help",
     [CTUNE_UI_TEXT_HELP_KEY                         ] = "Show/Hide contextual help",

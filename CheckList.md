@@ -2,7 +2,7 @@
 
 1.  Change version number in:
     - `CMakeList.txt`
-    - `docs/man/ctune.1.md`
+    - `docs/man/ctune.1.md` (+ date)
 2.  Check/change copyright years in:
     - `CMakeList.txt`
     - `docs/man/ctune.1.md`
