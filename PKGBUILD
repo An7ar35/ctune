@@ -38,3 +38,5 @@ build() {
 package() {
     DESTDIR="$pkgdir" cmake --install ctune_build
 }
+
+#TODO pre-install removal of old crap: sudo rm -r /usr/bin/ctune /usr/lib/ctune /usr/share/man/man1/ctune.1.gz

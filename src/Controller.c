@@ -101,8 +101,7 @@ static bool ctune_Controller_init( void ) {
     controller.ui_config             = ctune_Settings.cfg.getUIConfig();
 
     if( !ctune_Settings.cfg.isLoaded() ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Controller_init()] Looks like Settings has not loaded the config file yet." );
-        return false; //EARLY RETURN
+        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Controller_init()] Looks like Settings has not loaded a config file yet." );
     }
 
     ctune_RadioPlayer.init( ctune_Controller_songChangeEvent,
