@@ -51,7 +51,7 @@ static struct {
  * @param fmt ctune output format
  * @return Equivalent SDL format
  */
-static snd_pcm_format_t ctune_audio_translateToALSAFormat( ctune_output_fmt_t fmt ) {
+static snd_pcm_format_t ctune_audio_translateToALSAFormat( ctune_OutputFmt_e fmt ) {
     switch( fmt ) {
         case CTUNE_AUDIO_OUTPUT_FMT_S16:
             return SND_PCM_FORMAT_S16_LE;
@@ -273,14 +273,14 @@ static bool initAlsaMixer() {
 
 /**
  * Initialises ALSA
- * @param fmt           Output format
- * @param sample_rate   DSP frequency (samples per second)
- * @param channels      Number of separate sound channels
- * @param samples       Audio buffer size in samples (i.e. size of 1 frame in bytes)
- * @param volume        Pointer to start mixer volume or NULL for restore
+ * @param fmt         Output format
+ * @param sample_rate DSP frequency (samples per second)
+ * @param channels    Number of separate sound channels
+ * @param samples     Audio buffer size in samples (i.e. size of 1 frame in bytes)
+ * @param volume      Pointer to start mixer volume or NULL for restore
  * @return Error code (0 on success)
  */
-static int ctune_audio_initAudioOut( ctune_output_fmt_t fmt, int sample_rate, uint channels, uint samples, int volume ) {
+static int ctune_audio_initAudioOut( ctune_OutputFmt_e fmt, int sample_rate, uint channels, uint samples, int volume ) {
     CTUNE_LOG( CTUNE_LOG_DEBUG,
                "[ctune_audio_initAudioOut( format: %d, sample rate: %i, channels: %u, samples: %u, vol: %i )] Initialising ALSA server.",
                fmt, sample_rate, channels, samples, volume

@@ -2,7 +2,7 @@
 #define CTUNE_AUDIO_AUDIOOUT_H
 
 #include <stdbool.h>
-#include "output_format.h"
+#include "OutputFormat.h"
 #include "../datastructure/String.h"
 
 #define CTUNE_AUDIOOUT_ABI_VERSION 1
@@ -27,14 +27,14 @@ typedef struct ctune_AudioOut {
 
     /**
      * Initialises sound server
-     * @param fmt           Output format
-     * @param sample_rate   DSP frequency (samples per second)
-     * @param channels      Number of separate sound channels
-     * @param samples       Audio buffer size in samples (i.e. frame size)
-     * @param volume        Start mixer volume
+     * @param fmt         Output format
+     * @param sample_rate DSP frequency (samples per second)
+     * @param channels    Number of separate sound channels
+     * @param samples     Audio buffer size in samples (i.e. frame size)
+     * @param volume      Start mixer volume
      * @return 0 on success or negative ctune error number
      */
-    int (* init)( ctune_output_fmt_t fmt, int sample_rate, uint channels, uint samples, int volume );
+    int (* init)( ctune_OutputFmt_e fmt, int sample_rate, uint channels, uint samples, int volume );
 
     /**
      * Sends PCM data to sink buffer

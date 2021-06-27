@@ -172,7 +172,7 @@ set(SOURCE_FILES
         src/parser/KVPairs.h
         src/audio/AudioOut.h
         src/audio/channel_position.h
-        src/audio/output_format.h
+        src/audio/OutputFormat.h
         src/player/Player.h
         src/player/RadioPlayer.c
         src/player/RadioPlayer.h

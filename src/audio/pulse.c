@@ -34,7 +34,7 @@ static struct {
  * @param fmt ctune output format
  * @return Equivalent SDL format
  */
-static pa_sample_format_t ctune_audio_translateToALSAFormat( ctune_output_fmt_t fmt ) {
+static pa_sample_format_t ctune_audio_translateToALSAFormat( ctune_OutputFmt_e fmt ) {
     switch( fmt ) {
         case CTUNE_AUDIO_OUTPUT_FMT_S16:
             return PA_SAMPLE_S16LE;
@@ -338,14 +338,14 @@ static void ctune_audio_shutdownAudioOut() {
 
 /**
  * Initialises Pulse Audio
- * @param fmt           Output format
- * @param sample_rate   DSP frequency (samples per second)
- * @param channels      Number of separate sound channels
- * @param samples       Audio buffer size in samples (2^n)`
- * @param volume        Start mixer volume
+ * @param fmt         Output format
+ * @param sample_rate DSP frequency (samples per second)
+ * @param channels    Number of separate sound channels
+ * @param samples     Audio buffer size in samples (2^n)`
+ * @param volume      Start mixer volume
  * @return 0 on success or negative ctune error number
  */
-static int ctune_audio_initAudioOut( ctune_output_fmt_t fmt, int sample_rate, uint channels, uint samples, const int volume ) {
+static int ctune_audio_initAudioOut( ctune_OutputFmt_e fmt, int sample_rate, uint channels, uint samples, const int volume ) {
     CTUNE_LOG( CTUNE_LOG_DEBUG,
                "[ctune_audio_initAudioOut( format: %d, sample rate: %i, channels: %u, samples: %u, vol: %i )] Initialising PulseAudio server.",
                fmt, sample_rate, channels, samples, volume

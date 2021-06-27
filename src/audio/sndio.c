@@ -91,14 +91,14 @@ static void ctune_audio_shutdownAudioOut() {
 
 /**
  * Initialises sndio
- * @param fmt           Output format
- * @param sample_rate   DSP frequency (samples per second)
- * @param channels      Number of separate sound channels
- * @param samples       Audio buffer size in samples (2^n)
- * @param volume        Pointer to start mixer volume or NULL for restore
+ * @param fmt         Output format
+ * @param sample_rate DSP frequency (samples per second)
+ * @param channels    Number of separate sound channels
+ * @param samples     Audio buffer size in samples (2^n)
+ * @param volume      Pointer to start mixer volume or NULL for restore
  * @return Error code (0 on success)
  */
-static int ctune_audio_initAudioOut( ctune_output_fmt_t fmt, int sample_rate, uint channels, uint samples, int volume ) {
+static int ctune_audio_initAudioOut( ctune_OutputFmt_e fmt, int sample_rate, uint channels, uint samples, int volume ) {
     CTUNE_LOG( CTUNE_LOG_DEBUG,
                "[ctune_audio_initAudioOut( format: %d, sample rate: %i, channels: %u, samples: %u, vol: %i )] Initialising sndio server.",
                fmt, sample_rate, channels, samples, volume
