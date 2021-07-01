@@ -4,7 +4,7 @@
 #include <panel.h>
 
 #include "../../datastructure/HashMap.h"
-#include "../widget/ScrollWin.h"
+#include "../datastructure/WindowProperty.h"
 #include "../../dto/RadioStationInfo.h"
 #include "../../dto/RadioBrowserFilter.h"
 #include "../../datastructure/Vector.h"
