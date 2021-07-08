@@ -132,8 +132,6 @@ set(SOURCE_FILES
         src/datastructure/HashMap.h
         src/datastructure/Deque.c
         src/datastructure/Deque.h
-        src/datastructure/CircularBuffer.c
-        src/datastructure/CircularBuffer.h
         src/dto/ArgOptions.c
         src/dto/ArgOptions.h
         src/dto/RadioStationInfo.c
@@ -291,9 +289,7 @@ if(VLC_FOUND)
     MATH(EXPR CTUNE_INPUTS_COUNT "${CTUNE_INPUTS_COUNT}+1")
 
     add_library(ctune_plugin_in_vlc SHARED
-            src/player/vlc.c
-            src/datastructure/CircularBuffer.c
-            src/datastructure/CircularBuffer.h)
+            src/player/vlc.c)
 
     set_target_properties(ctune_plugin_in_vlc
             PROPERTIES PREFIX        ""
