@@ -36,7 +36,7 @@ struct {
 
     struct {
         const enum AVSampleFormat ffmpeg;
-        const ctune_output_fmt_t  ctune;
+        const ctune_OutputFmt_e   ctune;
 
     } out_sample_fmt;
 

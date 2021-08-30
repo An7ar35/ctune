@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 project(ctune
         LANGUAGES    C
-        VERSION      1.0.2
+        VERSION      1.0.3
         DESCRIPTION  "Curses based Internet radio tuner"
         HOMEPAGE_URL "eadavison.com")
 
@@ -132,8 +132,6 @@ set(SOURCE_FILES
         src/datastructure/HashMap.h
         src/datastructure/Deque.c
         src/datastructure/Deque.h
-        src/datastructure/CircularBuffer.c
-        src/datastructure/CircularBuffer.h
         src/dto/ArgOptions.c
         src/dto/ArgOptions.h
         src/dto/RadioStationInfo.c
@@ -172,7 +170,7 @@ set(SOURCE_FILES
         src/parser/KVPairs.h
         src/audio/AudioOut.h
         src/audio/channel_position.h
-        src/audio/output_format.h
+        src/audio/OutputFormat.h
         src/player/Player.h
         src/player/RadioPlayer.c
         src/player/RadioPlayer.h
@@ -291,9 +289,7 @@ if(VLC_FOUND)
     MATH(EXPR CTUNE_INPUTS_COUNT "${CTUNE_INPUTS_COUNT}+1")
 
     add_library(ctune_plugin_in_vlc SHARED
-            src/player/vlc.c
-            src/datastructure/CircularBuffer.c
-            src/datastructure/CircularBuffer.h)
+            src/player/vlc.c)
 
     set_target_properties(ctune_plugin_in_vlc
             PROPERTIES PREFIX        ""

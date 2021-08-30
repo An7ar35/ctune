@@ -24,7 +24,7 @@ struct ctune_RadioPlayer {
 
     struct {
         const char        * vlc;
-        ctune_output_fmt_t  ctune;
+        ctune_OutputFmt_e   ctune;
     } out_sample_fmt;
 
     const int               out_sample_rate;

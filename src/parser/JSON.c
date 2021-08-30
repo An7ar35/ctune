@@ -666,7 +666,7 @@ static bool ctune_parser_JSON_packNewRadioStationRcv( struct ctune_NewRadioStati
  * @param stats   ServerStats DTO instance
  * @return Success
  */
-bool ctune_parser_JSON_parseToServerStats( const struct String * raw_str, struct ctune_ServerStats * stats ) {
+static bool ctune_parser_JSON_parseToServerStats( const struct String * raw_str, struct ctune_ServerStats * stats ) {
     enum json_tokener_error err_token;
     json_object * json  = json_tokener_parse_verbose( raw_str->_raw, &err_token );
 
@@ -724,7 +724,7 @@ bool ctune_parser_JSON_parseToServerStats( const struct String * raw_str, struct
  * @param cfg     ServerConfig DTO instance
  * @return Success
  */
-bool ctune_parser_JSON_parseToServerConfig( const struct String * raw_str, struct ctune_ServerConfig * cfg ) {
+static bool ctune_parser_JSON_parseToServerConfig( const struct String * raw_str, struct ctune_ServerConfig * cfg ) {
     enum json_tokener_error err_token;
     json_object * json  = json_tokener_parse_verbose( raw_str->_raw, &err_token );
 
@@ -946,7 +946,7 @@ static bool ctune_parser_JSON_parseToRadioStationListFrom( const struct String *
  * @param category_items CategoryItems collection instance
  * @return Success
  */
-bool ctune_parser_JSON_parseToCategoryItemList( const struct String * raw_str, struct Vector * category_items ) {
+static bool ctune_parser_JSON_parseToCategoryItemList( const struct String * raw_str, struct Vector * category_items ) {
     enum json_tokener_error err_token;
     json_object * json = json_tokener_parse_verbose( raw_str->_raw, &err_token );
 
@@ -1069,7 +1069,7 @@ static bool ctune_parser_JSON_parseToClickCounter( const struct String * raw_str
  * @param vote_state RadioStationVote DTO
  * @return Success
  */
-bool ctune_parser_JSON_parseToRadioStationVote( const struct String * raw_str, struct ctune_RadioStationVote * vote_state ) {
+static bool ctune_parser_JSON_parseToRadioStationVote( const struct String * raw_str, struct ctune_RadioStationVote * vote_state ) {
     enum json_tokener_error err_token;
     json_object * json = json_tokener_parse_verbose( raw_str->_raw, &err_token );
 

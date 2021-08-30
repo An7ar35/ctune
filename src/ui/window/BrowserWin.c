@@ -120,6 +120,7 @@ static bool ctune_UI_BrowserWin_categoryCtrlFunctionCb( ctune_UI_SlideMenu_Item_
                    menu_item, menu_item->text._raw
         );
 
+        ctune_err.set( CTUNE_ERR_ACTION_FETCH );
         error_state = true;
         goto end;
     }
@@ -198,7 +199,7 @@ static bool ctune_UI_BrowserWin_categoryCtrlFunctionCb( ctune_UI_SlideMenu_Item_
  * @param getCatItems     Callback method to fetch station search category items
  * @param toggleFavourite Callback method to toggle a station's "favourite" status
  * @param getStationState Callback method to get a station's queued/favourite state
- * @return
+ * @return Initialised ctune_UI_BrowserWin_t object
  */
 static ctune_UI_BrowserWin_t ctune_UI_BrowserWin_init( const WindowProperty_t * left_canvas,
                                                        const WindowProperty_t * right_canvas,

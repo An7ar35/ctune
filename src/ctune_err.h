@@ -67,9 +67,10 @@
 #define CTUNE_ERR_SNDIO_NOVOL           ADD( CTUNE_ERR_AUDIO_OUT,  6 )
 #define CTUNE_ERR_UI                    600 //UI
 #define CTUNE_ERR_ACTION                700 //failed actions
-#define CTUNE_ERR_ACTION_UNSUPORTED     ADD( CTUNE_ERR_ACTION,  1 )
+#define CTUNE_ERR_ACTION_UNSUPPORTED    ADD( CTUNE_ERR_ACTION,  1 )
 #define CTUNE_ERR_ACTION_FAV_TOGGLE     ADD( CTUNE_ERR_ACTION,  2 )
 #define CTUNE_ERR_ACTION_FAV_UPDATE     ADD( CTUNE_ERR_ACTION,  3 )
+#define CTUNE_ERR_ACTION_FETCH          ADD( CTUNE_ERR_ACTION,  4 )
 
 
 extern const struct ctune_err_Instance {

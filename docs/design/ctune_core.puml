@@ -70,12 +70,12 @@ package ctune #lightgrey {
             file logfile as "ctune.log"
         }
 
-        Plugin ...> ffmpeg.so
-        Plugin ...> vlc.so
-        Plugin ...> pulse.so
-        Plugin ...> alsa.so
-        Plugin ...> sdl.so
-        Plugin ...> sndio.so
+        Plugin .[#RoyalBlue]..> ffmpeg.so
+        Plugin .[#RoyalBlue]..> vlc.so
+        Plugin .[#RoyalBlue]..> pulse.so
+        Plugin .[#RoyalBlue]..> alsa.so
+        Plugin .[#RoyalBlue]..> sdl.so
+        Plugin .[#RoyalBlue]..> sndio.so
 
         Settings -down-> cfgfile
         Settings -down-> favfile

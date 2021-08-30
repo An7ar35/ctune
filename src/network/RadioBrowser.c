@@ -19,15 +19,15 @@
  * @param addr_list Address StrList to randomize
  * @return Success
  */
-static int ctune_RadioBrowser_randomizeServerList( ctune_ServerList_t * list ) {
+static int ctune_RadioBrowser_randomizeServerList( ctune_ServerList_t * addr_list ) {
     srand( time(NULL ) );
 
-    size_t item_count = ctune_ServerList.size( list );
+    size_t item_count = ctune_ServerList.size( addr_list );
 
     for( size_t k = item_count; k > 0; --k ) {
         int pick = rand() % k;
 
-        ServerListNode * node = ctune_ServerList.at( list, pick );
+        ServerListNode * node = ctune_ServerList.at( addr_list, pick );
 
         if( node == NULL ) {
             CTUNE_LOG( CTUNE_LOG_ERROR,
@@ -39,8 +39,8 @@ static int ctune_RadioBrowser_randomizeServerList( ctune_ServerList_t * list ) {
             return false;
         }
 
-        node = ctune_ServerList.extract_node( list, node );
-        ctune_ServerList.emplace_back( list, node );
+        node = ctune_ServerList.extract_node( addr_list, node );
+        ctune_ServerList.emplace_back( addr_list, node );
     }
 
     return true;

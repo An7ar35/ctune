@@ -570,7 +570,7 @@ static void ctune_UI_openEditSelectedStationDialog( ctune_UI_PanelID_e tab ) {
         const ctune_RadioStationInfo_t * rsi = ctune_UI_RSListWin.getSelected( &ui.tabs.favourites );
 
         if( rsi == NULL ) {
-            ctune_UI.printError( ctune_UI_Language.text( CTUNE_UI_TEXT_STATION_NOT_EDITABLE ), CTUNE_ERR_ACTION_UNSUPORTED );
+            ctune_UI.printError( ctune_UI_Language.text( CTUNE_UI_TEXT_STATION_NOT_EDITABLE ), CTUNE_ERR_ACTION_UNSUPPORTED );
             return; //EARLY RETURN
         }
 
@@ -603,7 +603,7 @@ static void ctune_UI_openEditSelectedStationDialog( ctune_UI_PanelID_e tab ) {
             }
 
         } else {
-            ctune_UI.printError( ctune_UI_Language.text( CTUNE_UI_TEXT_STATION_NOT_EDITABLE ), CTUNE_ERR_ACTION_UNSUPORTED );
+            ctune_UI.printError( ctune_UI_Language.text( CTUNE_UI_TEXT_STATION_NOT_EDITABLE ), CTUNE_ERR_ACTION_UNSUPPORTED );
             return; //EARLY RETURN
         }
 

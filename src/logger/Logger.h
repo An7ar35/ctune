@@ -13,11 +13,11 @@
 #endif
 
 enum ctune_LogLevel {
-    CTUNE_LOG_FATAL   = 1, //RFC.2454 Syslog
-    CTUNE_LOG_ERROR   = 3, //RFC.2454 Syslog
-    CTUNE_LOG_WARNING = 4, //RFC.2454 Syslog
-    CTUNE_LOG_MSG     = 5, //RFC.2454 Syslog
-    CTUNE_LOG_DEBUG   = 7, //RFC.2454 Syslog
+    CTUNE_LOG_FATAL   = 1, //RFC.5424 Syslog
+    CTUNE_LOG_ERROR   = 3, //RFC.5424 Syslog
+    CTUNE_LOG_WARNING = 4, //RFC.5424 Syslog
+    CTUNE_LOG_MSG     = 5, //RFC.5424 Syslog
+    CTUNE_LOG_DEBUG   = 7, //RFC.5424 Syslog
     CTUNE_LOG_TRACE   = 8, //not syslog compliant
 };
 

@@ -3,7 +3,7 @@
 
 #include "Player.h"
 #include "../audio/AudioOut.h"
-#include "../audio/output_format.h"
+#include "../audio/OutputFormat.h"
 
 extern const struct ctune_RadioPlayer_Namespace {
     /**
