@@ -79,9 +79,10 @@ static const struct ctune_error ctune_error_descs[] = {
     { CTUNE_ERR_SNDIO_NOVOL,          "Volume control is not available ('sndio')" },
     { CTUNE_ERR_UI,                   "UI error - see log" },
     { CTUNE_ERR_ACTION,               "Failed action - see log" },
-    { CTUNE_ERR_ACTION_UNSUPORTED,    "Unsupported action" },
+    { CTUNE_ERR_ACTION_UNSUPPORTED,   "Unsupported action" },
     { CTUNE_ERR_ACTION_FAV_TOGGLE,    "Favourite state toggle failed - see log" },
-    { CTUNE_ERR_ACTION_FAV_UPDATE,    "Update failed - see log" }
+    { CTUNE_ERR_ACTION_FAV_UPDATE,    "Update failed - see log" },
+    { CTUNE_ERR_ACTION_FETCH,         "Fetch failed - see log" }
 };
 
 /**
