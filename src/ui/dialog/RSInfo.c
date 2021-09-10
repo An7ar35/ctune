@@ -404,7 +404,7 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
         wattron( rsinfo->dialog.canvas.pad, A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_STATE], rsinfo->col_separator_str );
         wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
-        mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%.*s", 2, ctune_RadioStationInfo.get.state( rsi ) );
+        mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_RadioStationInfo.get.state( rsi ) );
     }
 
     //LANGUAGE
