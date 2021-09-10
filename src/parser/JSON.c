@@ -496,6 +496,9 @@ static bool ctune_parser_JSON_packStationInfo( struct ctune_RadioStationInfo * r
     if( strcmp( key, "geo_long" ) == 0 )
         return ctune_parser_JSON_packField_double( key, val, &rsi->geo.longitude );
 
+    if( strcmp( key, "has_extended_info" ) == 0 )
+        return ctune_parser_JSON_packField_bool( key, val, &rsi->has_extended_info );
+
     if( strcmp( key, "station_src" ) == 0 )
         return ctune_parser_JSON_packField_enum( key, val,
                                                  (int) CTUNE_STATIONSRC_LOCAL,
