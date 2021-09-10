@@ -117,7 +117,7 @@ Requires the following to be installed on the system first:
 - `sdl2`  or `pulsedaudio` or `alsa` or `sndio` sound library/servers*
 - `pandoc` and `gzip` for the man page
 
-(*) The relevant plugins will be compiled for whatever libraries can be found on the system.*
+(*) The relevant plugins will be compiled for whatever libraries can be found on the system.
 
 From there:
 
@@ -145,6 +145,8 @@ Finally, for both approaches, run `sudo mandb` after to purge the `ctune` entry 
 
 At the moment this is not yet in AUR but you can just download the PKGBUILD file in the root of the 
 repository into a dedicated folder and run `makepkg -si` from inside. The rest should take care of itself.
+
+**If updates don't seem to work use `makepkg -fsi` instead to force-overwrite the local package.**
 
 ## Platform
 
