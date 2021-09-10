@@ -108,9 +108,9 @@ static bool ctune_parser_JSON_packField_bool( const char * key, const char * val
         } else {
             *target = ( tmp != 0 );
         }
-
-        return true;
     }
+
+    return true;
 }
 
 /**
