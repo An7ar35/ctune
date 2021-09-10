@@ -1,4 +1,4 @@
-% CTUNE(1) ctune 1.0.5
+% CTUNE(1) ctune 1.0.6
 % E.A.Davison
 % June 2021
 
