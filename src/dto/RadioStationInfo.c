@@ -955,7 +955,7 @@ static void ctune_RadioStationInfo_set_changeUUID( ctune_RadioStationInfo_t * rs
     }
 }
 
-static void ctune_RadioStationInfo_set_stationUUID( ctune_RadioStationInfo_t * rsi, char * str_ptr ){
+static void ctune_RadioStationInfo_set_stationUUID( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->station_uuid )
             free( rsi->station_uuid );
@@ -964,7 +964,7 @@ static void ctune_RadioStationInfo_set_stationUUID( ctune_RadioStationInfo_t * r
     }
 }
 
-static void ctune_RadioStationInfo_set_stationName( ctune_RadioStationInfo_t * rsi, char * str_ptr ){
+static void ctune_RadioStationInfo_set_stationName( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->name )
             free( rsi->name );
@@ -973,7 +973,7 @@ static void ctune_RadioStationInfo_set_stationName( ctune_RadioStationInfo_t * r
     }
 }
 
-static void ctune_RadioStationInfo_set_stationURL( ctune_RadioStationInfo_t * rsi, char * str_ptr ){
+static void ctune_RadioStationInfo_set_stationURL( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->url )
             free( rsi->url );
@@ -982,7 +982,7 @@ static void ctune_RadioStationInfo_set_stationURL( ctune_RadioStationInfo_t * rs
     }
 }
 
-static void ctune_RadioStationInfo_set_resolvedURL( ctune_RadioStationInfo_t * rsi, char * str_ptr ){
+static void ctune_RadioStationInfo_set_resolvedURL( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->url_resolved )
             free( rsi->url_resolved );
@@ -991,7 +991,7 @@ static void ctune_RadioStationInfo_set_resolvedURL( ctune_RadioStationInfo_t * r
     }
 }
 
-static void ctune_RadioStationInfo_set_homepage( ctune_RadioStationInfo_t * rsi, char * str_ptr ){
+static void ctune_RadioStationInfo_set_homepage( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->homepage )
             free( rsi->homepage );
@@ -1000,7 +1000,7 @@ static void ctune_RadioStationInfo_set_homepage( ctune_RadioStationInfo_t * rsi,
     }
 }
 
-static void ctune_RadioStationInfo_set_faviconURL( ctune_RadioStationInfo_t * rsi, char * str_ptr ){
+static void ctune_RadioStationInfo_set_faviconURL( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->favicon_url )
             free( rsi->favicon_url );
@@ -1009,7 +1009,7 @@ static void ctune_RadioStationInfo_set_faviconURL( ctune_RadioStationInfo_t * rs
     }
 }
 
-static void ctune_RadioStationInfo_set_tags( ctune_RadioStationInfo_t * rsi, char * str_ptr ){
+static void ctune_RadioStationInfo_set_tags( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->tags )
             free( rsi->tags );
@@ -1018,7 +1018,7 @@ static void ctune_RadioStationInfo_set_tags( ctune_RadioStationInfo_t * rsi, cha
     }
 }
 
-static void ctune_RadioStationInfo_set_country( ctune_RadioStationInfo_t * rsi, char * str_ptr ){
+static void ctune_RadioStationInfo_set_country( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->country )
             free( rsi->country );
@@ -1027,7 +1027,7 @@ static void ctune_RadioStationInfo_set_country( ctune_RadioStationInfo_t * rsi, 
     }
 }
 
-static void ctune_RadioStationInfo_set_countryCode_ISO3166_1( ctune_RadioStationInfo_t * rsi, const char * cc_str ){
+static void ctune_RadioStationInfo_set_countryCode_ISO3166_1( ctune_RadioStationInfo_t * rsi, const char * cc_str ) {
     if( rsi != NULL ) {
         if( rsi->country_code.iso3166_1 ) {
             free( rsi->country_code.iso3166_1 );
@@ -1069,7 +1069,7 @@ static void ctune_RadioStationInfo_set_countryCode_ISO3166_2( ctune_RadioStation
     }
 }
 
-static void ctune_RadioStationInfo_set_state( ctune_RadioStationInfo_t * rsi, char * str_ptr ){
+static void ctune_RadioStationInfo_set_state( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->state )
             free( rsi->state );
@@ -1078,7 +1078,7 @@ static void ctune_RadioStationInfo_set_state( ctune_RadioStationInfo_t * rsi, ch
     }
 }
 
-static void ctune_RadioStationInfo_set_language( ctune_RadioStationInfo_t * rsi, char * str_ptr ){
+static void ctune_RadioStationInfo_set_language( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->language )
             free( rsi->language );
@@ -1087,7 +1087,7 @@ static void ctune_RadioStationInfo_set_language( ctune_RadioStationInfo_t * rsi,
     }
 }
 
-static void ctune_RadioStationInfo_set_languageCodes( ctune_RadioStationInfo_t * rsi, char * str_ptr ){
+static void ctune_RadioStationInfo_set_languageCodes( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->language_codes )
             free( rsi->language_codes );
@@ -1096,14 +1096,14 @@ static void ctune_RadioStationInfo_set_languageCodes( ctune_RadioStationInfo_t *
     }
 }
 
-static void ctune_RadioStationInfo_set_votes( ctune_RadioStationInfo_t * rsi, ulong votes ){
+static void ctune_RadioStationInfo_set_votes( ctune_RadioStationInfo_t * rsi, ulong votes ) {
     if( rsi != NULL ) {
 
         rsi->votes = votes;
     }
 }
 
-static void ctune_RadioStationInfo_set_lastChangeTS( ctune_RadioStationInfo_t * rsi, char * str_ptr ){
+static void ctune_RadioStationInfo_set_lastChangeTS( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->iso8601.last_change_time )
             free( rsi->iso8601.last_change_time );
@@ -1112,7 +1112,7 @@ static void ctune_RadioStationInfo_set_lastChangeTS( ctune_RadioStationInfo_t * 
     }
 }
 
-static void ctune_RadioStationInfo_set_codec( ctune_RadioStationInfo_t * rsi, char * str_ptr ){
+static void ctune_RadioStationInfo_set_codec( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->codec )
             free( rsi->codec );
@@ -1121,22 +1121,22 @@ static void ctune_RadioStationInfo_set_codec( ctune_RadioStationInfo_t * rsi, ch
     }
 }
 
-static void ctune_RadioStationInfo_set_bitrate( ctune_RadioStationInfo_t * rsi, ulong bitrate ){
+static void ctune_RadioStationInfo_set_bitrate( ctune_RadioStationInfo_t * rsi, ulong bitrate ) {
     if( rsi != NULL )
         rsi->bitrate = bitrate;
 }
 
-static void ctune_RadioStationInfo_set_hls( ctune_RadioStationInfo_t * rsi, bool state ){
+static void ctune_RadioStationInfo_set_hls( ctune_RadioStationInfo_t * rsi, bool state ) {
     if( rsi != NULL )
         rsi->hls = state;
 }
 
-static void ctune_RadioStationInfo_set_lastCheckOk( ctune_RadioStationInfo_t * rsi, bool state ){
+static void ctune_RadioStationInfo_set_lastCheckOk( ctune_RadioStationInfo_t * rsi, bool state ) {
     if( rsi != NULL )
         rsi->last_check_ok = state;
 }
 
-static void ctune_RadioStationInfo_set_lastCheckTS( ctune_RadioStationInfo_t * rsi, char * str_ptr ){
+static void ctune_RadioStationInfo_set_lastCheckTS( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->iso8601.last_check_time )
             free( rsi->iso8601.last_check_time );
@@ -1145,7 +1145,7 @@ static void ctune_RadioStationInfo_set_lastCheckTS( ctune_RadioStationInfo_t * r
     }
 }
 
-static void ctune_RadioStationInfo_set_lastCheckOkTS( ctune_RadioStationInfo_t * rsi, char * str_ptr ){
+static void ctune_RadioStationInfo_set_lastCheckOkTS( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->iso8601.last_check_ok_time )
             free( rsi->iso8601.last_check_ok_time );
@@ -1154,7 +1154,7 @@ static void ctune_RadioStationInfo_set_lastCheckOkTS( ctune_RadioStationInfo_t *
     }
 }
 
-static void ctune_RadioStationInfo_set_lastLocalCheckTS( ctune_RadioStationInfo_t * rsi, char * str_ptr ){
+static void ctune_RadioStationInfo_set_lastLocalCheckTS( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->iso8601.last_local_check_time )
             free( rsi->iso8601.last_local_check_time );
@@ -1163,7 +1163,7 @@ static void ctune_RadioStationInfo_set_lastLocalCheckTS( ctune_RadioStationInfo_
     }
 }
 
-static void ctune_RadioStationInfo_set_clickTS( ctune_RadioStationInfo_t * rsi, char * str_ptr ){
+static void ctune_RadioStationInfo_set_clickTS( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->iso8601.click_timestamp )
             free( rsi->iso8601.click_timestamp );
@@ -1172,39 +1172,44 @@ static void ctune_RadioStationInfo_set_clickTS( ctune_RadioStationInfo_t * rsi, 
     }
 }
 
-static void ctune_RadioStationInfo_set_clickCount( ctune_RadioStationInfo_t * rsi, ulong count ){
+static void ctune_RadioStationInfo_set_clickCount( ctune_RadioStationInfo_t * rsi, ulong count ) {
     if( rsi != NULL )
         rsi->clickcount = count;
 }
 
-static void ctune_RadioStationInfo_set_clickTrend( ctune_RadioStationInfo_t * rsi, long trend ){
+static void ctune_RadioStationInfo_set_clickTrend( ctune_RadioStationInfo_t * rsi, long trend ) {
     if( rsi != NULL )
         rsi->clicktrend = trend;
 }
 
-static void ctune_RadioStationInfo_set_broken( ctune_RadioStationInfo_t * rsi, bool state ){
+static void ctune_RadioStationInfo_set_broken( ctune_RadioStationInfo_t * rsi, bool state ) {
     if( rsi != NULL )
         rsi->broken = state;
 }
 
-static void ctune_RadioStationInfo_set_sslErrCode( ctune_RadioStationInfo_t * rsi, long ssl_err_code ){
+static void ctune_RadioStationInfo_set_sslErrCode( ctune_RadioStationInfo_t * rsi, long ssl_err_code ) {
     if( rsi != NULL )
         rsi->ssl_error = ssl_err_code;
 }
 
-static void ctune_RadioStationInfo_set_geoCoordinates( ctune_RadioStationInfo_t * rsi, double latitude, double longitude ){
+static void ctune_RadioStationInfo_set_geoCoordinates( ctune_RadioStationInfo_t * rsi, double latitude, double longitude ) {
     if( rsi != NULL ) {
         rsi->geo.latitude  = latitude;
         rsi->geo.longitude = longitude;
     }
 }
 
-static void ctune_RadioStationInfo_set_favourite( ctune_RadioStationInfo_t * rsi, bool state ){
+static void ctune_RadioStationInfo_set_extendedInfoFlag( ctune_RadioStationInfo_t * rsi, bool state ) {
+    if( rsi != NULL )
+        rsi->has_extended_info = state;
+}
+
+static void ctune_RadioStationInfo_set_favourite( ctune_RadioStationInfo_t * rsi, bool state ) {
     if( rsi != NULL )
         rsi->is_favourite = state;
 }
 
-static void ctune_RadioStationInfo_set_stationSource( ctune_RadioStationInfo_t * rsi, ctune_StationSrc_e src ){
+static void ctune_RadioStationInfo_set_stationSource( ctune_RadioStationInfo_t * rsi, ctune_StationSrc_e src ) {
     if( rsi != NULL )
         rsi->station_src = src;
 }
@@ -1398,6 +1403,12 @@ static double ctune_RadioStationInfo_get_geoLongitude( const ctune_RadioStationI
     return rsi->geo.longitude;
 }
 
+static bool ctune_RadioStationInfo_get_hasExtendedInfo( const ctune_RadioStationInfo_t * rsi ) {
+    if( rsi == NULL )
+        return false;
+    return rsi->has_extended_info;
+}
+
 static bool ctune_RadioStationInfo_get_favourite( const ctune_RadioStationInfo_t * rsi ) {
     if( rsi == NULL )
         return false;
@@ -1467,6 +1478,7 @@ const struct ctune_RadioStationInfo_Namespace ctune_RadioStationInfo = {
         .broken                = &ctune_RadioStationInfo_set_broken,
         .sslErrCode            = &ctune_RadioStationInfo_set_sslErrCode,
         .geoCoordinates        = &ctune_RadioStationInfo_set_geoCoordinates,
+        .extendedInfoFlag      = &ctune_RadioStationInfo_set_extendedInfoFlag,
         .favourite             = &ctune_RadioStationInfo_set_favourite,
         .stationSource         = &ctune_RadioStationInfo_set_stationSource,
     },
@@ -1503,6 +1515,7 @@ const struct ctune_RadioStationInfo_Namespace ctune_RadioStationInfo = {
         .sslErrCode            = &ctune_RadioStationInfo_get_sslErrCode,
         .geoLatitude           = &ctune_RadioStationInfo_get_geoLatitude,
         .geoLongitude          = &ctune_RadioStationInfo_get_geoLongitude,
+        .hasExtendedInfo       = &ctune_RadioStationInfo_get_hasExtendedInfo,
         .favourite             = &ctune_RadioStationInfo_get_favourite,
         .stationSource         = &ctune_RadioStationInfo_get_stationSource,
     },
