@@ -419,7 +419,10 @@ static bool ctune_parser_JSON_packStationInfo( struct ctune_RadioStationInfo * r
         return ctune_parser_JSON_packField_str( key, val, &rsi->country );
 
     if( strcmp( key, "countrycode" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->country_code );
+        return ctune_parser_JSON_packField_str( key, val, &rsi->country_code.iso3166_1 );
+
+    if( strcmp( key, "iso_3166_2" ) == 0 )
+        return ctune_parser_JSON_packField_str( key, val, &rsi->country_code.iso3166_2 );
 
     if( strcmp( key, "favicon" ) == 0 )
         return ctune_parser_JSON_packField_str( key, val, &rsi->favicon_url );
@@ -1221,40 +1224,41 @@ static bool ctune_parser_JSON_parseRadioStationListToJSON( const struct Vector *
         const ctune_RadioStationInfo_t * rsi     = Vector.at( (Vector_t *) stations, i );
         json_object                    * station = json_object_new_object();
 
-        err[ 0] = json_object_object_add( station, "changeuuid", json_object_new_string( ( rsi->change_uuid != NULL ? rsi->change_uuid : "" ) ) );
-        err[ 1] = json_object_object_add( station, "stationuuid", json_object_new_string( ( rsi->station_uuid != NULL ? rsi->station_uuid : "" ) ) );
-        err[ 2] = json_object_object_add( station, "name", json_object_new_string( ( rsi->name != NULL ? rsi->name : "" ) ) );
-        err[ 3] = json_object_object_add( station, "url", json_object_new_string( ( rsi->url != NULL ? rsi->url : "" ) ) );
-        err[ 4] = json_object_object_add( station, "url_resolved", json_object_new_string( ( rsi->url_resolved != NULL ? rsi->url_resolved : "" ) ) );
-        err[ 5] = json_object_object_add( station, "homepage", json_object_new_string( ( rsi->homepage != NULL ? rsi->homepage : "" ) ) );
-        err[ 6] = json_object_object_add( station, "favicon", json_object_new_string( ( rsi->favicon_url != NULL ? rsi->favicon_url : "" ) ) );
-        err[ 7] = json_object_object_add( station, "tags", json_object_new_string( ( rsi->tags != NULL ? rsi->tags : "" ) ) );
-        err[ 8] = json_object_object_add( station, "country", json_object_new_string( ( rsi->country != NULL ? rsi->country : "" ) ) );
-        err[ 9] = json_object_object_add( station, "countrycode", json_object_new_string( ( rsi->country_code != NULL ? rsi->country_code : "" )) );
-        err[10] = json_object_object_add( station, "state", json_object_new_string( ( rsi->state != NULL ? rsi->state : "" )) );
-        err[11] = json_object_object_add( station, "language", json_object_new_string( ( rsi->language != NULL ? rsi->language : "" )) );
-        err[12] = json_object_object_add( station, "languagecodes", json_object_new_string( ( rsi->language_codes != NULL ? rsi->language_codes : "" )) );
-        err[13] = json_object_object_add( station, "votes", json_object_new_uint64( rsi->votes ) );
-        err[14] = json_object_object_add( station, "lastchangetime", json_object_new_string( ( rsi->last_change_time != NULL ? rsi->last_change_time : "" )) );
-        err[15] = json_object_object_add( station, "lastchangetime_iso8601", json_object_new_string( ( rsi->iso8601.last_change_time != NULL ? rsi->iso8601.last_change_time : "" )) );
-        err[16] = json_object_object_add( station, "codec", json_object_new_string( ( rsi->codec != NULL ? rsi->codec : "" )) );
-        err[17] = json_object_object_add( station, "bitrate", json_object_new_uint64( rsi->bitrate ) );
-        err[18] = json_object_object_add( station, "hls", json_object_new_int( rsi->hls ) );
-        err[19] = json_object_object_add( station, "lastcheckok", json_object_new_int( rsi->last_check_ok ) );
+        err[ 0] = json_object_object_add( station, "changeuuid", json_object_new_string( ( ctune_RadioStationInfo.get.changeUUID( rsi ) != NULL ? ctune_RadioStationInfo.get.changeUUID( rsi ) : "" ) ) );
+        err[ 1] = json_object_object_add( station, "stationuuid", json_object_new_string( ( ctune_RadioStationInfo.get.stationUUID( rsi ) != NULL ? ctune_RadioStationInfo.get.stationUUID( rsi ) : "" ) ) );
+        err[ 2] = json_object_object_add( station, "name", json_object_new_string( ( ctune_RadioStationInfo.get.stationName( rsi ) != NULL ? ctune_RadioStationInfo.get.stationName( rsi ) : "" ) ) );
+        err[ 3] = json_object_object_add( station, "url", json_object_new_string( ( ctune_RadioStationInfo.get.stationURL( rsi ) != NULL ? ctune_RadioStationInfo.get.stationURL( rsi ) : "" ) ) );
+        err[ 4] = json_object_object_add( station, "url_resolved", json_object_new_string( ( ctune_RadioStationInfo.get.resolvedURL( rsi ) != NULL ? ctune_RadioStationInfo.get.resolvedURL( rsi ) : "" ) ) );
+        err[ 5] = json_object_object_add( station, "homepage", json_object_new_string( ( ctune_RadioStationInfo.get.homepage( rsi ) != NULL ? ctune_RadioStationInfo.get.homepage( rsi ) : "" ) ) );
+        err[ 6] = json_object_object_add( station, "favicon", json_object_new_string( ( ctune_RadioStationInfo.get.faviconURL( rsi ) != NULL ? ctune_RadioStationInfo.get.faviconURL( rsi ) : "" ) ) );
+        err[ 7] = json_object_object_add( station, "tags", json_object_new_string( ( ctune_RadioStationInfo.get.tags( rsi ) != NULL ? ctune_RadioStationInfo.get.tags( rsi ) : "" ) ) );
+        err[ 8] = json_object_object_add( station, "country", json_object_new_string( ( ctune_RadioStationInfo.get.country( rsi ) != NULL ? ctune_RadioStationInfo.get.country( rsi ) : "" ) ) );
+        err[ 9] = json_object_object_add( station, "countrycode", json_object_new_string( ( ctune_RadioStationInfo.get.countryCode_ISO3166_1( rsi ) != NULL ? ctune_RadioStationInfo.get.countryCode_ISO3166_1( rsi ) : "" ) ) );
+        err[ 9] = json_object_object_add( station, "iso_3166_2", json_object_new_string( ( ctune_RadioStationInfo.get.countryCode_ISO3166_2( rsi ) != NULL ? ctune_RadioStationInfo.get.countryCode_ISO3166_2( rsi ) : "" ) ) );
+        err[10] = json_object_object_add( station, "state", json_object_new_string( ( ctune_RadioStationInfo.get.state( rsi ) != NULL ? ctune_RadioStationInfo.get.state( rsi ) : "" )) );
+        err[11] = json_object_object_add( station, "language", json_object_new_string( ( ctune_RadioStationInfo.get.language( rsi ) != NULL ? ctune_RadioStationInfo.get.language( rsi ) : "" )) );
+        err[12] = json_object_object_add( station, "languagecodes", json_object_new_string( ( ctune_RadioStationInfo.get.languageCodes( rsi ) != NULL ? ctune_RadioStationInfo.get.languageCodes( rsi ) : "" )) );
+        err[13] = json_object_object_add( station, "votes", json_object_new_uint64( ctune_RadioStationInfo.get.votes( rsi ) ) );
+        err[14] = json_object_object_add( station, "lastchangetime", json_object_new_string( ( rsi->last_change_time != NULL ? rsi->last_change_time : "" ) ) );
+        err[15] = json_object_object_add( station, "lastchangetime_iso8601", json_object_new_string( ( ctune_RadioStationInfo.get.lastChangeTS( rsi ) != NULL ? ctune_RadioStationInfo.get.lastChangeTS( rsi ) : "" )) );
+        err[16] = json_object_object_add( station, "codec", json_object_new_string( ( ctune_RadioStationInfo.get.codec( rsi ) != NULL ? ctune_RadioStationInfo.get.codec( rsi ) : "" )) );
+        err[17] = json_object_object_add( station, "bitrate", json_object_new_uint64( ctune_RadioStationInfo.get.bitrate( rsi ) ) );
+        err[18] = json_object_object_add( station, "hls", json_object_new_int( ctune_RadioStationInfo.get.hls( rsi ) ) );
+        err[19] = json_object_object_add( station, "lastcheckok", json_object_new_int( ctune_RadioStationInfo.get.lastCheckOK( rsi ) ) );
         err[20] = json_object_object_add( station, "lastchecktime", json_object_new_string( ( rsi->last_check_time != NULL ? rsi->last_check_time : "" )) );
-        err[21] = json_object_object_add( station, "lastchecktime_iso8601", json_object_new_string( ( rsi->iso8601.last_check_time != NULL ? rsi->iso8601.last_check_time : "" )) );
+        err[21] = json_object_object_add( station, "lastchecktime_iso8601", json_object_new_string( ( ctune_RadioStationInfo.get.lastCheckTS( rsi ) != NULL ? ctune_RadioStationInfo.get.lastCheckTS( rsi ) : "" )) );
         err[22] = json_object_object_add( station, "lastcheckoktime", json_object_new_string( ( rsi->last_check_ok_time != NULL ? rsi->last_check_ok_time : "" )) );
-        err[23] = json_object_object_add( station, "lastcheckoktime_iso8601", json_object_new_string( ( rsi->iso8601.last_check_ok_time != NULL ? rsi->iso8601.last_check_ok_time : "" )) );
+        err[23] = json_object_object_add( station, "lastcheckoktime_iso8601", json_object_new_string( ( ctune_RadioStationInfo.get.lastCheckOkTS( rsi ) != NULL ? ctune_RadioStationInfo.get.lastCheckOkTS( rsi ) : "" )) );
         err[24] = json_object_object_add( station, "lastlocalchecktime", json_object_new_string( ( rsi->last_local_check_time != NULL ? rsi->last_local_check_time : "" )) );
-        err[25] = json_object_object_add( station, "lastlocalchecktime_iso8601", json_object_new_string( ( rsi->iso8601.last_local_check_time != NULL ? rsi->iso8601.last_local_check_time : "" )) );
+        err[25] = json_object_object_add( station, "lastlocalchecktime_iso8601", json_object_new_string( ( ctune_RadioStationInfo.get.lastLocalCheckTS( rsi ) != NULL ? ctune_RadioStationInfo.get.lastLocalCheckTS( rsi ) : "" )) );
         err[26] = json_object_object_add( station, "clicktimestamp", json_object_new_string( ( rsi->click_timestamp != NULL ? rsi->click_timestamp : "" )) );
-        err[27] = json_object_object_add( station, "clicktimestamp_iso8601", json_object_new_string( ( rsi->iso8601.click_timestamp != NULL ? rsi->iso8601.click_timestamp : "" )) );
-        err[28] = json_object_object_add( station, "clickcount", json_object_new_uint64( rsi->clickcount ) );
-        err[29] = json_object_object_add( station, "clicktrend", json_object_new_int64( rsi->clicktrend ) );
-        err[30] = json_object_object_add( station, "ssl_error", json_object_new_int64( rsi->ssl_error ) );
-        err[31] = json_object_object_add( station, "geo_lat", json_object_new_double( rsi->geo.latitude ) );
-        err[32] = json_object_object_add( station, "geo_long", json_object_new_double( rsi->geo.longitude ) );
-        err[33] = json_object_object_add( station, "station_src", json_object_new_int( rsi->station_src ) );
+        err[27] = json_object_object_add( station, "clicktimestamp_iso8601", json_object_new_string( ( ctune_RadioStationInfo.get.clickTS( rsi ) != NULL ? ctune_RadioStationInfo.get.clickTS( rsi ) : "" )) );
+        err[28] = json_object_object_add( station, "clickcount", json_object_new_uint64( ctune_RadioStationInfo.get.clickCount( rsi ) ) );
+        err[29] = json_object_object_add( station, "clicktrend", json_object_new_int64( ctune_RadioStationInfo.get.clickTrend( rsi ) ) );
+        err[30] = json_object_object_add( station, "ssl_error", json_object_new_int64( ctune_RadioStationInfo.get.sslErrCode( rsi ) ) );
+        err[31] = json_object_object_add( station, "geo_lat", json_object_new_double( ctune_RadioStationInfo.get.geoLatitude( rsi ) ) );
+        err[32] = json_object_object_add( station, "geo_long", json_object_new_double( ctune_RadioStationInfo.get.geoLongitude( rsi ) ) );
+        err[33] = json_object_object_add( station, "station_src", json_object_new_int( ctune_RadioStationInfo.get.stationSource( rsi ) ) );
 
         json_object_array_add( array, station );
 

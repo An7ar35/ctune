@@ -5,33 +5,34 @@
  * @param rsi RadioStationInfo DTO as a void pointer
  */
 static void ctune_RadioStationInfo_init( void * rsi ) {
-    ( (struct ctune_RadioStationInfo *) rsi )->change_uuid           = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->station_uuid          = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->name                  = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->url                   = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->url_resolved          = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->homepage              = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->favicon_url           = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->tags                  = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->country               = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->country_code          = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->state                 = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->language              = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->language_codes        = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->votes                 = 0;
-    ( (struct ctune_RadioStationInfo *) rsi )->last_change_time      = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->codec                 = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->bitrate               = 0;
-    ( (struct ctune_RadioStationInfo *) rsi )->hls                   = false;
-    ( (struct ctune_RadioStationInfo *) rsi )->last_check_ok         = false;
-    ( (struct ctune_RadioStationInfo *) rsi )->last_check_time       = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->last_check_ok_time    = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->last_local_check_time = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->click_timestamp       = NULL;
-    ( (struct ctune_RadioStationInfo *) rsi )->clickcount            = 0;
-    ( (struct ctune_RadioStationInfo *) rsi )->clicktrend            = 0;
-    ( (struct ctune_RadioStationInfo *) rsi )->broken                = false;
-    ( (struct ctune_RadioStationInfo *) rsi )->ssl_error             = 0;
+    ( (struct ctune_RadioStationInfo *) rsi )->change_uuid            = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->station_uuid           = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->name                   = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->url                    = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->url_resolved           = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->homepage               = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->favicon_url            = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->tags                   = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->country                = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->country_code.iso3166_1 = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->country_code.iso3166_2 = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->state                  = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->language               = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->language_codes         = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->votes                  = 0;
+    ( (struct ctune_RadioStationInfo *) rsi )->last_change_time       = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->codec                  = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->bitrate                = 0;
+    ( (struct ctune_RadioStationInfo *) rsi )->hls                    = false;
+    ( (struct ctune_RadioStationInfo *) rsi )->last_check_ok          = false;
+    ( (struct ctune_RadioStationInfo *) rsi )->last_check_time        = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->last_check_ok_time     = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->last_local_check_time  = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->click_timestamp        = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->clickcount             = 0;
+    ( (struct ctune_RadioStationInfo *) rsi )->clicktrend             = 0;
+    ( (struct ctune_RadioStationInfo *) rsi )->broken                 = false;
+    ( (struct ctune_RadioStationInfo *) rsi )->ssl_error              = 0;
 
     ( (struct ctune_RadioStationInfo *) rsi )->iso8601.last_change_time      = NULL;
     ( (struct ctune_RadioStationInfo *) rsi )->iso8601.last_check_time       = NULL;
@@ -76,8 +77,10 @@ static void ctune_RadioStationInfo_copy( const void * lhs, void * rhs ) {
         dest->tags = strdup( from->tags );
     if( from->country )
         dest->country = strdup( from->country );
-    if( from->country_code )
-        dest->country_code = strdup( from->country_code );
+    if( from->country_code.iso3166_1 )
+        dest->country_code.iso3166_1 = strdup( from->country_code.iso3166_1 );
+    if( from->country_code.iso3166_2 )
+        dest->country_code.iso3166_2 = strdup( from->country_code.iso3166_2 );
     if( from->state )
         dest->state = strdup( from->state );
     if( from->language )
@@ -149,8 +152,10 @@ static void ctune_RadioStationInfo_mincopy( const void * lhs, void * rhs ) {
         dest->tags = strdup( from->tags );
     if( from->country )
         dest->country = strdup( from->country );
-    if( from->country_code )
-        dest->country_code = strdup( from->country_code );
+    if( from->country_code.iso3166_1 )
+        dest->country_code.iso3166_1 = strdup( from->country_code.iso3166_1 );
+    if( from->country_code.iso3166_2 )
+        dest->country_code.iso3166_2 = strdup( from->country_code.iso3166_2 );
     if( from->state )
         dest->state = strdup( from->state );
     if( from->language )
@@ -269,7 +274,10 @@ static bool ctune_RadioStationInfo_equal( const void * lhs, const void * rhs ) {
     if( !ctune_streq( rsi_a->country, rsi_b->country ) )
         return false;
 
-    if( !ctune_streq( rsi_a->country_code, rsi_b->country_code ) )
+    if( !ctune_streq( rsi_a->country_code.iso3166_1, rsi_b->country_code.iso3166_1 ) )
+        return false;
+
+    if( !ctune_streq( rsi_a->country_code.iso3166_2, rsi_b->country_code.iso3166_2 ) )
         return false;
 
     if( !ctune_streq( rsi_a->state, rsi_b->state ) )
@@ -475,9 +483,14 @@ static void ctune_RadioStationInfo_freeContent( void * rsi ) {
         station->country = NULL;
     }
 
-    if( station->country_code ) {
-        free( station->country_code );
-        station->country_code = NULL;
+    if( station->country_code.iso3166_1 ) {
+        free( station->country_code.iso3166_1 );
+        station->country_code.iso3166_1 = NULL;
+    }
+
+    if( station->country_code.iso3166_2 ) {
+        free( station->country_code.iso3166_2 );
+        station->country_code.iso3166_2 = NULL;
     }
 
     if( station->state ) {
@@ -580,7 +593,8 @@ static void ctune_RadioStationInfo_print( const ctune_RadioStationInfo_t * rsi, 
     fprintf( out, "favicon_url .....................: %s\n", rsi->favicon_url );
     fprintf( out, "tags ............................: %s\n", rsi->tags );
     fprintf( out, "country .........................: %s\n", rsi->country );
-    fprintf( out, "country_code ....................: %c%c\n", rsi->country_code[0], rsi->country_code[1] );
+    fprintf( out, "country_code (ISO 3166_1)........: %c%c\n", rsi->country_code.iso3166_1[0], rsi->country_code.iso3166_1[1] );
+    fprintf( out, "country_code (ISO 3166_2)........: %c%c\n", rsi->country_code.iso3166_2[0], rsi->country_code.iso3166_2[1] );
     fprintf( out, "state ...........................: %s\n", rsi->state );
     fprintf( out, "language ........................: %s\n", rsi->language );
     fprintf( out, "language_codes...................: %s\n", rsi->language_codes );
@@ -707,12 +721,15 @@ static int ctune_RadioStationInfo_compare_by_country_code( const void * lhs, con
     const ctune_RadioStationInfo_t * a = (ctune_RadioStationInfo_t *) lhs;
     const ctune_RadioStationInfo_t * b = (ctune_RadioStationInfo_t *) rhs;
 
-    if( a->country_code == NULL )
+    const char * lhs_cc = ( a->country_code.iso3166_2 == NULL ? a->country_code.iso3166_1 : a->country_code.iso3166_2 );
+    const char * rhs_cc = ( b->country_code.iso3166_2 == NULL ? b->country_code.iso3166_1 : b->country_code.iso3166_2 );
+
+    if( lhs_cc == NULL )
         return +1;
-    else if( b->country_code == NULL )
+    else if( rhs_cc == NULL )
         return -1;
     else
-        return strcmp( a->country_code, b->country_code );
+        return strcmp( lhs_cc, rhs_cc );
 }
 
 static int ctune_RadioStationInfo_compare_by_country_code_r( const void * lhs, const void * rhs ) {
@@ -1010,36 +1027,45 @@ static void ctune_RadioStationInfo_set_country( ctune_RadioStationInfo_t * rsi, 
     }
 }
 
-static void ctune_RadioStationInfo_set_countryCode( ctune_RadioStationInfo_t * rsi, const char * cc_str ){
+static void ctune_RadioStationInfo_set_countryCode_ISO3166_1( ctune_RadioStationInfo_t * rsi, const char * cc_str ){
     if( rsi != NULL ) {
-        if( rsi->country_code ) {
-            free( rsi->country_code );
-            rsi->country_code = NULL;
+        if( rsi->country_code.iso3166_1 ) {
+            free( rsi->country_code.iso3166_1 );
+            rsi->country_code.iso3166_1 = NULL;
         }
 
         if( cc_str != NULL ) {
             if( strlen( cc_str ) >= 2 ) {
-                rsi->country_code = malloc( sizeof( char ) * 3 );
+                rsi->country_code.iso3166_1 = malloc( sizeof( char ) * 3 );
 
-                if( rsi->country_code != NULL ) {
-                    rsi->country_code[ 0 ] = cc_str[ 0 ];
-                    rsi->country_code[ 1 ] = cc_str[ 1 ];
-                    rsi->country_code[ 2 ] = '\0';
+                if( rsi->country_code.iso3166_1 != NULL ) {
+                    rsi->country_code.iso3166_1[ 0 ] = cc_str[ 0 ];
+                    rsi->country_code.iso3166_1[ 1 ] = cc_str[ 1 ];
+                    rsi->country_code.iso3166_1[ 2 ] = '\0';
 
                 } else {
                     CTUNE_LOG( CTUNE_LOG_ERROR,
-                               "[ctune_RadioStationInfo_set_countryCode( %p, %p )] Failed to allocate memory for 'country_code'.",
+                               "[ctune_RadioStationInfo_set_countryCode_ISO3166_1( %p, %p )] Failed to allocate memory for 'country_code'.",
                                rsi, cc_str
                     );
                 }
 
             } else {
                 CTUNE_LOG( CTUNE_LOG_ERROR,
-                           "[ctune_RadioStationInfo_set_countryCode( %p, %p )] String passed is too short - nothing copied.",
+                           "[ctune_RadioStationInfo_set_countryCode_ISO3166_1( %p, %p )] String passed is too short - nothing copied.",
                            rsi, cc_str
                 );
             }
         }
+    }
+}
+
+static void ctune_RadioStationInfo_set_countryCode_ISO3166_2( ctune_RadioStationInfo_t * rsi, char * cc_str ) {
+    if( rsi != NULL ) {
+        if( rsi->country_code.iso3166_2 )
+            free( rsi->country_code.iso3166_2 );
+
+        rsi->country_code.iso3166_2 = cc_str;
     }
 }
 
@@ -1240,7 +1266,22 @@ static const char * ctune_RadioStationInfo_get_country( const ctune_RadioStation
 static const char * ctune_RadioStationInfo_get_countryCode( const ctune_RadioStationInfo_t * rsi ) {
     if( rsi == NULL )
         return NULL;
-    return rsi->country_code;
+    if( rsi->country_code.iso3166_2 != NULL )
+        return rsi->country_code.iso3166_2;
+    else
+        return rsi->country_code.iso3166_1;
+}
+
+static const char * ctune_RadioStationInfo_get_countryCode_ISO3166_1( const ctune_RadioStationInfo_t * rsi ) {
+    if( rsi == NULL )
+        return NULL;
+    return rsi->country_code.iso3166_1;
+}
+
+static const char * ctune_RadioStationInfo_get_countryCode_ISO3166_2( const ctune_RadioStationInfo_t * rsi ) {
+    if( rsi == NULL )
+        return NULL;
+    return rsi->country_code.iso3166_2;
 }
 
 static const char * ctune_RadioStationInfo_get_state( const ctune_RadioStationInfo_t * rsi ) {
@@ -1397,69 +1438,72 @@ const struct ctune_RadioStationInfo_Namespace ctune_RadioStationInfo = {
     .sortAttrStr           = &ctune_RadioStationInfo_sortAttrStr,
 
     .set = {
-        .changeUUID        = &ctune_RadioStationInfo_set_changeUUID,
-        .stationUUID       = &ctune_RadioStationInfo_set_stationUUID,
-        .stationName       = &ctune_RadioStationInfo_set_stationName,
-        .stationURL        = &ctune_RadioStationInfo_set_stationURL,
-        .resolvedURL       = &ctune_RadioStationInfo_set_resolvedURL,
-        .homepage          = &ctune_RadioStationInfo_set_homepage,
-        .faviconURL        = &ctune_RadioStationInfo_set_faviconURL,
-        .tags              = &ctune_RadioStationInfo_set_tags,
-        .country           = &ctune_RadioStationInfo_set_country,
-        .countryCode       = &ctune_RadioStationInfo_set_countryCode,
-        .state             = &ctune_RadioStationInfo_set_state,
-        .language          = &ctune_RadioStationInfo_set_language,
-        .languageCodes     = &ctune_RadioStationInfo_set_languageCodes,
-        .votes             = &ctune_RadioStationInfo_set_votes,
-        .lastChangeTS      = &ctune_RadioStationInfo_set_lastChangeTS,
-        .codec             = &ctune_RadioStationInfo_set_codec,
-        .bitrate           = &ctune_RadioStationInfo_set_bitrate,
-        .hls               = &ctune_RadioStationInfo_set_hls,
-        .lastCheckOK       = &ctune_RadioStationInfo_set_lastCheckOk,
-        .lastCheckTS       = &ctune_RadioStationInfo_set_lastCheckTS,
-        .lastCheckOkTS     = &ctune_RadioStationInfo_set_lastCheckOkTS,
-        .lastLocalCheckTS  = &ctune_RadioStationInfo_set_lastLocalCheckTS,
-        .clickTS           = &ctune_RadioStationInfo_set_clickTS,
-        .clickCount        = &ctune_RadioStationInfo_set_clickCount,
-        .clickTrend        = &ctune_RadioStationInfo_set_clickTrend,
-        .broken            = &ctune_RadioStationInfo_set_broken,
-        .sslErrCode        = &ctune_RadioStationInfo_set_sslErrCode,
-        .geoCoordinates    = &ctune_RadioStationInfo_set_geoCoordinates,
-        .favourite         = &ctune_RadioStationInfo_set_favourite,
-        .stationSource     = &ctune_RadioStationInfo_set_stationSource,
+        .changeUUID            = &ctune_RadioStationInfo_set_changeUUID,
+        .stationUUID           = &ctune_RadioStationInfo_set_stationUUID,
+        .stationName           = &ctune_RadioStationInfo_set_stationName,
+        .stationURL            = &ctune_RadioStationInfo_set_stationURL,
+        .resolvedURL           = &ctune_RadioStationInfo_set_resolvedURL,
+        .homepage              = &ctune_RadioStationInfo_set_homepage,
+        .faviconURL            = &ctune_RadioStationInfo_set_faviconURL,
+        .tags                  = &ctune_RadioStationInfo_set_tags,
+        .country               = &ctune_RadioStationInfo_set_country,
+        .countryCode_ISO3166_1 = &ctune_RadioStationInfo_set_countryCode_ISO3166_1,
+        .countryCode_ISO3166_2 = &ctune_RadioStationInfo_set_countryCode_ISO3166_2,
+        .state                 = &ctune_RadioStationInfo_set_state,
+        .language              = &ctune_RadioStationInfo_set_language,
+        .languageCodes         = &ctune_RadioStationInfo_set_languageCodes,
+        .votes                 = &ctune_RadioStationInfo_set_votes,
+        .lastChangeTS          = &ctune_RadioStationInfo_set_lastChangeTS,
+        .codec                 = &ctune_RadioStationInfo_set_codec,
+        .bitrate               = &ctune_RadioStationInfo_set_bitrate,
+        .hls                   = &ctune_RadioStationInfo_set_hls,
+        .lastCheckOK           = &ctune_RadioStationInfo_set_lastCheckOk,
+        .lastCheckTS           = &ctune_RadioStationInfo_set_lastCheckTS,
+        .lastCheckOkTS         = &ctune_RadioStationInfo_set_lastCheckOkTS,
+        .lastLocalCheckTS      = &ctune_RadioStationInfo_set_lastLocalCheckTS,
+        .clickTS               = &ctune_RadioStationInfo_set_clickTS,
+        .clickCount            = &ctune_RadioStationInfo_set_clickCount,
+        .clickTrend            = &ctune_RadioStationInfo_set_clickTrend,
+        .broken                = &ctune_RadioStationInfo_set_broken,
+        .sslErrCode            = &ctune_RadioStationInfo_set_sslErrCode,
+        .geoCoordinates        = &ctune_RadioStationInfo_set_geoCoordinates,
+        .favourite             = &ctune_RadioStationInfo_set_favourite,
+        .stationSource         = &ctune_RadioStationInfo_set_stationSource,
     },
 
     .get = {
-        .changeUUID        = &ctune_RadioStationInfo_get_changeUUID,
-        .stationUUID       = &ctune_RadioStationInfo_get_stationUUID,
-        .stationName       = &ctune_RadioStationInfo_get_stationName,
-        .stationURL        = &ctune_RadioStationInfo_get_stationURL,
-        .resolvedURL       = &ctune_RadioStationInfo_get_resolvedURL,
-        .homepage          = &ctune_RadioStationInfo_get_homepage,
-        .faviconURL        = &ctune_RadioStationInfo_get_faviconURL,
-        .tags              = &ctune_RadioStationInfo_get_tags,
-        .country           = &ctune_RadioStationInfo_get_country,
-        .countryCode       = &ctune_RadioStationInfo_get_countryCode,
-        .state             = &ctune_RadioStationInfo_get_state,
-        .language          = &ctune_RadioStationInfo_get_language,
-        .languageCodes     = &ctune_RadioStationInfo_get_languageCodes,
-        .votes             = &ctune_RadioStationInfo_get_votes,
-        .lastChangeTS      = &ctune_RadioStationInfo_get_lastChangeTS,
-        .codec             = &ctune_RadioStationInfo_get_codec,
-        .bitrate           = &ctune_RadioStationInfo_get_bitrate,
-        .hls               = &ctune_RadioStationInfo_get_hls,
-        .lastCheckOK       = &ctune_RadioStationInfo_get_lastCheckOK,
-        .lastCheckTS       = &ctune_RadioStationInfo_get_lastCheckTS,
-        .lastCheckOkTS     = &ctune_RadioStationInfo_get_lastCheckOkTS,
-        .lastLocalCheckTS  = &ctune_RadioStationInfo_get_lastLocalCheckTS,
-        .clickTS           = &ctune_RadioStationInfo_get_clickTS,
-        .clickCount        = &ctune_RadioStationInfo_get_clickCount,
-        .clickTrend        = &ctune_RadioStationInfo_get_clickTrend,
-        .broken            = &ctune_RadioStationInfo_get_broken,
-        .sslErrCode        = &ctune_RadioStationInfo_get_sslErrCode,
-        .geoLatitude       = &ctune_RadioStationInfo_get_geoLatitude,
-        .geoLongitude      = &ctune_RadioStationInfo_get_geoLongitude,
-        .favourite         = &ctune_RadioStationInfo_get_favourite,
-        .stationSource     = &ctune_RadioStationInfo_get_stationSource,
+        .changeUUID            = &ctune_RadioStationInfo_get_changeUUID,
+        .stationUUID           = &ctune_RadioStationInfo_get_stationUUID,
+        .stationName           = &ctune_RadioStationInfo_get_stationName,
+        .stationURL            = &ctune_RadioStationInfo_get_stationURL,
+        .resolvedURL           = &ctune_RadioStationInfo_get_resolvedURL,
+        .homepage              = &ctune_RadioStationInfo_get_homepage,
+        .faviconURL            = &ctune_RadioStationInfo_get_faviconURL,
+        .tags                  = &ctune_RadioStationInfo_get_tags,
+        .country               = &ctune_RadioStationInfo_get_country,
+        .countryCode           = &ctune_RadioStationInfo_get_countryCode,
+        .countryCode_ISO3166_1 = &ctune_RadioStationInfo_get_countryCode_ISO3166_1,
+        .countryCode_ISO3166_2 = &ctune_RadioStationInfo_get_countryCode_ISO3166_2,
+        .state                 = &ctune_RadioStationInfo_get_state,
+        .language              = &ctune_RadioStationInfo_get_language,
+        .languageCodes         = &ctune_RadioStationInfo_get_languageCodes,
+        .votes                 = &ctune_RadioStationInfo_get_votes,
+        .lastChangeTS          = &ctune_RadioStationInfo_get_lastChangeTS,
+        .codec                 = &ctune_RadioStationInfo_get_codec,
+        .bitrate               = &ctune_RadioStationInfo_get_bitrate,
+        .hls                   = &ctune_RadioStationInfo_get_hls,
+        .lastCheckOK           = &ctune_RadioStationInfo_get_lastCheckOK,
+        .lastCheckTS           = &ctune_RadioStationInfo_get_lastCheckTS,
+        .lastCheckOkTS         = &ctune_RadioStationInfo_get_lastCheckOkTS,
+        .lastLocalCheckTS      = &ctune_RadioStationInfo_get_lastLocalCheckTS,
+        .clickTS               = &ctune_RadioStationInfo_get_clickTS,
+        .clickCount            = &ctune_RadioStationInfo_get_clickCount,
+        .clickTrend            = &ctune_RadioStationInfo_get_clickTrend,
+        .broken                = &ctune_RadioStationInfo_get_broken,
+        .sslErrCode            = &ctune_RadioStationInfo_get_sslErrCode,
+        .geoLatitude           = &ctune_RadioStationInfo_get_geoLatitude,
+        .geoLongitude          = &ctune_RadioStationInfo_get_geoLongitude,
+        .favourite             = &ctune_RadioStationInfo_get_favourite,
+        .stationSource         = &ctune_RadioStationInfo_get_stationSource,
     },
 };

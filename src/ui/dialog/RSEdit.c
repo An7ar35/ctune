@@ -405,7 +405,7 @@ static bool ctune_UI_RSEdit_packFieldValues( ctune_UI_RSEdit_t * rsedit, ctune_R
         char * cc = ctune_trimspace( field_buffer( rsedit->cache.fields[ INPUT_COUNTRY_CODE ], 0 ) );
 
         if( cc != NULL ) {
-            ctune_RadioStationInfo.set.countryCode( rsi, cc );
+            ctune_RadioStationInfo.set.countryCode_ISO3166_1( rsi, cc );
             free( cc );
         }
     }
@@ -560,7 +560,7 @@ static void ctune_UI_RSEdit_initFields( ctune_UI_RSEdit_t * rsedit ) {
     set_field_buffer( rsedit->cache.fields[ INPUT_HOMEPAGE       ], 0, ctune_fallbackStr( ctune_RadioStationInfo.get.homepage( rsi ), "" ) );
     set_field_buffer( rsedit->cache.fields[ INPUT_TAGS           ], 0, ctune_fallbackStr( ctune_RadioStationInfo.get.tags( rsi ), "" ) );
     set_field_buffer( rsedit->cache.fields[ INPUT_COUNTRY        ], 0, ctune_fallbackStr( ctune_RadioStationInfo.get.country( rsi ), "" ) );
-    set_field_buffer( rsedit->cache.fields[ INPUT_COUNTRY_CODE   ], 0, ctune_fallbackStr( ctune_RadioStationInfo.get.countryCode( rsi ), "" ) );
+    set_field_buffer( rsedit->cache.fields[ INPUT_COUNTRY_CODE   ], 0, ctune_fallbackStr( ctune_RadioStationInfo.get.countryCode_ISO3166_1( rsi ), "" ) );
     set_field_buffer( rsedit->cache.fields[ INPUT_STATE          ], 0, ctune_fallbackStr( ctune_RadioStationInfo.get.state( rsi ), "" ) );
     set_field_buffer( rsedit->cache.fields[ INPUT_LANGUAGE       ], 0, ctune_fallbackStr( ctune_RadioStationInfo.get.language( rsi ), "" ) );
     set_field_buffer( rsedit->cache.fields[ INPUT_LANGUAGE_CODES ], 0, ctune_fallbackStr( ctune_RadioStationInfo.get.languageCodes( rsi ), "" ) );
