@@ -24,7 +24,12 @@ typedef struct ctune_RadioStationInfo {
     char * favicon_url;
     char * tags;
     char * country;
-    char * country_code; //https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+
+    struct {
+        char * iso3166_1; //https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+        char * iso3166_2; //https://en.wikipedia.org/wiki/ISO_3166-2
+    } country_code;
+
     char * state;
     char * language;
     char * language_codes; //https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
@@ -234,7 +239,8 @@ extern const struct ctune_RadioStationInfo_Namespace {
         void (* faviconURL)( ctune_RadioStationInfo_t * rsi, char * str_ptr );
         void (* tags)( ctune_RadioStationInfo_t * rsi, char * str_ptr );
         void (* country)( ctune_RadioStationInfo_t * rsi, char * str_ptr );
-        void (* countryCode)( ctune_RadioStationInfo_t * rsi, const char * cc_str );
+        void (* countryCode_ISO3166_1)( ctune_RadioStationInfo_t * rsi, const char * cc_str );
+        void (* countryCode_ISO3166_2)( ctune_RadioStationInfo_t * rsi, char * cc_str );
         void (* state)( ctune_RadioStationInfo_t * rsi, char * str_ptr );
         void (* language)( ctune_RadioStationInfo_t * rsi, char * str_ptr );
         void (* languageCodes)( ctune_RadioStationInfo_t * rsi, char * str_ptr );
@@ -271,6 +277,8 @@ extern const struct ctune_RadioStationInfo_Namespace {
         const char * (* tags)( const ctune_RadioStationInfo_t * rsi );
         const char * (* country)( const ctune_RadioStationInfo_t * rsi );
         const char * (* countryCode)( const ctune_RadioStationInfo_t * rsi );
+        const char * (* countryCode_ISO3166_1)( const ctune_RadioStationInfo_t * rsi );
+        const char * (* countryCode_ISO3166_2)( const ctune_RadioStationInfo_t * rsi );
         const char * (* state)( const ctune_RadioStationInfo_t * rsi );
         const char * (* language)( const ctune_RadioStationInfo_t * rsi );
         const char * (* languageCodes)( const ctune_RadioStationInfo_t * rsi );

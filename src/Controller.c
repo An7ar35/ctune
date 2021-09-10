@@ -335,6 +335,9 @@ static bool ctune_Controller_getStations( ctune_RadioBrowserFilter_t * filter, V
                                                     stations );
 
     if( !ret ) {
+        if( ctune_err.number() == CTUNE_ERR_NONE )
+            ctune_err.set( CTUNE_ERR_ACTION_FETCH );
+
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_Controller_getStations( %p, %p )] Error downloading radio stations.",
                    filter, stations );
@@ -361,6 +364,9 @@ static bool ctune_Controller_getStationsBy( const ctune_ByCategory_e category, c
                                                       search_term,
                                                       stations );
     if( !ret ) {
+        if( ctune_err.number() == CTUNE_ERR_NONE )
+            ctune_err.set( CTUNE_ERR_ACTION_FETCH );
+
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_Controller_getStationsBy( %i, \"%s\", %p )] Error downloading radio stations.",
                    category, ( search_term ? search_term : "" ), stations );
@@ -387,6 +393,9 @@ bool ctune_Controller_getCategoryItems( const ctune_ListCategory_e category, con
                                                          categories );
 
     if( !ret ) {
+        if( ctune_err.number() == CTUNE_ERR_NONE )
+            ctune_err.set( CTUNE_ERR_ACTION_FETCH );
+
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_Controller_getCategoryItems( %i, %p, %p )] Error downloading category items.",
                    category, filter, categories );

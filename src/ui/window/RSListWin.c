@@ -191,9 +191,9 @@ static void ctune_UI_RSListWin_printSmallItemRow( ctune_UI_RSListWin_t * win, ct
             mvwprintw( win->canvas_win, (*win_row), name_col, "%-*s", info_col, station_name );
         }
 
-        mvwprintw( win->canvas_win, (*win_row), info_col, "%*lu%s|%s",
+        mvwprintw( win->canvas_win, (*win_row), info_col, "%*lu%s|%.*s",
                    MAX_BITRATE_FIELD_WIDTH, station_bitrate, win->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_BITRATE_UNIT_SHORT ),
-                   ( station_cc == NULL  || strlen( station_cc ) != 2 ? "??" : station_cc ) );
+                   2, ( station_cc == NULL  || strlen( station_cc ) < 2 ? "??" : station_cc ) );
 
         wattroff( win->canvas_win, row_theme );
         *win_row += 1;
@@ -278,7 +278,7 @@ static void ctune_UI_RSListWin_printLargeItemRow( ctune_UI_RSListWin_t * win, ct
             mvwprintw( win->canvas_win, (*win_row), name_col, "%-*s", cc_col, station_name );
         }
 
-        mvwprintw( win->canvas_win, (*win_row), cc_col, "%s", ( station_cc == NULL || strlen( station_cc ) != 2 ? "??" : station_cc ) );
+        mvwprintw( win->canvas_win, (*win_row), cc_col, "%.*s", 2, ( station_cc == NULL || strlen( station_cc ) < 2 ? "??" : station_cc ) );
 
         *win_row += 1;
     }

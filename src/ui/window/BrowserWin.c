@@ -120,7 +120,6 @@ static bool ctune_UI_BrowserWin_categoryCtrlFunctionCb( ctune_UI_SlideMenu_Item_
                    menu_item, menu_item->text._raw
         );
 
-        ctune_err.set( CTUNE_ERR_ACTION_FETCH );
         error_state = true;
         goto end;
     }
