@@ -83,21 +83,34 @@ static bool ctune_parser_JSON_packField_bool( const char * key, const char * val
         return true; //EARLY RETURN
     }
 
-    long tmp = strtol( val, NULL, 10 );
+    if( strcmp( val, "false" ) == 0 ) {
+        *target = false;
 
-    if( ( tmp == 0 && strcmp( val, "0" ) != 0 ) || errno == ERANGE ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_parser_JSON_packField_bool( \"%s\", \"%s\", %p )] "
-                   "Failed string->`bool` conversion.",
-                   key, val, target
-        );
+    } else if( strcmp( val, "true" ) == 0 ) {
+        *target = true;
 
-        return false;
+    } else {
+        long tmp = strtol( val, NULL, 10 );
+
+        if( ( tmp == 0 && strcmp( val, "0" ) != 0 ) || errno == ERANGE ) {
+            //last ditch attempt to get a boolean (done as a last resort as slow)
+            if( !ctune_stob( val, target ) ) {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[ctune_parser_JSON_packField_bool( \"%s\", \"%s\", %p )] "
+                           "Failed string->`bool` conversion.",
+                           key, val, target
+                );
+
+                return false; //EARLY RETURN
+            }
+
+
+        } else {
+            *target = ( tmp != 0 );
+        }
+
+        return true;
     }
-
-    *target = ( tmp != 0 );
-
-    return true;
 }
 
 /**
