@@ -197,14 +197,18 @@ static size_t ctune_Settings_favouriteCount( void ) {
 /**
  * [PRIVATE] Get file state
  * @param filename File path/name
+ * @param size Pointer to container to set the found file size (only on CTUNE_FILE_FOUND)
  * @return CTUNE_FILE_*
  */
-static ctune_FileState ctune_Settings_getFileState( const char * filename ) {
+static ctune_FileState ctune_Settings_getFileState( const char * filename, ssize_t * size ) {
     struct stat file_stat;
     const int err    = stat( filename, &file_stat );
     const int err_no = errno;
 
     if( err == 0 ) {
+        if( size != NULL )
+            *size = file_stat.st_size;
+
         return CTUNE_FILE_FOUND;
 
     } else if( err == -1 && err_no == ENOENT ) {
@@ -219,6 +223,62 @@ static ctune_FileState ctune_Settings_getFileState( const char * filename ) {
 
         return CTUNE_FILE_ERR;
     }
+}
+
+/**
+ * Create a copy of a file's content
+ * @param src Source filepath
+ * @param target Target filepath
+ * @param buff_size Size of buffer to use
+ * @return Success
+ */
+static bool ctune_Settings_duplicateFile( const char * src, const char * target, size_t buff_size ) {
+    bool   error_state      = false;
+    FILE * from_fd          = NULL;
+    FILE * to_fd            = NULL;
+    size_t source_size      = 0;
+    size_t read_from_src    = 0;
+    size_t writen_to_target = 0;
+    char   buffer[buff_size];
+
+    if( ctune_Settings_getFileState( src, &source_size ) != CTUNE_FILE_FOUND ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_duplicateFile( \"%s\", \"%s\" )] Failed to get stats for source: %s", src, target, strerror( errno ) );
+        goto end;
+    }
+
+    if( ( from_fd = fopen( src, "r" ) ) == NULL ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_duplicateFile( \"%s\", \"%s\" )] Failed to open source: %s", src, target, strerror( errno ) );
+        error_state = true;
+        goto end;
+    }
+
+    if( ( to_fd = fopen( target, "w" ) ) == NULL ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_duplicateFile( \"%s\", \"%s\" )] Failed to open target: %s", src, target, strerror( errno ) );
+        error_state = true;
+        goto end;
+    }
+
+    size_t read = 0;
+
+    while( ( read = fread( buffer, 1, sizeof( buffer ), from_fd ) ) > 0 ) {
+        read_from_src    += read;
+        writen_to_target += fwrite( buffer, 1, read,to_fd );
+    }
+
+    if( source_size != writen_to_target ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_duplicateFile( \"%s\", \"%s\" )] Read/Write mismatch: %lu/%lu", src, target, writen_to_target, source_size );
+        error_state = true;
+    } else {
+        CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_Settings_duplicateFile( \"%s\", \"%s\" )] Copied %lu/%lu successfully.", src, target, writen_to_target, source_size );
+    }
+
+    end:
+        if( from_fd )
+            fclose( from_fd );
+        if( to_fd )
+            fclose( to_fd );
+
+        return !( error_state );
 }
 
 /**
@@ -448,7 +508,7 @@ static bool ctune_Settings_rtlock_lock( void ) {
 
     ctune_Settings_resolveDataFilePath( CTUNE_LOCK_FILENAME, &lockfile_path );
 
-    int file_state = ctune_Settings_getFileState( lockfile_path._raw );
+    int file_state = ctune_Settings_getFileState( lockfile_path._raw, NULL );
 
     switch( file_state ) {
         case CTUNE_FILE_NOTFOUND: {
@@ -494,7 +554,7 @@ static bool ctune_Settings_rtlock_unlock( void ) {
 
     ctune_Settings_resolveDataFilePath( CTUNE_LOCK_FILENAME, &lockfile_path );
 
-    const int file_state = ctune_Settings_getFileState( lockfile_path._raw );
+    const int file_state = ctune_Settings_getFileState( lockfile_path._raw, NULL );
 
     if( file_state == CTUNE_FILE_FOUND ) {
         if( remove( lockfile_path._raw ) == 0 ) {
@@ -900,6 +960,63 @@ static bool ctune_Settings_setUIConfig( const ctune_UIConfig_t * cfg ) {
 
 //==================================== CTUNE FAVOURITES ============================================
 /**
+ * [PRIVATE] Creates a backup of the current favourites
+ * @param fav_path Favourites file path
+ * @param backup_path Target backup file path
+ * @return Success
+ */
+static bool ctune_Settings_backupFavourites( const char * fav_path, const char * backup_path ) {
+    bool error_state = false;
+
+    if( ctune_Settings_getFileState( backup_path, NULL ) == CTUNE_FILE_FOUND ) {
+        if( remove( backup_path ) != 0 ) {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_Settings_backupFavourites()] Failed to remove old backup file (\"%s\"): %s",
+                       backup_path,
+                       strerror( errno )
+            );
+            error_state = true;
+            goto end;
+        }
+    }
+
+    if( rename( fav_path, backup_path ) != 0 ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_Settings_backupFavourites()] Failed to rename favourites into backup file (\"%s\" -> \"%s\"): %s",
+                   fav_path,
+                   backup_path,
+                   strerror( errno )
+        );
+        error_state = true;
+        goto end;
+    }
+
+    if( !ctune_Settings_duplicateFile( backup_path, fav_path, 1024 ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_Settings_backupFavourites()] Failed to duplicate file: \"%s\" -> \"%s\"",
+                   backup_path,
+                   fav_path
+        );
+
+        //revert renaming
+        if( rename( backup_path, fav_path ) != 0 ) {
+            CTUNE_LOG( CTUNE_LOG_FATAL,
+                       "[ctune_Settings_backupFavourites()] Failed to rename backup file back to favourites (\"%s\" -> \"%s\"): %s",
+                       backup_path,
+                       fav_path,
+                       strerror( errno )
+            );
+        }
+
+        error_state = true;
+        goto end;
+    }
+
+    end:
+        return !( error_state );
+}
+
+/**
  * Load favourite stations from file
  * @return Success
  */
@@ -927,27 +1044,10 @@ static bool ctune_Settings_loadFavourites() {
 
     }
 
-    if( ctune_Settings_getFileState( backup_path._raw ) == CTUNE_FILE_FOUND ) {
-        if( remove( backup_path._raw ) != 0 ) {
-            CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[ctune_Settings_loadFavourites()] Failed to remove old backup file (\"%s\"): %s",
-                       backup_path._raw,
-                       strerror( errno )
-            );
-            error_state = true;
-            goto end;
-        }
-    }
-
-    if( rename( file_path._raw, backup_path._raw ) != 0 ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_Settings_loadFavourites()] Failed to rename favourites into backup file (\"%s\" -> \"%s\"): %s",
-                   file_path._raw,
-                   backup_path._raw,
-                   strerror( errno )
-        );
-        error_state = true;
-        goto end;
+    if( !ctune_Settings_backupFavourites( file_path._raw, backup_path._raw ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_loadFavourites()] Failed create backup." );
+    } else {
+        CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_Settings_loadFavourites()] Backup successful." );
     }
 
     if( !ctune_parser_JSON.parseToRadioStationList( &file_content, &station_list ) ) {
