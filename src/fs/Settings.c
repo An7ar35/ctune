@@ -146,14 +146,16 @@ static struct ctune_Settings_Cfg {
 static struct ctune_Settings_Fav {
     const char * dir_name;
     const char * file_name;
+    const char * backup_name;
     HashMap_t    favs[CTUNE_STATIONSRC_COUNT];
 
     ctune_RadioStationInfo_SortBy_e sort_id;
 
 } favourites = {
-    .dir_name  = "ctune/",
-    .file_name = "ctune.fav",
-    .sort_id   = CTUNE_RADIOSTATIONINFO_SORTBY_NONE,
+    .dir_name    = "ctune/",
+    .file_name   = "ctune.fav",
+    .backup_name = "ctune.fav.bck",
+    .sort_id     = CTUNE_RADIOSTATIONINFO_SORTBY_NONE,
 };
 
 /**
@@ -791,13 +793,39 @@ static bool ctune_Settings_loadFavourites() {
 
     bool     error_state  = false;
     String_t file_path    = String.init();
+    String_t backup_path  = String.init();
     String_t file_content = String.init();
     Vector_t station_list = Vector.init( sizeof( ctune_RadioStationInfo_t ), ctune_RadioStationInfo.freeContent );
 
     ctune_Settings_resolveCfgFilePath( favourites.file_name, &file_path );
+    ctune_Settings_resolveCfgFilePath( favourites.backup_name, &backup_path );
 
     if( !ctune_Settings_readFile( file_path._raw, &file_content ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_loadFavourites()] Failed to load file content." );
+        error_state = true;
+        goto end;
+
+    }
+
+    if( access( backup_path._raw, F_OK ) == 0 ) {
+        if( remove( backup_path._raw ) != 0 ) {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_Settings_loadFavourites()] Failed to remove old backup file (\"%s\"): %s",
+                       backup_path._raw,
+                       strerror( errno )
+            );
+            error_state = true;
+            goto end;
+        }
+    }
+
+    if( rename( file_path._raw, backup_path._raw ) != 0 ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_Settings_loadFavourites()] Failed to rename favourites into backup file (\"%s\" -> \"%s\"): %s",
+                   file_path._raw,
+                   backup_path._raw,
+                   strerror( errno )
+        );
         error_state = true;
         goto end;
     }
@@ -838,6 +866,7 @@ static bool ctune_Settings_loadFavourites() {
 
     end:
         String.free( &file_path );
+        String.free( &backup_path );
         String.free( &file_content );
         Vector.clear_vector( &station_list );
         return !( error_state );
