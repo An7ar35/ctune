@@ -29,6 +29,21 @@ extern const struct ctune_Settings_Instance {
 
     } xdg;
 
+    struct { /* Runtime lock file*/
+        /**
+         * Creates the lock file
+         * @return Success
+         */
+        bool (* lock)( void );
+
+        /**
+         * Deletes the lock file
+         * @return Success
+         */
+        bool (* unlock)( void );
+
+    } rtlock;
+
     struct { /* Favourite stations */
         /**
          * Loads the setting file

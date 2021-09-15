@@ -45,6 +45,13 @@
 
 #define CTUNE_PLAYER_PLUGIN_COUNT       2
 #define CTUNE_SOUND_OUTPUT_PLUGIN_COUNT 4
+#define CTUNE_LOCK_FILENAME             "ctune.lock"
+
+typedef enum {
+    CTUNE_FILE_ERR      = -1,
+    CTUNE_FILE_NOTFOUND =  0,
+    CTUNE_FILE_FOUND    =  1
+} ctune_FileState;
 
 /**
  * List of supported input plugin names (i.e.: players)
@@ -185,6 +192,33 @@ static size_t ctune_Settings_favouriteCount( void ) {
     }
 
     return count;
+}
+
+/**
+ * [PRIVATE] Get file state
+ * @param filename File path/name
+ * @return CTUNE_FILE_*
+ */
+static ctune_FileState ctune_Settings_getFileState( const char * filename ) {
+    struct stat file_stat;
+    const int err    = stat( filename, &file_stat );
+    const int err_no = errno;
+
+    if( err == 0 ) {
+        return CTUNE_FILE_FOUND;
+
+    } else if( err == -1 && err_no == ENOENT ) {
+        return CTUNE_FILE_NOTFOUND;
+
+    } else {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_Settings_getFileState( \"%s\" )] Failed to get stats: %s",
+                   filename,
+                   strerror( err_no )
+        );
+
+        return CTUNE_FILE_ERR;
+    }
 }
 
 /**
@@ -401,6 +435,92 @@ static void ctune_Settings_resolveDataFilePath( const char * file_name, String_t
 
     if( error_state )
         String.free( &xdg.resolved_data_path );
+}
+
+//=================================== CTUNE RUNTIME LOCK ===========================================
+
+/**
+ * Creates the lock file
+ * @return Success
+ */
+static bool ctune_Settings_rtlock_lock( void ) {
+    String_t lockfile_path = String.init();
+
+    ctune_Settings_resolveDataFilePath( CTUNE_LOCK_FILENAME, &lockfile_path );
+
+    int file_state = ctune_Settings_getFileState( lockfile_path._raw );
+
+    switch( file_state ) {
+        case CTUNE_FILE_NOTFOUND: {
+            FILE * lockfile = fopen( lockfile_path._raw, "w" );
+
+            if( lockfile ) {
+                fclose( lockfile );
+                CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_Settings_rtlock_lock()] Lock file created: %s", lockfile_path._raw );
+
+            } else {
+                fprintf( stderr, "Failed to create lock file: %s\n", lockfile_path._raw );
+                file_state = CTUNE_FILE_ERR;
+            }
+        } break;
+
+        case CTUNE_FILE_FOUND: {
+            fprintf( stdout, "ERROR    : Lock file found: %s\n"
+                             "ISSUE    : Another instance of ctune may be running already.\n"
+                             "SOLUTIONS: a) Close other instance and try launching again.\n"
+                             "           b) Kill other instance, delete lock file and try launching again.\n"
+                             "           c) Reboot system, delete lock file and try launching again.\n"
+                             "           d) Report bug.\n",
+                             lockfile_path._raw
+            );
+        } break;
+
+        default: //CTUNE_FILE_ERR
+            fprintf( stdout, "Error raised when trying to find lock file: %s\n" ,lockfile_path._raw );
+        break;
+    }
+
+    String.free( &lockfile_path );
+    return ( file_state == CTUNE_FILE_NOTFOUND );
+}
+
+/**
+ * Deletes the lock file
+ * @return Success
+ */
+static bool ctune_Settings_rtlock_unlock( void ) {
+    String_t lockfile_path = String.init();
+    bool     error_state = false;
+
+    ctune_Settings_resolveDataFilePath( CTUNE_LOCK_FILENAME, &lockfile_path );
+
+    const int file_state = ctune_Settings_getFileState( lockfile_path._raw );
+
+    if( file_state == CTUNE_FILE_FOUND ) {
+        if( remove( lockfile_path._raw ) == 0 ) {
+            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_Settings_rtlock_unlock()] Lock file deleted successfully." );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_Settings_rtlock_unlock()] Failed to remove lock file (\"%s\"): %s",
+                       lockfile_path._raw,
+                       strerror( errno )
+            );
+
+            error_state = true;
+        }
+
+    } else if( file_state == CTUNE_FILE_ERR ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_Settings_rtlock_unlock()] Failed to get lock file state (\"%s\").",
+                   lockfile_path._raw
+        );
+
+        error_state = true;
+    }
+
+    String.free( &lockfile_path );
+    return !( error_state );
 }
 
 //===================================== CTUNE CONFIG ===============================================
@@ -807,7 +927,7 @@ static bool ctune_Settings_loadFavourites() {
 
     }
 
-    if( access( backup_path._raw, F_OK ) == 0 ) {
+    if( ctune_Settings_getFileState( backup_path._raw ) == CTUNE_FILE_FOUND ) {
         if( remove( backup_path._raw ) != 0 ) {
             CTUNE_LOG( CTUNE_LOG_ERROR,
                        "[ctune_Settings_loadFavourites()] Failed to remove old backup file (\"%s\"): %s",
@@ -1104,6 +1224,11 @@ const struct ctune_Settings_Instance ctune_Settings = {
     .xdg = {
         .resolveCfgFilePath   = &ctune_Settings_resolveCfgFilePath,
         .resolveDataFilePath  = &ctune_Settings_resolveDataFilePath,
+    },
+
+    .rtlock = {
+        .lock                 = &ctune_Settings_rtlock_lock,
+        .unlock               = &ctune_Settings_rtlock_unlock,
     },
 
     .favs = {
