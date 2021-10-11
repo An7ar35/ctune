@@ -12,7 +12,9 @@
 #include "ui/UI.h"
 
 //TODO [major functionality] playlist tab + functionality (load csv files from cmd args/dialog box?)
-//TODO [medium functionality] Playlog viewer tab
+//TODO [medium functionality] Playlog viewer tab with stations played by descending order on the left and tracks played on the right inc timestamp
+//                            + must auto refresh on view
+//                            + ability to view station info (cache it?)
 //TODO [medium functionality] Settings viewer dialog
 
 /* setup/teardown and system */

@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "Field.h"
+
 typedef struct ctune_ServerStats {
     char * supported_version;
     char * software_version;
@@ -38,6 +40,14 @@ extern const struct ctune_ServerStats_Namespace {
      * @param stats ServerStats instance
      */
     void (* print)( FILE *out, const struct ctune_ServerStats *stats );
+
+    /**
+     * Gets a field by its name string
+     * @param rsi ServerStats_t object
+     * @param api_name Name string
+     * @return Field
+     */
+    ctune_Field_t (* getField)( struct ctune_ServerStats *stats, const char *api_name );
 
 } ctune_ServerStats;
 

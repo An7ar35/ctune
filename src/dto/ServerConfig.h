@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include "Field.h"
 #include "../datastructure/StrList.h"
 
 typedef struct ctune_ServerConfig {
@@ -49,6 +50,14 @@ extern const struct ctune_ServerConfig_Namespace {
      * @param cfg ServerConfig instance
      */
     void (* print)( FILE *out, const struct ctune_ServerConfig *cfg );
+
+    /**
+     * Gets a field by its name string
+     * @param rsi ServerConfig object
+     * @param api_name Name string
+     * @return Field
+     */
+    ctune_Field_t (* getField)( struct ctune_ServerConfig *cfg, const char *api_name );
 
 } ctune_ServerConfig;
 

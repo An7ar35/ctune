@@ -154,6 +154,7 @@ set(SOURCE_FILES
         src/dto/RadioStationVote.h
         src/dto/UIConfig.h
         src/dto/UIConfig.c
+        src/dto/Field.h
         src/enum/ByCategory.h
         src/enum/ByCategory.c
         src/enum/ListCategory.c

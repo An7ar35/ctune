@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "Field.h"
 #include "../datastructure/String.h"
 #include "../datastructure/StrList.h"
 
@@ -104,6 +105,22 @@ extern const struct ctune_NewRadioStation_Namespace {
      * @return Valid state
      */
     bool (* validateSendFields)( const struct ctune_NewRadioStation * nrs );
+
+    /**
+     * Gets a send field by its name string
+     * @param rsi NewRadioStation_t object
+     * @param api_name Name string
+     * @return Field
+     */
+    ctune_Field_t (* getSendField)( struct ctune_NewRadioStation *nrs, const char *api_name );
+
+    /**
+     * Gets a receive field by its name string
+     * @param rsi NewRadioStation_t object
+     * @param api_name Name string
+     * @return Field
+     */
+    ctune_Field_t (* getReceiveField)( struct ctune_NewRadioStation *nrs, const char *api_name );
 
 } ctune_NewRadioStation;
 

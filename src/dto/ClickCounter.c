@@ -1,5 +1,7 @@
 #include "ClickCounter.h"
 
+#include <string.h>
+
 /**
  * Initialise fields in the struct
  * @param stats StationClickCounter DTO pointer
@@ -62,10 +64,38 @@ static void ctune_StationClickCounter_print( FILE * out, const struct ctune_Clic
 }
 
 /**
+ * Gets a field by its name string
+ * @param rsi ClickCounter_t object
+ * @param api_name Name string
+ * @return Field
+ */
+inline static ctune_Field_t ctune_StationClickCounter_getField( struct ctune_ClickCounter *clk_counter, const char *api_name ) {
+    if( strcmp( api_name, "name" ) == 0 ) {
+        return ( ctune_Field_t ) { ._field = &clk_counter->name, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "stationuuid" ) == 0 ) {
+        return ( ctune_Field_t ) { ._field = &clk_counter->stationuuid, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "url" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &clk_counter->url, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "ok" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &clk_counter->ok, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "message" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &clk_counter->message, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else {
+        return (ctune_Field_t) { ._field = NULL, ._type = CTUNE_FIELD_UNKNOWN };
+    }
+}
+
+/**
  * Namespace constructor
  */
 const struct ctune_ClickCounter_Namespace ctune_ClickCounter = {
     .init        = &ctune_StationClickCounter_init,
     .freeContent = &ctune_StationClickCounter_freeContent,
     .print       = &ctune_StationClickCounter_print,
+    .getField    = &ctune_StationClickCounter_getField,
 };

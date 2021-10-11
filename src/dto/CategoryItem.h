@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "Field.h"
+
 typedef struct ctune_CategoryItem {
     char * name;
     ulong  stationcount;
@@ -31,6 +33,14 @@ extern const struct ctune_CategoryItem_Namespace {
      * @param cat_item CategoryItem instance
      */
     void (* print)( FILE * out, const struct ctune_CategoryItem * cat_item );
+
+    /**
+     * Gets a field by its name string
+     * @param rsi CategoryItem_t object
+     * @param api_name Name string
+     * @return Field
+     */
+    ctune_Field_t (* getField)( struct ctune_CategoryItem *cat_item, const char *api_name );
 
 } ctune_CategoryItem;;
 
