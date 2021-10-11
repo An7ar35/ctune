@@ -17,6 +17,7 @@ typedef int (* Comparator)( const void *, const void * );
 typedef struct ctune_RadioStationInfo {
     char * change_uuid;
     char * station_uuid;
+    char * server_uuid;
     char * name;
     char * url;
     char * url_resolved;
@@ -234,6 +235,7 @@ extern const struct ctune_RadioStationInfo_Namespace {
     struct {
         void (* changeUUID)( ctune_RadioStationInfo_t * rsi, char * str_ptr );
         void (* stationUUID)( ctune_RadioStationInfo_t * rsi, char * str_ptr );
+        void (* serverUUID)( ctune_RadioStationInfo_t * rsi, char * str_ptr );
         void (* stationName)( ctune_RadioStationInfo_t * rsi, char * str_ptr );
         void (* stationURL)( ctune_RadioStationInfo_t * rsi, char * str_ptr );
         void (* resolvedURL)( ctune_RadioStationInfo_t * rsi, char * str_ptr );
@@ -272,6 +274,7 @@ extern const struct ctune_RadioStationInfo_Namespace {
     struct {
         const char * (* changeUUID)( const ctune_RadioStationInfo_t * rsi );
         const char * (* stationUUID)( const ctune_RadioStationInfo_t * rsi );
+        const char * (* serverUUID)( const ctune_RadioStationInfo_t * rsi );
         const char * (* stationName)( const ctune_RadioStationInfo_t * rsi );
         const char * (* stationURL)( const ctune_RadioStationInfo_t * rsi );
         const char * (* resolvedURL)( const ctune_RadioStationInfo_t * rsi );

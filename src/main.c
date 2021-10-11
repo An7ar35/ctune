@@ -11,8 +11,6 @@
 #include "Controller.h"
 #include "ui/UI.h"
 
-//TODO [important!!]==> what if another instance of `ctune` is already running? msg to shut it down? perhaps console arg to kill it?
-//TODO [minor functionality] backup of favs on boot/load as "ctune.fav.bck" in case of any problems
 //TODO [major functionality] playlist tab + functionality (load csv files from cmd args/dialog box?)
 //TODO [medium functionality] Playlog viewer tab
 //TODO [medium functionality] Settings viewer dialog
@@ -29,6 +27,10 @@ void        ctune_handleSignal( int signal_id );
  * @return Exit state
  */
 int main( int argc, char * argv[] ) {
+    if( !ctune_Settings.rtlock.lock() ) {
+        exit( ERR ); //EARLY EXIT
+    };
+
     ctune_ArgOptions_t options = {
         #ifndef NDEBUG
             .log_level         = CTUNE_LOG_TRACE,
@@ -208,6 +210,7 @@ static void ctune_shutdown() {
     ctune_PlaybackLog.close();
     ctune_UI.teardown();
     ctune_Settings.cfg.writeCfg();
+    ctune_Settings.rtlock.unlock();
     ctune_Settings.free();
 
     if( ctune_err.number() != CTUNE_ERR_NONE ) {
@@ -229,6 +232,7 @@ void ctune_handleSignal( int signal_id ) {
             CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught interrupt signal (^C).", signal_id );
             ctune_shutdown();
             exit_curses( ERR );
+            break;
 
         case SIGQUIT: //quit (^\)
         case SIGTSTP: //suspend (^Z)

@@ -7,6 +7,7 @@
 static void ctune_RadioStationInfo_init( void * rsi ) {
     ( (struct ctune_RadioStationInfo *) rsi )->change_uuid            = NULL;
     ( (struct ctune_RadioStationInfo *) rsi )->station_uuid           = NULL;
+    ( (struct ctune_RadioStationInfo *) rsi )->server_uuid            = NULL;
     ( (struct ctune_RadioStationInfo *) rsi )->name                   = NULL;
     ( (struct ctune_RadioStationInfo *) rsi )->url                    = NULL;
     ( (struct ctune_RadioStationInfo *) rsi )->url_resolved           = NULL;
@@ -63,6 +64,8 @@ static void ctune_RadioStationInfo_copy( const void * lhs, void * rhs ) {
         dest->change_uuid = strdup( from->change_uuid );
     if( from->station_uuid )
         dest->station_uuid = strdup( from->station_uuid );
+    if( from->server_uuid )
+        dest->server_uuid = strdup( from->server_uuid );
     if( from->name )
         dest->name = strdup( from->name );
     if( from->url )
@@ -254,6 +257,9 @@ static bool ctune_RadioStationInfo_equal( const void * lhs, const void * rhs ) {
         return false;
 
     if( !ctune_streq( rsi_a->station_uuid, rsi_b->station_uuid ) )
+        return false;
+
+    if( !ctune_streq( rsi_a->server_uuid, rsi_b->server_uuid ) )
         return false;
 
     if( !ctune_streq( rsi_a->name, rsi_b->name ) )
@@ -449,6 +455,11 @@ static void ctune_RadioStationInfo_freeContent( void * rsi ) {
         station->station_uuid = NULL;
     }
 
+    if( station->server_uuid ) {
+        free( station->server_uuid );
+        station->server_uuid = NULL;
+    }
+
     if( station->name ) {
         free( station->name );
         station->name = NULL;
@@ -586,6 +597,7 @@ static void ctune_RadioStationInfo_print( const ctune_RadioStationInfo_t * rsi, 
 
     fprintf( out, "change_uuid......................: %s\n", rsi->change_uuid );
     fprintf( out, "station_uuid ....................: %s\n", rsi->station_uuid );
+    fprintf( out, "server_uuid .....................: %s\n", rsi->server_uuid );
     fprintf( out, "name ............................: %s\n", rsi->name );
     fprintf( out, "url .............................: %s\n", rsi->url );
     fprintf( out, "url_resolved ....................: %s\n", rsi->url_resolved );
@@ -964,6 +976,15 @@ static void ctune_RadioStationInfo_set_stationUUID( ctune_RadioStationInfo_t * r
     }
 }
 
+static void ctune_RadioStationInfo_set_serverUUID( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
+    if( rsi != NULL ) {
+        if( rsi->server_uuid )
+            free( rsi->server_uuid );
+
+        rsi->server_uuid = str_ptr;
+    }
+}
+
 static void ctune_RadioStationInfo_set_stationName( ctune_RadioStationInfo_t * rsi, char * str_ptr ) {
     if( rsi != NULL ) {
         if( rsi->name )
@@ -1226,6 +1247,12 @@ static const char * ctune_RadioStationInfo_get_stationUUID( const ctune_RadioSta
     return rsi->station_uuid;
 }
 
+static const char * ctune_RadioStationInfo_get_serverUUID( const ctune_RadioStationInfo_t * rsi ) {
+    if( rsi == NULL )
+        return NULL;
+    return rsi->server_uuid;
+}
+
 static const char * ctune_RadioStationInfo_get_stationName( const ctune_RadioStationInfo_t * rsi ) {
     if( rsi == NULL )
         return NULL;
@@ -1451,6 +1478,7 @@ const struct ctune_RadioStationInfo_Namespace ctune_RadioStationInfo = {
     .set = {
         .changeUUID            = &ctune_RadioStationInfo_set_changeUUID,
         .stationUUID           = &ctune_RadioStationInfo_set_stationUUID,
+        .serverUUID            = &ctune_RadioStationInfo_set_serverUUID,
         .stationName           = &ctune_RadioStationInfo_set_stationName,
         .stationURL            = &ctune_RadioStationInfo_set_stationURL,
         .resolvedURL           = &ctune_RadioStationInfo_set_resolvedURL,
@@ -1486,6 +1514,7 @@ const struct ctune_RadioStationInfo_Namespace ctune_RadioStationInfo = {
     .get = {
         .changeUUID            = &ctune_RadioStationInfo_get_changeUUID,
         .stationUUID           = &ctune_RadioStationInfo_get_stationUUID,
+        .serverUUID            = &ctune_RadioStationInfo_get_serverUUID,
         .stationName           = &ctune_RadioStationInfo_get_stationName,
         .stationURL            = &ctune_RadioStationInfo_get_stationURL,
         .resolvedURL           = &ctune_RadioStationInfo_get_resolvedURL,

@@ -56,6 +56,7 @@ static const struct ctune_error ctune_error_descs[] = {
     { CTUNE_ERR_INVALID_URL,          "Invalid URL string" },
     { CTUNE_ERR_RADIO_BROWSER_API,    "Radio Browser API error" },
     { CTUNE_ERR_PARSE,                "Parsing error" },
+    { CTUNE_ERR_PARSE_UNKNOWN_KEY, "Parsing error: unrecognised key - see log" },
     { CTUNE_ERR_PLAYER,               "Player error" },
     { CTUNE_ERR_PLAYER_INIT,          "Failed to init player instance - see log" },
     { CTUNE_ERR_STREAM_OPEN,          "Can't open source stream" },
