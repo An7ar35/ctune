@@ -414,6 +414,9 @@ static bool ctune_parser_JSON_packStationInfo( struct ctune_RadioStationInfo * r
         return ctune_parser_JSON_packField_str( key, val, &rsi->change_uuid );
 
     if( strcmp( key, "stationuuid" ) == 0 )
+        return ctune_parser_JSON_packField_str( key, val, &rsi->station_uuid );
+
+    if( strcmp( key, "serveruuid" ) == 0 )
         return ctune_parser_JSON_packField_str( key, val, &rsi->server_uuid );
 
     if( strcmp( key, "clickcount" ) == 0 )
