@@ -29,7 +29,7 @@ sha512sums=('SKIP')
 
 build() {
     cmake -B ctune_build -S "ctune" \
-          -DCMAKE_BUILD_TYPE='None' \
+          -DCMAKE_BUILD_TYPE='Release' \
           -DCMAKE_INSTALL_PREFIX='/usr' \
           -Wno-dev
     cmake --build ctune_build
