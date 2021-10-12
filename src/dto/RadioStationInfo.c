@@ -1448,6 +1448,12 @@ static ctune_StationSrc_e ctune_RadioStationInfo_get_stationSource( const ctune_
     return rsi->station_src;
 }
 
+/**
+ * Gets a field by its name string
+ * @param rsi RadioStationInfo_t object
+ * @param api_name Name string
+ * @return Field
+ */
 inline static ctune_Field_t ctune_RadioStationInfo_getField( ctune_RadioStationInfo_t * rsi, const char * api_name ) {
     if( strcmp( api_name, "bitrate" ) == 0 ) {
         return ( ctune_Field_t ) { ._field = &rsi->bitrate, ._type = CTUNE_FIELD_UNSIGNED_LONG };

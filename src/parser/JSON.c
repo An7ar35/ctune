@@ -252,6 +252,47 @@ static bool ctune_parser_JSON_packField_enum( const char * key, const char * val
 }
 
 /**
+ * [PRIVATE] Converts and packs a value into a field
+ * @param key Key
+ * @param val Value
+ * @param type Field type
+ * @param target Target field
+ * @return Success of operation
+ */
+static bool ctune_parser_JSON_packField( const char * key, const char * val, ctune_FieldType_e type, void * target ) {
+    switch( type ) {
+        case CTUNE_FIELD_BOOLEAN:
+            return ctune_parser_JSON_packField_bool( key, val, target );
+        case CTUNE_FIELD_SIGNED_LONG:
+            return ctune_parser_JSON_packField_long( key, val, target );
+        case CTUNE_FIELD_UNSIGNED_LONG:
+            return ctune_parser_JSON_packField_ulong( key, val, target );
+        case CTUNE_FIELD_DOUBLE:
+            return ctune_parser_JSON_packField_double( key, val, target );
+        case CTUNE_FIELD_CHAR_PTR:
+            return ctune_parser_JSON_packField_str( key, val, target );
+        case CTUNE_FIELD_STRLIST:
+            return( StrList.insert_back( target, val ) != NULL );
+        case CTUNE_FIELD_ENUM_STATIONSRC:
+            return ctune_parser_JSON_packField_enum( key, val,
+                                                     (int) CTUNE_STATIONSRC_LOCAL,
+                                                     ((int) CTUNE_STATIONSRC_COUNT) - 1,
+                                                     (int *) target );
+
+        case CTUNE_FIELD_STRING: //fallthrough
+        default: {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_parser_JSON_packField( \"%s\", \"%s\", %i, %p )] "
+                       "Field type (%i) not implemented.",
+                       key, val, (int) type, target
+            );
+
+            return false;
+        }
+    }
+}
+
+/**
  * [PRIVATE] Packs key-value pairs into a ServerStats struct
  * @param stats ServerStats object
  * @param key   Key string
@@ -268,31 +309,20 @@ static bool ctune_parser_JSON_packServerStats( struct ctune_ServerStats * stats,
 
         return false;
     }
-
+    
     ctune_Field_t field = ctune_ServerStats.getField( stats, key );
 
-    switch( field._type ) {
-        case CTUNE_FIELD_BOOLEAN:
-            return ctune_parser_JSON_packField_bool( key, val, field._field );
-        case CTUNE_FIELD_SIGNED_LONG:
-            return ctune_parser_JSON_packField_long( key, val, field._field );
-        case CTUNE_FIELD_UNSIGNED_LONG:
-            return ctune_parser_JSON_packField_ulong( key, val, field._field );
-        case CTUNE_FIELD_DOUBLE:
-            return ctune_parser_JSON_packField_double( key, val, field._field );
-        case CTUNE_FIELD_CHAR_PTR:
-            return ctune_parser_JSON_packField_str( key, val, field._field );
-        default:
-            break;
+    if( !ctune_parser_JSON_packField( key, val, field._type, field._field ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_parser_JSON_packServerStats( %p, \"%s\", \"%s\" )] "
+                   "Key (type: %i) not recognised (unexpected change in src json?).",
+                   stats, key, val, (int) field._type
+        );
+
+        return false;
     }
 
-    CTUNE_LOG( CTUNE_LOG_ERROR,
-               "[ctune_parser_JSON_packServerStats( %p, \"%s\", \"%s\" )] "
-               "Key (type: %i) not recognised (unexpected change in src json?).",
-               stats, key, val, (int) field._type
-    );
-
-    return false;
+    return true;
 }
 
 /**
@@ -315,30 +345,17 @@ static bool ctune_parser_JSON_packServerConfig( struct ctune_ServerConfig * cfg,
 
     ctune_Field_t field = ctune_ServerConfig.getField( cfg, key );
 
-    switch( field._type ) {
-        case CTUNE_FIELD_BOOLEAN:
-            return ctune_parser_JSON_packField_bool( key, val, field._field );
-        case CTUNE_FIELD_SIGNED_LONG:
-            return ctune_parser_JSON_packField_long( key, val, field._field );
-        case CTUNE_FIELD_UNSIGNED_LONG:
-            return ctune_parser_JSON_packField_ulong( key, val, field._field );
-        case CTUNE_FIELD_DOUBLE:
-            return ctune_parser_JSON_packField_double( key, val, field._field );
-        case CTUNE_FIELD_CHAR_PTR:
-            return ctune_parser_JSON_packField_str( key, val, field._field );
-        case CTUNE_FIELD_STRLIST:
-            return( StrList.insert_back( field._field, val ) != NULL );
-        default:
-            break;
+    if( !ctune_parser_JSON_packField( key, val, field._type, field._field ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_parser_JSON_packServerConfig( %p, \"%s\", \"%s\" )] "
+                   "Key (type: %i) not recognised (unexpected change in src json?).",
+                   cfg, key, val, (int) field._type
+        );
+
+        return false;
     }
 
-    CTUNE_LOG( CTUNE_LOG_ERROR,
-               "[ctune_parser_JSON_packServerConfig( %p, \"%s\", \"%s\" )] "
-               "Key (type: %i) not recognised (unexpected change in src json?).",
-               cfg, key, val, (int) field._type
-    );
-
-    return false;
+    return true;
 }
 
 /**
@@ -361,33 +378,17 @@ static bool ctune_parser_JSON_packStationInfo( struct ctune_RadioStationInfo * r
 
     ctune_Field_t field = ctune_RadioStationInfo.getField( rsi, key );
 
-    switch( field._type ) {
-        case CTUNE_FIELD_BOOLEAN:
-            return ctune_parser_JSON_packField_bool( key, val, field._field );
-        case CTUNE_FIELD_SIGNED_LONG:
-            return ctune_parser_JSON_packField_long( key, val, field._field );
-        case CTUNE_FIELD_UNSIGNED_LONG:
-            return ctune_parser_JSON_packField_ulong( key, val, field._field );
-        case CTUNE_FIELD_DOUBLE:
-            return ctune_parser_JSON_packField_double( key, val, field._field );
-        case CTUNE_FIELD_CHAR_PTR:
-            return ctune_parser_JSON_packField_str( key, val, field._field );
-        case CTUNE_FIELD_ENUM_STATIONSRC:
-            return ctune_parser_JSON_packField_enum( key, val,
-                                                     (int) CTUNE_STATIONSRC_LOCAL,
-                                                     ((int) CTUNE_STATIONSRC_COUNT) - 1,
-                                                     (int *) field._field );
-        default:
-            break;
+    if( !ctune_parser_JSON_packField( key, val, field._type, field._field ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_parser_JSON_packStationInfo( %p, \"%s\", \"%s\" )] "
+                   "Key (type: %i) not recognised (unexpected change in src json?): @dev -> check remote API docs for recent changes.",
+                   rsi, key, val, (int) field._type
+        );
+
+        return false;
     }
 
-    CTUNE_LOG( CTUNE_LOG_ERROR,
-               "[ctune_parser_JSON_packStationInfo( %p, \"%s\", \"%s\" )] "
-               "Key (type: %i) not recognised (unexpected change in src json?): @dev -> check remote API docs for recent changes.",
-               rsi, key, val, (int) field._type
-    );
-
-    return false;
+    return true;
 }
 
 /**
@@ -410,28 +411,17 @@ static bool ctune_parser_JSON_packCategoryItem( struct ctune_CategoryItem * cat_
 
     ctune_Field_t field = ctune_CategoryItem.getField( cat_item, key );
 
-    switch( field._type ) {
-        case CTUNE_FIELD_BOOLEAN:
-            return ctune_parser_JSON_packField_bool( key, val, field._field );
-        case CTUNE_FIELD_SIGNED_LONG:
-            return ctune_parser_JSON_packField_long( key, val, field._field );
-        case CTUNE_FIELD_UNSIGNED_LONG:
-            return ctune_parser_JSON_packField_ulong( key, val, field._field );
-        case CTUNE_FIELD_DOUBLE:
-            return ctune_parser_JSON_packField_double( key, val, field._field );
-        case CTUNE_FIELD_CHAR_PTR:
-            return ctune_parser_JSON_packField_str( key, val, field._field );
-        default:
-            break;
+    if( !ctune_parser_JSON_packField( key, val, field._type, field._field ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_parser_JSON_packCategoryItem( %p, \"%s\", \"%s\" )] "
+                   "Key (type: %i) not recognised (unexpected change in src json?).",
+                   cat_item, key, val, (int) field._type
+        );
+
+        return false;
     }
 
-    CTUNE_LOG( CTUNE_LOG_ERROR,
-               "[ctune_parser_JSON_packCategoryItem( %p, \"%s\", \"%s\" )] "
-               "Key (type: %i) not recognised (unexpected change in src json?).",
-               cat_item, key, val, (int) field._type
-    );
-
-    return false;
+    return true;
 }
 
 /**
@@ -454,28 +444,17 @@ static bool ctune_parser_JSON_packClickCounter( struct ctune_ClickCounter * clk_
 
     ctune_Field_t field = ctune_ClickCounter.getField( clk_counter, key );
 
-    switch( field._type ) {
-        case CTUNE_FIELD_BOOLEAN:
-            return ctune_parser_JSON_packField_bool( key, val, field._field );
-        case CTUNE_FIELD_SIGNED_LONG:
-            return ctune_parser_JSON_packField_long( key, val, field._field );
-        case CTUNE_FIELD_UNSIGNED_LONG:
-            return ctune_parser_JSON_packField_ulong( key, val, field._field );
-        case CTUNE_FIELD_DOUBLE:
-            return ctune_parser_JSON_packField_double( key, val, field._field );
-        case CTUNE_FIELD_CHAR_PTR:
-            return ctune_parser_JSON_packField_str( key, val, field._field );
-        default:
-            break;
+    if( !ctune_parser_JSON_packField( key, val, field._type, field._field ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_parser_JSON_packClickCounter( %p, \"%s\", \"%s\" )] "
+                   "Key (type: %i) not recognised (unexpected change in src json?).",
+                   clk_counter, key, val, (int) field._type
+        );
+
+        return false;
     }
 
-    CTUNE_LOG( CTUNE_LOG_ERROR,
-               "[ctune_parser_JSON_packClickCounter( %p, \"%s\", \"%s\" )] "
-               "Key (type: %i) not recognised (unexpected change in src json?).",
-               clk_counter, key, val, (int) field._type
-    );
-
-    return false;
+    return true;
 }
 
 /**
@@ -498,28 +477,17 @@ static bool ctune_parser_JSON_packRadioStationVote( struct ctune_RadioStationVot
 
     ctune_Field_t field = ctune_RadioStationVote.getField( vote_state, key );
 
-    switch( field._type ) {
-        case CTUNE_FIELD_BOOLEAN:
-            return ctune_parser_JSON_packField_bool( key, val, field._field );
-        case CTUNE_FIELD_SIGNED_LONG:
-            return ctune_parser_JSON_packField_long( key, val, field._field );
-        case CTUNE_FIELD_UNSIGNED_LONG:
-            return ctune_parser_JSON_packField_ulong( key, val, field._field );
-        case CTUNE_FIELD_DOUBLE:
-            return ctune_parser_JSON_packField_double( key, val, field._field );
-        case CTUNE_FIELD_CHAR_PTR:
-            return ctune_parser_JSON_packField_str( key, val, field._field );
-        default:
-            break;
+    if( !ctune_parser_JSON_packField( key, val, field._type, field._field ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_parser_JSON_packRadioStationVote( %p, \"%s\", \"%s\" )] "
+                   "Key (type: %i) not recognised (unexpected change in src json?).",
+                   vote_state, key, val, (int) field._type
+        );
+
+        return false;
     }
 
-    CTUNE_LOG( CTUNE_LOG_ERROR,
-               "[ctune_parser_JSON_packRadioStationVote( %p, \"%s\", \"%s\" )] "
-               "Key (type: %i) not recognised (unexpected change in src json?).",
-               vote_state, key, val, (int) field._type
-    );
-
-    return false;
+    return true;
 }
 
 /**
@@ -529,7 +497,7 @@ static bool ctune_parser_JSON_packRadioStationVote( struct ctune_RadioStationVot
  * @param val         Value string
  * @return Success
  */
-static bool ctune_parser_JSON_packNewRadioStationRcv( struct ctune_NewRadioStation * new_station, const char * key, const char * val ) { //TODO
+static bool ctune_parser_JSON_packNewRadioStationRcv( struct ctune_NewRadioStation * new_station, const char * key, const char * val ) {
     if( new_station == NULL ) { //ERROR CONTROL
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_parser_JSON_packNewRadioStationRcv( %p, \"%s\", \"%s\" )] "
@@ -542,28 +510,17 @@ static bool ctune_parser_JSON_packNewRadioStationRcv( struct ctune_NewRadioStati
 
     ctune_Field_t field = ctune_NewRadioStation.getReceiveField( new_station, key );
 
-    switch( field._type ) {
-        case CTUNE_FIELD_BOOLEAN:
-            return ctune_parser_JSON_packField_bool( key, val, field._field );
-        case CTUNE_FIELD_SIGNED_LONG:
-            return ctune_parser_JSON_packField_long( key, val, field._field );
-        case CTUNE_FIELD_UNSIGNED_LONG:
-            return ctune_parser_JSON_packField_ulong( key, val, field._field );
-        case CTUNE_FIELD_DOUBLE:
-            return ctune_parser_JSON_packField_double( key, val, field._field );
-        case CTUNE_FIELD_CHAR_PTR:
-            return ctune_parser_JSON_packField_str( key, val, field._field );
-        default:
-            break;
+    if( !ctune_parser_JSON_packField( key, val, field._type, field._field ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_parser_JSON_packNewRadioStationRcv( %p, \"%s\", \"%s\" )] "
+                   "Key (type: %i) not recognised (unexpected change in src json?).",
+                   new_station, key, val, (int) field._type
+        );
+
+        return false;
     }
 
-    CTUNE_LOG( CTUNE_LOG_ERROR,
-               "[ctune_parser_JSON_packNewRadioStationRcv( %p, \"%s\", \"%s\" )] "
-               "Key (type: %i) not recognised (unexpected change in src json?).",
-               new_station, key, val, (int) field._type
-    );
-
-    return false;
+    return true;
 }
 
 //=====================================================================================================================================================================
