@@ -502,6 +502,7 @@ static bool ctune_UI_RSFind_createFields( ctune_UI_RSFind_t * rsfind ) {
     rsfind->cache.order_items[ STATION_ATTR_CLICKTREND     ] = rsfind->cb.getDisplayText( CTUNE_UI_TEXT_ORDERBY_CLICKTREND );
     rsfind->cache.order_items[ STATION_ATTR_RANDOM         ] = rsfind->cb.getDisplayText( CTUNE_UI_TEXT_ORDERBY_RANDOM );
     rsfind->cache.order_items[ STATION_ATTR_STATIONCOUNT   ] = rsfind->cb.getDisplayText( CTUNE_UI_TEXT_ORDERBY_STATIONCOUNT );
+    rsfind->cache.order_items[ STATION_ATTR_CHANGETIMESTAMP] = rsfind->cb.getDisplayText( CTUNE_UI_TEXT_ORDERBY_CHANGETIMESTAMP );
 
     for( size_t i = 0; i < STATION_ATTR_COUNT; ++i )
         rsfind->cache.order_width = (int) ctune_max_ul( rsfind->cache.order_width, strlen( rsfind->cache.order_items[ i ] ) );

@@ -24,6 +24,7 @@ typedef enum {
     STATION_ATTR_CLICKTREND      = 16,
     STATION_ATTR_RANDOM          = 17,
     STATION_ATTR_STATIONCOUNT    = 18,
+    STATION_ATTR_CHANGETIMESTAMP = 19,
 
     STATION_ATTR_COUNT
 } ctune_StationAttr_e;
