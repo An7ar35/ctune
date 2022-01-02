@@ -7,7 +7,6 @@
 2.  Check/change copyright years in:
     - `CMakeList.txt`
     - `docs/man/ctune.1.md`
-    - `PKGBUILD`
 3.  Clear build and CMake cache
 4.  If change in functionality then modify as needed:
     - readme (`README.md`) 

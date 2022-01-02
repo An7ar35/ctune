@@ -6,7 +6,7 @@ project(ctune
         HOMEPAGE_URL "eadavison.com")
 
 set(PROJECT_AUTHOR "E.A.Davison")
-set(PROJECT_YEARS  "2020-21")
+set(PROJECT_YEARS  "2020-22")
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_FLAGS "-Wall")
