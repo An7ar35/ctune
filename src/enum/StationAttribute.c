@@ -31,7 +31,7 @@ static const char * ctune_StationAttr_str( ctune_StationAttr_e cat ) {
         [STATION_ATTR_CHANGETIMESTAMP ] = "changetimestamp",
     };
 
-    assert( (int) cat >= 0 && (int) cat < 19 );
+    assert( (int) cat >= 0 && (int) cat < STATION_ATTR_COUNT );
     return arr[ (int) cat ];
 }
 
