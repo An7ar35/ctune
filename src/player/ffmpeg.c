@@ -91,20 +91,12 @@ static void ctune_Player_avLogCallback( void * avcl, int level, const char * fmt
                 CTUNE_LOG( CTUNE_LOG_WARNING, line_buffer );
                 break;
 
-            case AV_LOG_INFO: //(32) Standard information.
-                CTUNE_LOG( CTUNE_LOG_MSG, line_buffer );
-                break;
-
-            case AV_LOG_VERBOSE: //fallthrough - (40) Detailed information.
-            case AV_LOG_DEBUG:   //(48) Stuff which is only useful for libav* developers.
-                CTUNE_LOG( CTUNE_LOG_DEBUG, line_buffer );
-                break;
-
-            case AV_LOG_TRACE: //(56)
-                CTUNE_LOG( CTUNE_LOG_TRACE, line_buffer );
-                break;
-
-            case AV_LOG_QUIET: //fallthrough
+            /* these msgs are not that relevant for ctune and just pollute the log mostly */
+            case AV_LOG_INFO:    //(32) fallthrough - Standard information.
+            case AV_LOG_VERBOSE: //(40) fallthrough - Detailed information.
+            case AV_LOG_DEBUG:   //(48) fallthrough - Stuff which is only useful for libav* developers.
+            case AV_LOG_TRACE:   //(56) fallthrough
+            case AV_LOG_QUIET:   //fallthrough
             default: break;
         }
     }
