@@ -252,6 +252,47 @@ static bool ctune_parser_JSON_packField_enum( const char * key, const char * val
 }
 
 /**
+ * [PRIVATE] Converts and packs a value into a field
+ * @param key Key
+ * @param val Value
+ * @param type Field type
+ * @param target Target field
+ * @return Success of operation
+ */
+static bool ctune_parser_JSON_packField( const char * key, const char * val, ctune_FieldType_e type, void * target ) {
+    switch( type ) {
+        case CTUNE_FIELD_BOOLEAN:
+            return ctune_parser_JSON_packField_bool( key, val, target );
+        case CTUNE_FIELD_SIGNED_LONG:
+            return ctune_parser_JSON_packField_long( key, val, target );
+        case CTUNE_FIELD_UNSIGNED_LONG:
+            return ctune_parser_JSON_packField_ulong( key, val, target );
+        case CTUNE_FIELD_DOUBLE:
+            return ctune_parser_JSON_packField_double( key, val, target );
+        case CTUNE_FIELD_CHAR_PTR:
+            return ctune_parser_JSON_packField_str( key, val, target );
+        case CTUNE_FIELD_STRLIST:
+            return( StrList.insert_back( target, val ) != NULL );
+        case CTUNE_FIELD_ENUM_STATIONSRC:
+            return ctune_parser_JSON_packField_enum( key, val,
+                                                     (int) CTUNE_STATIONSRC_LOCAL,
+                                                     ((int) CTUNE_STATIONSRC_COUNT) - 1,
+                                                     (int *) target );
+
+        case CTUNE_FIELD_STRING: //fallthrough
+        default: {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_parser_JSON_packField( \"%s\", \"%s\", %i, %p )] "
+                       "Field type (%i) not implemented.",
+                       key, val, (int) type, target
+            );
+
+            return false;
+        }
+    }
+}
+
+/**
  * [PRIVATE] Packs key-value pairs into a ServerStats struct
  * @param stats ServerStats object
  * @param key   Key string
@@ -268,44 +309,20 @@ static bool ctune_parser_JSON_packServerStats( struct ctune_ServerStats * stats,
 
         return false;
     }
+    
+    ctune_Field_t field = ctune_ServerStats.getField( stats, key );
 
-    if( strcmp( key, "supported_version" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &stats->supported_version );
+    if( !ctune_parser_JSON_packField( key, val, field._type, field._field ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_parser_JSON_packServerStats( %p, \"%s\", \"%s\" )] "
+                   "Key (type: %i) not recognised (unexpected change in src json?).",
+                   stats, key, val, (int) field._type
+        );
 
-    if( strcmp( key, "software_version" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &stats->software_version );
+        return false;
+    }
 
-    if( strcmp( key, "status" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &stats->status );
-
-    if( strcmp( key, "stations" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &stats->stations );
-
-    if( strcmp( key, "stations_broken" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &stats->stations_broken );
-
-    if( strcmp( key, "tags" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &stats->tags );
-
-    if( strcmp( key, "clicks_last_hour" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &stats->clicks_last_hour );
-
-    if( strcmp( key, "clicks_last_day" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &stats->clicks_last_day );
-
-    if( strcmp( key, "languages" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &stats->languages );
-
-    if( strcmp( key, "countries" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &stats->countries );
-
-    CTUNE_LOG( CTUNE_LOG_ERROR,
-               "[ctune_parser_JSON_packServerStats( %p, \"%s\", \"%s\" )] "
-               "Key not recognised (unexpected change in src json?).",
-               stats, key, val
-    );
-
-    return false;
+    return true;
 }
 
 /**
@@ -326,67 +343,19 @@ static bool ctune_parser_JSON_packServerConfig( struct ctune_ServerConfig * cfg,
         return false;
     }
 
-    if( strcmp( key, "check_enabled" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &cfg->check_enabled );
+    ctune_Field_t field = ctune_ServerConfig.getField( cfg, key );
 
-    if( strcmp( key, "prometheus_exporter_enabled" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &cfg->prometheus_exporter_enabled );
+    if( !ctune_parser_JSON_packField( key, val, field._type, field._field ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_parser_JSON_packServerConfig( %p, \"%s\", \"%s\" )] "
+                   "Key (type: %i) not recognised (unexpected change in src json?).",
+                   cfg, key, val, (int) field._type
+        );
 
-    if( strcmp( key, "pull_servers" ) == 0 )
-        return( StrList.insert_back( &cfg->pull_servers, val ) != NULL );
+        return false;
+    }
 
-    if( strcmp( key, "tcp_timeout_seconds" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &cfg->tcp_timeout_seconds );
-
-    if( strcmp( key, "broken_stations_never_working_timeout_seconds" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &cfg->broken_stations_never_working_timeout_seconds );
-
-    if( strcmp( key, "broken_stations_timeout_seconds" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &cfg->broken_stations_timeout_seconds );
-
-    if( strcmp( key, "checks_timeout_seconds" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &cfg->checks_timeout_seconds );
-
-    if( strcmp( key, "click_valid_timeout_seconds" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &cfg->click_valid_timeout_seconds );
-
-    if( strcmp( key, "clicks_timeout_seconds" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &cfg->clicks_timeout_seconds );
-
-    if( strcmp( key, "mirror_pull_interval_seconds" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &cfg->mirror_pull_interval_seconds );
-
-    if( strcmp( key, "update_caches_interval_seconds" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &cfg->update_caches_interval_seconds );
-
-    if( strcmp( key, "server_name" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &cfg->server_name );
-
-    if( strcmp( key, "check_retries" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &cfg->check_retries );
-
-    if( strcmp( key, "check_batchsize" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &cfg->check_batchsize );
-
-    if( strcmp( key, "check_pause_seconds" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &cfg->check_pause_seconds );
-
-    if( strcmp( key, "api_threads" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &cfg->api_threads );
-
-    if( strcmp( key, "cache_type" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &cfg->cache_type );
-
-    if( strcmp( key, "cache_ttl" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &cfg->cache_ttl );
-
-    CTUNE_LOG( CTUNE_LOG_ERROR,
-               "[ctune_parser_JSON_packServerConfig( %p, \"%s\", \"%s\" )] "
-               "Key not recognised (unexpected change in src json?).",
-               cfg, key, val
-    );
-
-    return false;
+    return true;
 }
 
 /**
@@ -407,130 +376,19 @@ static bool ctune_parser_JSON_packStationInfo( struct ctune_RadioStationInfo * r
         return false;
     }
 
-    if( strcmp( key, "bitrate" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &rsi->bitrate );
+    ctune_Field_t field = ctune_RadioStationInfo.getField( rsi, key );
 
-    if( strcmp( key, "changeuuid" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->change_uuid );
+    if( !ctune_parser_JSON_packField( key, val, field._type, field._field ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_parser_JSON_packStationInfo( %p, \"%s\", \"%s\" )] "
+                   "Key (type: %i) not recognised (unexpected change in src json?): @dev -> check remote API docs for recent changes.",
+                   rsi, key, val, (int) field._type
+        );
 
-    if( strcmp( key, "stationuuid" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->station_uuid );
+        return false;
+    }
 
-    if( strcmp( key, "serveruuid" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->server_uuid );
-
-    if( strcmp( key, "clickcount" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &rsi->clickcount );
-
-    if( strcmp( key, "clicktimestamp" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->click_timestamp );
-
-    if( strcmp( key, "clicktimestamp_iso8601" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->iso8601.click_timestamp );
-
-    if( strcmp( key, "clicktrend" ) == 0 )
-        return ctune_parser_JSON_packField_long( key, val, &rsi->clicktrend );
-
-    if( strcmp( key, "codec" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->codec );
-
-    if( strcmp( key, "country" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->country );
-
-    if( strcmp( key, "countrycode" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->country_code.iso3166_1 );
-
-    if( strcmp( key, "iso_3166_2" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->country_code.iso3166_2 );
-
-    if( strcmp( key, "favicon" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->favicon_url );
-
-    if( strcmp( key, "hls" ) == 0 )
-        return ctune_parser_JSON_packField_bool( key, val, &rsi->hls );
-
-    if( strcmp( key, "homepage" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->homepage );
-
-    if( strcmp( key, "language" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->language );
-
-    if( strcmp( key, "languagecodes" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->language_codes );
-
-    if( strcmp( key, "lastchangetime" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->last_change_time );
-
-    if( strcmp( key, "lastchangetime_iso8601" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->iso8601.last_change_time );
-
-    if( strcmp( key, "lastcheckok" ) == 0 )
-        return ctune_parser_JSON_packField_bool( key, val, &rsi->last_check_ok );
-
-    if( strcmp( key, "lastchecktime" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->last_check_time );
-
-    if( strcmp( key, "lastchecktime_iso8601" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->iso8601.last_check_time );
-
-    if( strcmp( key, "lastcheckoktime" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->last_check_ok_time );
-
-    if( strcmp( key, "lastcheckoktime_iso8601" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->iso8601.last_check_ok_time );
-
-    if( strcmp( key, "lastlocalchecktime" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->last_local_check_time );
-
-    if( strcmp( key, "lastlocalchecktime_iso8601" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->iso8601.last_local_check_time );
-
-    if( strcmp( key, "name" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->name );
-
-    if( strcmp( key, "state" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->state );
-
-    if( strcmp( key, "stationuuid" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->station_uuid );
-
-    if( strcmp( key, "tags" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->tags );
-
-    if( strcmp( key, "url" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->url );
-
-    if( strcmp( key, "url_resolved" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &rsi->url_resolved );
-
-    if( strcmp( key, "votes" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &rsi->votes );
-
-    if( strcmp( key, "ssl_error" ) == 0 )
-        return ctune_parser_JSON_packField_long( key, val, &rsi->ssl_error );
-
-    if( strcmp( key, "geo_lat" ) == 0 )
-        return ctune_parser_JSON_packField_double( key, val, &rsi->geo.latitude );
-
-    if( strcmp( key, "geo_long" ) == 0 )
-        return ctune_parser_JSON_packField_double( key, val, &rsi->geo.longitude );
-
-    if( strcmp( key, "has_extended_info" ) == 0 )
-        return ctune_parser_JSON_packField_bool( key, val, &rsi->has_extended_info );
-
-    if( strcmp( key, "station_src" ) == 0 )
-        return ctune_parser_JSON_packField_enum( key, val,
-                                                 (int) CTUNE_STATIONSRC_LOCAL,
-                                                 ((int) CTUNE_STATIONSRC_COUNT) - 1,
-                                                 (int *) &rsi->station_src );
-
-    CTUNE_LOG( CTUNE_LOG_ERROR,
-               "[ctune_parser_JSON_packStationInfo( %p, \"%s\", \"%s\" )] "
-               "Key not recognised (unexpected change in src json?): @dev -> check remote API docs for recent changes.",
-               rsi, key, val
-    );
-
-    return false;
+    return true;
 }
 
 /**
@@ -551,23 +409,19 @@ static bool ctune_parser_JSON_packCategoryItem( struct ctune_CategoryItem * cat_
         return false;
     }
 
-    if( strcmp( key, "name" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &cat_item->name );
+    ctune_Field_t field = ctune_CategoryItem.getField( cat_item, key );
 
-    if( strcmp( key, "stationcount" ) == 0 )
-        return ctune_parser_JSON_packField_ulong( key, val, &cat_item->stationcount );
+    if( !ctune_parser_JSON_packField( key, val, field._type, field._field ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_parser_JSON_packCategoryItem( %p, \"%s\", \"%s\" )] "
+                   "Key (type: %i) not recognised (unexpected change in src json?).",
+                   cat_item, key, val, (int) field._type
+        );
 
-    if( strcmp( key, "country" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &cat_item->country );
-        //INFO (28 Sept 2020): The RadioBrowser API returns "Array" when there are multiple countries with the same state name
+        return false;
+    }
 
-    CTUNE_LOG( CTUNE_LOG_ERROR,
-               "[ctune_parser_JSON_packCategoryItem( %p, \"%s\", \"%s\" )] "
-               "Key not recognised (unexpected change in src json?).",
-               cat_item, key, val
-    );
-
-    return false;
+    return true;
 }
 
 /**
@@ -588,28 +442,19 @@ static bool ctune_parser_JSON_packClickCounter( struct ctune_ClickCounter * clk_
         return false;
     }
 
-    if( strcmp( key, "name" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &clk_counter->name );
+    ctune_Field_t field = ctune_ClickCounter.getField( clk_counter, key );
 
-    if( strcmp( key, "stationuuid" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &clk_counter->stationuuid );
+    if( !ctune_parser_JSON_packField( key, val, field._type, field._field ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_parser_JSON_packClickCounter( %p, \"%s\", \"%s\" )] "
+                   "Key (type: %i) not recognised (unexpected change in src json?).",
+                   clk_counter, key, val, (int) field._type
+        );
 
-    if( strcmp( key, "url" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &clk_counter->url );
+        return false;
+    }
 
-    if( strcmp( key, "ok" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &clk_counter->ok );
-
-    if( strcmp( key, "message" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &clk_counter->message );
-
-    CTUNE_LOG( CTUNE_LOG_ERROR,
-               "[ctune_parser_JSON_packClickCounter( %p, \"%s\", \"%s\" )] "
-               "Key not recognised (unexpected change in src json?).",
-               clk_counter, key, val
-    );
-
-    return false;
+    return true;
 }
 
 /**
@@ -630,19 +475,19 @@ static bool ctune_parser_JSON_packRadioStationVote( struct ctune_RadioStationVot
         return false;
     }
 
-    if( strcmp( key, "ok" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &vote_state->ok );
+    ctune_Field_t field = ctune_RadioStationVote.getField( vote_state, key );
 
-    if( strcmp( key, "message" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &vote_state->message );
+    if( !ctune_parser_JSON_packField( key, val, field._type, field._field ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_parser_JSON_packRadioStationVote( %p, \"%s\", \"%s\" )] "
+                   "Key (type: %i) not recognised (unexpected change in src json?).",
+                   vote_state, key, val, (int) field._type
+        );
 
-    CTUNE_LOG( CTUNE_LOG_ERROR,
-               "[ctune_parser_JSON_packRadioStationVote( %p, \"%s\", \"%s\" )] "
-               "Key not recognised (unexpected change in src json?).",
-               vote_state, key, val
-    );
+        return false;
+    }
 
-    return false;
+    return true;
 }
 
 /**
@@ -663,22 +508,19 @@ static bool ctune_parser_JSON_packNewRadioStationRcv( struct ctune_NewRadioStati
         return false;
     }
 
-    if( strcmp( key, "ok" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &new_station->received.ok );
+    ctune_Field_t field = ctune_NewRadioStation.getReceiveField( new_station, key );
 
-    if( strcmp( key, "message" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &new_station->received.message );
+    if( !ctune_parser_JSON_packField( key, val, field._type, field._field ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_parser_JSON_packNewRadioStationRcv( %p, \"%s\", \"%s\" )] "
+                   "Key (type: %i) not recognised (unexpected change in src json?).",
+                   new_station, key, val, (int) field._type
+        );
 
-    if( strcmp( key, "uuid" ) == 0 )
-        return ctune_parser_JSON_packField_str( key, val, &new_station->received.uuid );
+        return false;
+    }
 
-    CTUNE_LOG( CTUNE_LOG_ERROR,
-               "[ctune_parser_JSON_packNewRadioStationRcv( %p, \"%s\", \"%s\" )] "
-               "Key not recognised (unexpected change in src json?).",
-               new_station, key, val
-    );
-
-    return false;
+    return true;
 }
 
 //=====================================================================================================================================================================
@@ -1254,6 +1096,8 @@ static bool ctune_parser_JSON_parseRadioStationListToJSON( const struct Vector *
 
         const ctune_RadioStationInfo_t * rsi     = Vector.at( (Vector_t *) stations, i );
         json_object                    * station = json_object_new_object();
+
+        //TODO create an
 
         err[ 0] = json_object_object_add( station, "changeuuid", json_object_new_string( ( ctune_RadioStationInfo.get.changeUUID( rsi ) != NULL ? ctune_RadioStationInfo.get.changeUUID( rsi ) : "" ) ) );
         err[ 1] = json_object_object_add( station, "stationuuid", json_object_new_string( ( ctune_RadioStationInfo.get.stationUUID( rsi ) != NULL ? ctune_RadioStationInfo.get.stationUUID( rsi ) : "" ) ) );

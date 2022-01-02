@@ -60,6 +60,49 @@ struct {
 };
 
 /**
+ * [PRIVATE] AV log callback
+ * @param ptr   A pointer to an arbitrary struct of which the first field is a pointer to an AVClass struct.
+ * @param level The importance level of the message expressed using a Logging Constant.
+ * @param fmt   The format string (printf-compatible) that specifies how subsequent arguments are converted to output.
+ * @param vargs The arguments referenced by the format string.
+ */
+static void ctune_Player_avLogCallback( void * avcl, int level, const char * fmt, va_list vl ) {
+    static const int LINE_SIZE = 256;
+
+    int  prefix = 1;
+    int  writen = 0;
+    char line_buffer[LINE_SIZE];
+
+    if( ( writen = av_log_format_line2( avcl, level, fmt, vl, line_buffer, LINE_SIZE, &prefix ) ) < 0 ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Player_avLogCallback( %p, %i, %fmt, ... )] Failed to format FFMPEG log line: ", avcl, level, fmt, writen );
+
+    } else {
+        switch( level ) {
+            case AV_LOG_PANIC: //fallthrough - (0) Something went really wrong and we will crash now.
+            case AV_LOG_FATAL: //(8) Something went wrong and recovery is not possible.
+                CTUNE_LOG( CTUNE_LOG_FATAL, line_buffer );
+                break;
+
+            case AV_LOG_ERROR: //(16) Something went wrong and cannot losslessly be recovered.
+                CTUNE_LOG( CTUNE_LOG_ERROR, line_buffer );
+                break;
+
+            case AV_LOG_WARNING: //(24) Something somehow does not look correct.
+                CTUNE_LOG( CTUNE_LOG_WARNING, line_buffer );
+                break;
+
+            /* these msgs are not that relevant for ctune and just pollute the log mostly */
+            case AV_LOG_INFO:    //(32) fallthrough - Standard information.
+            case AV_LOG_VERBOSE: //(40) fallthrough - Detailed information.
+            case AV_LOG_DEBUG:   //(48) fallthrough - Stuff which is only useful for libav* developers.
+            case AV_LOG_TRACE:   //(56) fallthrough
+            case AV_LOG_QUIET:   //fallthrough
+            default: break;
+        }
+    }
+}
+
+/**
  * [PRIVATE] Callback for when a timout occurs
  * @param err cTune error code
  */
@@ -575,6 +618,8 @@ static void ctune_Player_init(
     #else
         av_log_set_level( AV_LOG_QUIET );
     #endif
+
+    av_log_set_callback( ctune_Player_avLogCallback );
 
     if( sound_server == NULL || playback_ctrl_callback == NULL || song_change_callback == NULL  ) {
         ctune_err.set( CTUNE_ERR_PLAYER_INIT );

@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "Field.h"
+
 typedef struct ctune_ClickCounter {
     char * ok;
     char * message;
@@ -33,6 +35,14 @@ extern const struct ctune_ClickCounter_Namespace {
      * @param stats StationClickCounter instance
      */
     void (* print)( FILE * out, const struct ctune_ClickCounter * clk_counter );
+
+    /**
+     * Gets a field by its name string
+     * @param rsi ClickCounter_t object
+     * @param api_name Name string
+     * @return Field
+     */
+    ctune_Field_t (* getField)( struct ctune_ClickCounter *clk_counter, const char *api_name );
 
 } ctune_ClickCounter;
 

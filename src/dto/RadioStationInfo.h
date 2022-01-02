@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include "Field.h"
 #include "../enum/StationSrc.h"
 #include "../datastructure/String.h"
 #include "../utils/utilities.h"
@@ -308,6 +309,14 @@ extern const struct ctune_RadioStationInfo_Namespace {
         bool (* favourite)( const ctune_RadioStationInfo_t * rsi );
         ctune_StationSrc_e (* stationSource)( const ctune_RadioStationInfo_t * rsi );
     } get;
+
+    /**
+     * Gets a field by its name string
+     * @param rsi RadioStationInfo_t object
+     * @param api_name Name string
+     * @return Field
+     */
+    ctune_Field_t (* getField)( ctune_RadioStationInfo_t * rsi, const char * api_name );
 
 } ctune_RadioStationInfo;
 

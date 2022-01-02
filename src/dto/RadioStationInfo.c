@@ -1448,6 +1448,131 @@ static ctune_StationSrc_e ctune_RadioStationInfo_get_stationSource( const ctune_
     return rsi->station_src;
 }
 
+/**
+ * Gets a field by its name string
+ * @param rsi RadioStationInfo_t object
+ * @param api_name Name string
+ * @return Field
+ */
+inline static ctune_Field_t ctune_RadioStationInfo_getField( ctune_RadioStationInfo_t * rsi, const char * api_name ) {
+    if( strcmp( api_name, "bitrate" ) == 0 ) {
+        return ( ctune_Field_t ) { ._field = &rsi->bitrate, ._type = CTUNE_FIELD_UNSIGNED_LONG };
+
+    } else if( strcmp( api_name, "changeuuid" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->change_uuid, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "stationuuid" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->station_uuid, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "serveruuid" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->server_uuid, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "clickcount" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->clickcount, ._type = CTUNE_FIELD_UNSIGNED_LONG };
+
+    } else if( strcmp( api_name, "clicktimestamp" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->click_timestamp, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "clicktimestamp_iso8601" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->iso8601.click_timestamp, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "clicktrend" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->clicktrend, ._type = CTUNE_FIELD_SIGNED_LONG };
+
+    } else if( strcmp( api_name, "codec" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->codec, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "country" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->country, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "countrycode" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->country_code.iso3166_1, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "iso_3166_2" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->country_code.iso3166_2, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "favicon" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->favicon_url, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "hls" ) == 0 ) {
+        return ( ctune_Field_t ) { ._field = &rsi->hls, ._type = CTUNE_FIELD_BOOLEAN };
+
+    } else if( strcmp( api_name, "homepage" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->homepage, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "language" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->language, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "languagecodes" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->language_codes, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "lastchangetime" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->last_change_time, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "lastchangetime_iso8601" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->iso8601.last_change_time, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "lastcheckok" ) == 0 ) {
+        return ( ctune_Field_t ) { ._field = &rsi->last_check_ok, ._type = CTUNE_FIELD_BOOLEAN };
+
+    } else if( strcmp( api_name, "lastchecktime" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->last_check_time, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "lastchecktime_iso8601" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->iso8601.last_check_time, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "lastcheckoktime" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->last_check_ok_time, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "lastcheckoktime_iso8601" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->iso8601.last_check_ok_time, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "lastlocalchecktime" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->last_local_check_time, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "lastlocalchecktime_iso8601" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->iso8601.last_local_check_time, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "name" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->name, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "state" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->state, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "stationuuid" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->station_uuid, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "tags" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->tags, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "url" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->url, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "url_resolved" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->url_resolved, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "votes" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->votes, ._type = CTUNE_FIELD_UNSIGNED_LONG };
+
+    } else if( strcmp( api_name, "ssl_error" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->ssl_error, ._type = CTUNE_FIELD_SIGNED_LONG };
+
+    } else if( strcmp( api_name, "geo_lat" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->geo.latitude, ._type = CTUNE_FIELD_DOUBLE };
+
+    } else if( strcmp( api_name, "geo_long" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &rsi->geo.longitude, ._type = CTUNE_FIELD_DOUBLE };
+
+    } else if( strcmp( api_name, "has_extended_info" ) == 0 ) {
+        return ( ctune_Field_t ) { ._field = &rsi->has_extended_info, ._type = CTUNE_FIELD_BOOLEAN };
+
+    } else if( strcmp( api_name, "station_src" ) == 0 ) {
+        return ( ctune_Field_t ) { ._field = &rsi->station_src, ._type = CTUNE_FIELD_ENUM_STATIONSRC };
+
+    } else {
+        return (ctune_Field_t){ ._field = NULL, ._type = CTUNE_FIELD_UNKNOWN };
+    }
+}
 
 /**
  * Namespace constructor
@@ -1548,4 +1673,6 @@ const struct ctune_RadioStationInfo_Namespace ctune_RadioStationInfo = {
         .favourite             = &ctune_RadioStationInfo_get_favourite,
         .stationSource         = &ctune_RadioStationInfo_get_stationSource,
     },
+
+    .getField = &ctune_RadioStationInfo_getField,
 };

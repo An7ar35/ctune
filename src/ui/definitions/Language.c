@@ -83,6 +83,7 @@ static const char * field_str[CTUNE_UI_TEXT_ENUM_COUNT] = {
     [CTUNE_UI_TEXT_ORDERBY_CLICKTREND               ] = "Click trend",
     [CTUNE_UI_TEXT_ORDERBY_RANDOM                   ] = "Random",
     [CTUNE_UI_TEXT_ORDERBY_STATIONCOUNT             ] = "Station count",
+    [CTUNE_UI_TEXT_ORDERBY_CHANGETIMESTAMP          ] = "Timestamp change",
     [CTUNE_UI_TEXT_CAT_COUNTRIES                    ] = "Countries",
     [CTUNE_UI_TEXT_CAT_COUNTRY_CODES                ] = "Country codes",
     [CTUNE_UI_TEXT_CAT_CODECS                       ] = "Codecs",

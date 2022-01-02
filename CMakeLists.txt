@@ -1,16 +1,17 @@
 cmake_minimum_required(VERSION 3.17)
 project(ctune
         LANGUAGES    C
-        VERSION      1.0.7
+        VERSION      1.0.8
         DESCRIPTION  "Curses based Internet radio tuner"
         HOMEPAGE_URL "eadavison.com")
 
 set(PROJECT_AUTHOR "E.A.Davison")
-set(PROJECT_YEARS  "2020-21")
+set(PROJECT_YEARS  "2020-22")
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_FLAGS "-Wall")
 set(CMAKE_C_FLAGS "-Wextra")
+set(CMAKE_C_FLAGS_RELEASE "-O2")
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -154,6 +155,7 @@ set(SOURCE_FILES
         src/dto/RadioStationVote.h
         src/dto/UIConfig.h
         src/dto/UIConfig.c
+        src/dto/Field.h
         src/enum/ByCategory.h
         src/enum/ByCategory.c
         src/enum/ListCategory.c

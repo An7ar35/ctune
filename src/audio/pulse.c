@@ -18,6 +18,7 @@ static volatile int ctune_audio_mix_volume = 0;
  * PulseAudio server information
  */
 static struct {
+
     pa_threaded_mainloop * main_loop;
     int                    main_loop_ret_val;
     pa_mainloop_api      * mainloop_api;
@@ -26,6 +27,7 @@ static struct {
     pa_channel_map         channel_map;
     pa_cvolume             channel_volume;
     pa_sample_spec         sample_specs;
+    volatile sig_atomic_t  ready;
 
 } pulse_audio_server;
 
@@ -214,6 +216,8 @@ static void notifyStreamStateChangeCallBack( pa_stream * stream, void * mainloop
             CTUNE_LOG( CTUNE_LOG_DEBUG, "[getStreamStateCallBack( %p, %p )] PulseAudio stream created (connected to %s).",
                        stream, mainloop,  pa_stream_get_device_name( stream )
             );
+
+            pulse_audio_server.ready = true;
             break;
 
         case PA_STREAM_UNCONNECTED:
@@ -228,6 +232,7 @@ static void notifyStreamStateChangeCallBack( pa_stream * stream, void * mainloop
                        "[notifyStreamStateChangeCallBack( %p, %p )] PulseAudio stream failure: %s.",
                        stream, mainloop, pa_strerror( pa_context_errno( pa_stream_get_context( stream ) ) )
             );
+            pulse_audio_server.ready = false;
             break;
     }
 
@@ -295,6 +300,7 @@ static void ctune_audio_setVolume( int vol ) {
 
     CTUNE_LOG( CTUNE_LOG_TRACE, "[ctune_audio_setVolume( %i )] Pulse mixing volume: %i%%", vol, ctune_audio_mix_volume );
 
+
     pa_threaded_mainloop_lock( pulse_audio_server.main_loop );
 
     pa_context_set_sink_input_volume( pulse_audio_server.context,
@@ -312,7 +318,7 @@ static void ctune_audio_setVolume( int vol ) {
  * @return Volume change state
  */
 static bool ctune_audio_changeVolume( int delta ) {
-    if( delta ) {
+    if( delta && pulse_audio_server.ready ) {
         ctune_audio_setVolume( ctune_audio_mix_volume + delta );
         return true;
     }
@@ -324,6 +330,7 @@ static bool ctune_audio_changeVolume( int delta ) {
  * Calls all the cleaning/closing/shutdown functions for the PulseAudio server
  */
 static void ctune_audio_shutdownAudioOut() {
+    pulse_audio_server.ready = false;
     if( pulse_audio_server.main_loop )
         pa_threaded_mainloop_stop( pulse_audio_server.main_loop );
     if( pulse_audio_server.context )
@@ -355,6 +362,7 @@ static int ctune_audio_initAudioOut( ctune_OutputFmt_e fmt, int sample_rate, uin
     pa_proplist_sets( property_list, PA_PROP_APPLICATION_ID, CTUNE_APPNAME );
     pa_proplist_sets( property_list, PA_PROP_APPLICATION_NAME, CTUNE_APPNAME );
 
+    pulse_audio_server.ready                 = false;
     pulse_audio_server.main_loop             = pa_threaded_mainloop_new();
     pulse_audio_server.main_loop_ret_val     = 0;
     pulse_audio_server.mainloop_api          = pa_threaded_mainloop_get_api( pulse_audio_server.main_loop );

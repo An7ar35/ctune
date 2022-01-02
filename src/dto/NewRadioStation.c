@@ -1,5 +1,7 @@
 #include "NewRadioStation.h"
 
+#include <string.h>
+
 #include "../logger/Logger.h"
 
 /**
@@ -248,6 +250,66 @@ static bool ctune_NewRadioStation_validateSendFields( const struct ctune_NewRadi
 }
 
 /**
+ * Gets a send field by its name string
+ * @param rsi NewRadioStation_t object
+ * @param api_name Name string
+ * @return Field
+ */
+static inline ctune_Field_t ctune_NewRadioStation_getSendField( struct ctune_NewRadioStation *nrs, const char *api_name ) {
+    if( strcmp( api_name, "name" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &nrs->send.name, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "url" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &nrs->send.url, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "homepage" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &nrs->send.homepage, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "favicon" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &nrs->send.favicon, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "country" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &nrs->send.country, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "countrycode" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &nrs->send.countrycode, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "state" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &nrs->send.state, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "language" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &nrs->send.language, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "tags" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &nrs->send.tags, ._type = CTUNE_FIELD_STRLIST };
+
+    } else {
+        return (ctune_Field_t) { ._field = NULL, ._type = CTUNE_FIELD_UNKNOWN };
+    }
+}
+
+/**
+ * Gets a receive field by its name string
+ * @param rsi NewRadioStation_t object
+ * @param api_name Name string
+ * @return Field
+ */
+static inline ctune_Field_t ctune_NewRadioStation_getReceiveField( struct ctune_NewRadioStation *nrs, const char *api_name ) {
+    if( strcmp( api_name, "ok" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &nrs->received.ok , ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "message" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &nrs->received.message, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else if( strcmp( api_name, "uuid" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &nrs->received.uuid, ._type = CTUNE_FIELD_CHAR_PTR };
+
+    } else {
+        return (ctune_Field_t) { ._field = NULL, ._type = CTUNE_FIELD_UNKNOWN };
+    }
+}
+
+/**
  * Namespace constructor
  */
 const struct ctune_NewRadioStation_Namespace ctune_NewRadioStation = {
@@ -257,4 +319,6 @@ const struct ctune_NewRadioStation_Namespace ctune_NewRadioStation = {
     .printRcv               = &ctune_NewRadioStation_printRcv,
     .parameteriseSendFields = &ctune_NewRadioStation_parameteriseSendFields,
     .validateSendFields     = &ctune_NewRadioStation_validateSendFields,
+    .getSendField           = &ctune_NewRadioStation_getSendField,
+    .getReceiveField        = &ctune_NewRadioStation_getReceiveField,
 };
