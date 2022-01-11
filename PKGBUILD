@@ -24,7 +24,7 @@ optdepends=('sdl2: for SDL2 output plugin support'
 conflicts=('ctune')
 provides=('ctune')
 license=('AGPL3')
-source=(git://github.com/An7ar35/ctune)
+source=(git+https://github.com/An7ar35/ctune.git)
 sha512sums=('SKIP')
 
 build() {
