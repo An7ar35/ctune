@@ -159,21 +159,21 @@ static bool ctune_UI_BrowserWin_categoryCtrlFunctionCb( ctune_UI_SlideMenu_Item_
             CTUNE_LOG( CTUNE_LOG_ERROR,
                        "[ctune_UI_BrowserWin_categoryCtrlFunctionCb( %p )] "
                        "Failed to create payload for menu item '%s' in menu '%s'.",
-                       menu_item, cat->name, menu_item->text._raw
+                       menu_item, ctune_CategoryItem.get.name( cat ), menu_item->text._raw
             );
 
             error_state = true;
 
         } else if( !ctune_UI_SlideMenu.createMenuItem( menu_item->sub_menu,
                                                        CTUNE_UI_SLIDEMENU_LEAF,
-                                                       cat->name,
+                                                       ctune_CategoryItem.get.name( cat ),
                                                        sub_cat_payload,
                                                        ctune_UI_BrowserWin_subCategoryCtrlFunctionCb ) )
         {
             CTUNE_LOG( CTUNE_LOG_ERROR,
                        "[ctune_UI_BrowserWin_categoryCtrlFunctionCb( %p )] "
                        "Failed to create menu item '%s' for menu '%s'.",
-                       menu_item, cat->name, menu_item->text._raw
+                       menu_item, ctune_CategoryItem.get.name( cat ), menu_item->text._raw
             );
 
             error_state = true;
