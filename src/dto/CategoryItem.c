@@ -9,7 +9,7 @@
 static void ctune_CategoryItem_init( void * cat_item ) {
     ( (struct ctune_CategoryItem *) cat_item )->name         = NULL;
     ( (struct ctune_CategoryItem *) cat_item )->stationcount = 0;
-    ( (struct ctune_CategoryItem *) cat_item )->country      = NULL;
+    ( (struct ctune_CategoryItem *) cat_item )->data         = NULL;
 }
 
 /**
@@ -27,9 +27,9 @@ static void ctune_CategoryItem_freeContent( void * cat_item ) {
         ci->name = NULL;
     }
 
-    if( ci->country ) {
-        free( ci->country );
-        ci->country = NULL;
+    if( ci->data ) {
+        free( ci->data );
+        ci->data = NULL;
     }
 }
 
@@ -40,8 +40,8 @@ static void ctune_CategoryItem_freeContent( void * cat_item ) {
  */
 static void ctune_CategoryItem_print( FILE * out, const struct ctune_CategoryItem * cat_item ) {
     fprintf( out, "{ name: \"%s\", stationcount: %lu", cat_item->name, cat_item->stationcount );
-    if( cat_item->country )
-        fprintf( out, ", country: \"%s\" }", cat_item->country );
+    if( cat_item->data )
+        fprintf( out, ", data: \"%s\" }", cat_item->data );
     else
         fprintf( out, " }" );
 }
@@ -56,15 +56,54 @@ inline static ctune_Field_t ctune_ServerStats_getField( struct ctune_CategoryIte
     if( strcmp( api_name, "name" ) == 0 ) {
         return (ctune_Field_t){ ._field = &cat_item->name, ._type = CTUNE_FIELD_CHAR_PTR };
 
-    } else if(strcmp( api_name, "stationcount" ) == 0 ) {
+    } else if( strcmp( api_name, "stationcount" ) == 0 ) {
         return (ctune_Field_t){ ._field = &cat_item->stationcount, ._type = CTUNE_FIELD_UNSIGNED_LONG };
 
-    } else if(strcmp( api_name, "country" ) == 0 ) {
-        return (ctune_Field_t){ ._field = &cat_item->country, ._type = CTUNE_FIELD_CHAR_PTR };
+    } else if( strcmp( api_name, "country" ) == 0 ) {
+        return  ( ctune_Field_t ) { ._field = &cat_item->data, ._type = CTUNE_FIELD_CHAR_PTR };
         //INFO (28 Sept 2020): The RadioBrowser API returns "Array" when there are multiple countries with the same state name
+    } else if( strcmp( api_name, "iso_639" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &cat_item->data, ._type = CTUNE_FIELD_CHAR_PTR };
+
     } else {
         return (ctune_Field_t) { ._field = NULL, ._type = CTUNE_FIELD_UNKNOWN };
     }
+}
+
+/**
+ * Gets the name of the category
+ * @param cat_item CategoryItem object
+ * @return Name string
+ */
+static const char * ctune_CategoryItem_get_name( const struct ctune_CategoryItem * cat_item ) {
+    return cat_item->name;
+}
+
+/**
+ * Gets the station count of the category
+ * @param cat_item CategoryItem object
+ * @return Station count
+ */
+static ulong ctune_CategoryItem_get_stationcount( const struct ctune_CategoryItem * cat_item ) {
+    return cat_item->stationcount;
+}
+
+/**
+ * Gets the ISO639 of the category
+ * @param cat_item CategoryItem object
+ * @return ISO 639 string
+ */
+static const char * ctune_CategoryItem_get_iso639( const struct ctune_CategoryItem * cat_item ) {
+    return cat_item->data;
+}
+
+/**
+ * Gets the country of the category
+ * @param cat_item CategoryItem object
+ * @return Country string
+ */
+static const char * ctune_CategoryItem_get_country( const struct ctune_CategoryItem * cat_item ) {
+    return cat_item->data;
 }
 
 /**
@@ -75,4 +114,10 @@ const struct ctune_CategoryItem_Namespace ctune_CategoryItem = {
     .freeContent = &ctune_CategoryItem_freeContent,
     .print       = &ctune_CategoryItem_print,
     .getField    = &ctune_ServerStats_getField,
+    .get =  {
+        .name         = &ctune_CategoryItem_get_name,
+        .stationcount = &ctune_CategoryItem_get_stationcount,
+        .iso639       = &ctune_CategoryItem_get_iso639,
+        .country      = &ctune_CategoryItem_get_country,
+    }
 };

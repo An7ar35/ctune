@@ -9,7 +9,7 @@
 typedef struct ctune_CategoryItem {
     char * name;
     ulong  stationcount;
-    char * country; //only used for 'states' category
+    char * data; //multi-purpose string storage ('language': 'iso_639', 'states': 'country')
 
 } ctune_CategoryItem_t;
 
@@ -41,6 +41,16 @@ extern const struct ctune_CategoryItem_Namespace {
      * @return Field
      */
     ctune_Field_t (* getField)( struct ctune_CategoryItem *cat_item, const char *api_name );
+
+    /**
+     * Getters
+     */
+    struct {
+        const char * (* name)( const ctune_CategoryItem_t * cat_item );
+        ulong (* stationcount)( const ctune_CategoryItem_t * cat_item );
+        const char * (* iso639)( const ctune_CategoryItem_t * cat_item );
+        const char * (* country)( const ctune_CategoryItem_t * cat_item );
+    } get;
 
 } ctune_CategoryItem;;
 
