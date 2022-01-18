@@ -506,6 +506,7 @@ target_link_libraries(ctune PRIVATE
         ctune_logger            #CTUNE_LOG(..)
         ${JSONC_LIBRARIES}      #(json-c/*.h) for `parse/JSON.c`
         ${NCURSES_LIBRARIES}    #(ncurses.h) for `ui/*`
+        ${CURSES_LIBRARIES}     #(ncurses.h) for `ui/*`
         panel                   #(panel.h) ncurses panel lib for `ui/*`
         form                    #(form.h) ncurses form lib for `ui/*`
         pthread                 #threading
