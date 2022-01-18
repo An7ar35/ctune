@@ -14,8 +14,10 @@ depends=('ncurses'
          'alsa-lib'
          'pulseaudio')
 
-makedepends=('cmake'
-             'git')
+makedepends=('make'
+             'cmake'
+             'git'
+             'pandoc')
 
 optdepends=('sdl2: for SDL2 output plugin support'
             'sndio: for SNDIO output plugin support'
