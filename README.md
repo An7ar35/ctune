@@ -143,10 +143,10 @@ Finally, for both approaches, run `sudo mandb` after to purge the `ctune` entry 
 
 #### Arch AUR (x64)
 
-At the moment this is not yet in AUR but you can just download the PKGBUILD file in the root of the 
-repository into a dedicated folder and run `makepkg -si` from inside. The rest should take care of itself.
+The package is available in the AUR repository under `ctune-git`. Install using your favourite AUR package browser/installer.
 
-**If updates don't seem to work use `makepkg -fsi` instead to force-overwrite the local package.**
+>  Alternatively just download the `PKGBUILD` file into an empty staging folder and run `makepkg -si` from inside. 
+   The rest should take care of itself.
 
 ## Platform
 
@@ -174,7 +174,7 @@ A. Press `F1` to get a contextual list of key bindings in the UI.
 
 **Disclaimer: I've writen this software primarily for myself so temper your support-level expectations accordingly.**
 
-If you open a bug ticket please include the following to help diagnose the source of the issue raised:
+That being said, if you open a bug ticket please include the following to help diagnose the source of the issue raised:
 
 1. Basic information:
     1. **(UI bugs)** Terminal/Shell used if it's a UI bug (e.g.: Konsole 21.04 using BASH 5.1.8)
