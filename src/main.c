@@ -20,7 +20,8 @@
 /* setup/teardown and system */
 static bool ctune_init( const ctune_ArgOptions_t * options );
 static void ctune_shutdown();
-void        ctune_handleSignal( int signal_id );
+static void ctune_setupSigHandler();
+static void ctune_handleSignal( int signo, siginfo_t * info, void * context );
 
 /**
  * Program entry point
@@ -113,14 +114,7 @@ int main( int argc, char * argv[] ) {
         exit( ERR ); //EARLY EXIT
     }
 
-    struct sigaction signal_handler;
-
-    signal_handler.sa_handler = ctune_handleSignal;
-    sigemptyset( &signal_handler.sa_mask );
-    signal_handler.sa_flags = 0;
-
-    sigaction( SIGINT, &signal_handler, NULL );
-
+    ctune_setupSigHandler();
 
     ctune_Controller.load( &options );
     ctune_ArgOptions.freeContent( &options );
@@ -225,26 +219,44 @@ static void ctune_shutdown() {
 }
 
 /**
- * Handles system signals
- * @param signal_id Signal to handle
+ * Sets-up the signal handler (- call once)
  */
-void ctune_handleSignal( int signal_id ) {
-    switch( signal_id ) {
+void ctune_setupSigHandler() {
+    static struct sigaction signal_handler;
+
+    memset( &signal_handler, 0, sizeof( signal_handler ) );
+    signal_handler.sa_sigaction = ctune_handleSignal;
+    signal_handler.sa_flags     = SA_SIGINFO;
+
+    sigaction( SIGINT, &signal_handler, NULL );
+    sigaction( SIGTERM, &signal_handler, NULL );
+    sigaction( SIGQUIT, &signal_handler, NULL );
+    sigaction( SIGTSTP, &signal_handler, NULL );
+}
+
+/**
+ * Handles system signals
+ * @param signo Signal to handle
+ * @param info Pointer to signal information struct
+ * @param context Pointer to context
+ */
+void ctune_handleSignal( int signo, siginfo_t * info, void * context ) {
+    switch( signo ) {
         case SIGINT: //interrupt (^C)
-            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught interrupt signal (^C).", signal_id );
+            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught interrupt signal (^C).", signo );
             ctune_shutdown();
             exit_curses( ERR );
             break;
-        case SIGTERM: //
-            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught SIGTERM signal.", signal_id );
+        case SIGTERM: //terminate
+            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught SIGTERM signal.", signo );
             ctune_shutdown();
             exit_curses( OK );
             break;
         case SIGQUIT: //quit (^\)
         case SIGTSTP: //suspend (^Z)
         default:
-            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught signal, forwarding...", signal_id );
-            signal( signal_id, SIG_DFL );
+            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught signal, forwarding...", signo );
+            signal( signo, SIG_DFL );
             break;
     }
 }
