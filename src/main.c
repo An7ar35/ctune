@@ -235,7 +235,11 @@ void ctune_handleSignal( int signal_id ) {
             ctune_shutdown();
             exit_curses( ERR );
             break;
-
+        case SIGTERM: //
+            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught SIGTERM signal.", signal_id );
+            ctune_shutdown();
+            exit_curses( OK );
+            break;
         case SIGQUIT: //quit (^\)
         case SIGTSTP: //suspend (^Z)
         default:
