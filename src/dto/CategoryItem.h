@@ -48,7 +48,7 @@ extern const struct ctune_CategoryItem_Namespace {
     struct {
         const char * (* name)( const ctune_CategoryItem_t * cat_item );
         ulong (* stationcount)( const ctune_CategoryItem_t * cat_item );
-        const char * (* iso639)( const ctune_CategoryItem_t * cat_item );
+        const char * (* data)( const ctune_CategoryItem_t * cat_item );
         const char * (* country)( const ctune_CategoryItem_t * cat_item );
     } get;
 

@@ -65,6 +65,9 @@ inline static ctune_Field_t ctune_ServerStats_getField( struct ctune_CategoryIte
     } else if( strcmp( api_name, "iso_639" ) == 0 ) {
         return (ctune_Field_t){ ._field = &cat_item->data, ._type = CTUNE_FIELD_CHAR_PTR };
 
+    } else if( strcmp( api_name, "iso_3166_1" ) == 0 ) {
+        return (ctune_Field_t){ ._field = &cat_item->data, ._type = CTUNE_FIELD_CHAR_PTR };
+
     } else {
         return (ctune_Field_t) { ._field = NULL, ._type = CTUNE_FIELD_UNKNOWN };
     }
@@ -89,11 +92,11 @@ static ulong ctune_CategoryItem_get_stationcount( const struct ctune_CategoryIte
 }
 
 /**
- * Gets the ISO639 of the category
+ * Gets the anonymous data store of the category
  * @param cat_item CategoryItem object
- * @return ISO 639 string
+ * @return Data string
  */
-static const char * ctune_CategoryItem_get_iso639( const struct ctune_CategoryItem * cat_item ) {
+static const char * ctune_CategoryItem_get_data( const struct ctune_CategoryItem * cat_item ) {
     return cat_item->data;
 }
 
@@ -117,7 +120,7 @@ const struct ctune_CategoryItem_Namespace ctune_CategoryItem = {
     .get =  {
         .name         = &ctune_CategoryItem_get_name,
         .stationcount = &ctune_CategoryItem_get_stationcount,
-        .iso639       = &ctune_CategoryItem_get_iso639,
+        .data         = &ctune_CategoryItem_get_data,
         .country      = &ctune_CategoryItem_get_country,
     }
 };
