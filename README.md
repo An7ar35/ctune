@@ -148,12 +148,12 @@ The package is available in the AUR repository under `ctune-git`. Install using 
 >  Alternatively just download the `PKGBUILD` file into an empty staging folder and run `makepkg -si` from inside. 
    The rest should take care of itself.
 
-#### Ubuntu (>= 22.04)
+#### Ubuntu (tested on 22.04.1 LTS)
 
 No PPA but here are copy/paste commands to install all the required programs and development libraries you would need before compiling `ctune`:
 
 ```shell
-sudo apt-get install git cmake cmake-extras make pipewire-pulse
+sudo apt-get install git cmake cmake-extras make man pandoc gzip
 ```
 
 ```shell
