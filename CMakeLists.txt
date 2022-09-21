@@ -476,6 +476,7 @@ endif()
 
 add_executable(ctune ${SOURCE_FILES})
 add_dependencies(ctune man ctune_logger libjsonc)
+include_directories(${CMAKE_EXTERNAL_OUTPUT_DIRECTORY}/include)
 
 if(USING_FFMPEG)
     add_dependencies(ctune ctune_plugin_in_ffmpeg)
