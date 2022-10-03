@@ -3,12 +3,13 @@
 
 #include "../enum/KeyboardKeyID.h"
 
-#define CTUNE_KEY_TAB         9
-#define CTUNE_KEY_RETURN     10
-#define CTUNE_KEY_ESC        27
-#define CTUNE_KEY_SPACE      32
-#define CTUNE_KEY_BACKSPACE 127
-#define CTUNE_KEY_STAB      353
+#define CTUNE_KEY_TAB             9
+#define CTUNE_KEY_RETURN         10
+#define CTUNE_KEY_ESC            27
+#define CTUNE_KEY_SPACE          32
+#define CTUNE_KEY_BACKSPACE     127
+#define CTUNE_KEY_ALT_BACKSPACE 263
+#define CTUNE_KEY_STAB          353
 
 /**
  * Container for keyboard key properties
