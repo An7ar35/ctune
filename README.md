@@ -177,6 +177,7 @@ As a baseline v1.0.0 works on ArchLinux with:
 - OpenSSL (1.1.1k)
 - Curl (7.77.0)
 - nCurses (6.2.20200212)
+- libbsd
 
 ## F.A.Q.
 

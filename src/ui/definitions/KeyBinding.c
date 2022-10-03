@@ -144,6 +144,7 @@ static const ctune_UI_KeyBinding_t bindings_rsfind[] = {
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_GO_LEFT, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_KEYBOARD_LEFT },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_GO_RIGHT, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_KEYBOARD_RIGHT },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_DEL_PREV, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_KEYBOARD_BACKSPACE },
+    { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_DEL_PREV, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_KEYBOARD_ALT_BACKSPACE },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_DEL_NEXT, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_KEYBOARD_DELCHAR },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_ESC, .description = CTUNE_UI_TEXT_HELP_FORM_ESC, .key = CTUNE_UI_KEYBOARD_ESC },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_HELP, .description = CTUNE_UI_TEXT_HELP_KEY, .key = CTUNE_UI_KEYBOARD_F1 },
@@ -168,6 +169,7 @@ static const ctune_UI_KeyBinding_t bindings_rsfind[] = {
 static const ctune_UI_KeyBinding_t bindings_rsedit[] = {
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_RESIZE, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_KEYBOARD_RESIZE },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_DEL_PREV, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_KEYBOARD_BACKSPACE },
+    { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_DEL_PREV, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_KEYBOARD_ALT_BACKSPACE },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_DEL_NEXT, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_KEYBOARD_DELCHAR },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_ESC, .description = CTUNE_UI_TEXT_HELP_FORM_ESC, .key = CTUNE_UI_KEYBOARD_ESC },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_HELP, .description = CTUNE_UI_TEXT_HELP_KEY, .key = CTUNE_UI_KEYBOARD_F1 },

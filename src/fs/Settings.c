@@ -299,11 +299,27 @@ static bool ctune_Settings_createDirectory( String_t * dir_path ) {
         if( mkdir( dir_path->_raw, 0700 ) != 0 ) { //read/write/execute for owner
             CTUNE_LOG( CTUNE_LOG_ERROR,
                        "[ctune_Settings_createDirectory( \"%s\" )] "
-                       "Could not create directory: %s",
+                       "Could not create directory via stat call: %s",
                        dir_path->_raw, strerror( errno )
             );
 
-            return false;
+            String_t cmd = String.init();
+            String.set( &cmd, "mkdir -m 0700 -p " );
+            String.append_back( &cmd, dir_path->_raw );
+
+            int sys_ret = system( cmd._raw );
+
+            if( sys_ret != 0 ) {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[ctune_Settings_createDirectory( \"%s\" )] "
+                           "Could not create directory via system call: %s",
+                           cmd._raw, strerror( errno )
+                );
+            }
+
+            String.free( &cmd );
+
+            return ( sys_ret == 0 );
         }
     }
 
