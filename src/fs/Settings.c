@@ -506,6 +506,7 @@ static void ctune_Settings_resolveDataFilePath( const char * file_name, String_t
 static bool ctune_Settings_rtlock_lock( void ) {
     String_t lockfile_path = String.init();
 
+    ctune_Settings_createDirectory( &lockfile_path );
     ctune_Settings_resolveDataFilePath( CTUNE_LOCK_FILENAME, &lockfile_path );
 
     int file_state = ctune_Settings_getFileState( lockfile_path._raw, NULL );
