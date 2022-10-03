@@ -12,7 +12,8 @@ depends=('ncurses'
          'curl'
          'ffmpeg'
          'alsa-lib'
-         'pulseaudio')
+         'pulseaudio'
+         'libbsd')
 
 makedepends=('make'
              'cmake'
