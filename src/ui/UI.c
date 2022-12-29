@@ -854,7 +854,7 @@ static void ctune_UI_printTabMenu( enum ctune_UI_PanelID curr_panel, int * end_c
     for( int i = 0; i < 3; ++i ) {
         size_t width = strlen( titles[i] ) + 2;;
 
-        if( curr_panel == tabs[i] ) {
+        if( (int) curr_panel == tabs[i] ) {
             wattron( ui.panel_windows[curr_panel], ctune_UI_Theme.color( CTUNE_UI_ITEM_TAB_CURR ) );
             mvwprintw( ui.panel_windows[curr_panel], row, col, " %s ", titles[i] );
             wattroff( ui.panel_windows[curr_panel], ctune_UI_Theme.color( CTUNE_UI_ITEM_TAB_CURR ) );

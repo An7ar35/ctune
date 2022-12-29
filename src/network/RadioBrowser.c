@@ -92,7 +92,7 @@ static bool ctune_RadioBrowser_downloadRadioBrowserData( ctune_ServerList_t * ad
         CTUNE_LOG( CTUNE_LOG_TRACE, "\n[HTTP request]\n==============\n%s\n==============\n", query_buff );
     #endif
 
-    if( cx < 0 || cx >= query_buff_length ) {
+    if( cx < 0 || (size_t) cx >= query_buff_length ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_RadioBrowser_downloadRadioBrowserData( %p, \"%s\", %p )] "
                    "Failed to construct the query (buffer too small, req. length: %i)",

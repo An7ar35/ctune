@@ -273,7 +273,7 @@ static Bucket_t * HashMap_insertBST( HashMap_t * map, Bucket_t * parent, Bucket_
  * @param hash Hash key to find
  * @return Pointer to Bucket_t whose key matches the hash or NULL if no match found
  */
-static Bucket_t * HashMap_searchBST( const HashMap_t * map, Bucket_t * root, int64_t hash ) {
+static Bucket_t * HashMap_searchBST( const HashMap_t * map, Bucket_t * root, uint64_t hash ) {
     if( root == NULL )
         return NULL;
     else if( hash > root->hashkey )
