@@ -30,9 +30,9 @@ enum RADIOPLAYER_INIT_STAGES {
  * @param out_channel_layout Number of channels of the PCM data to be sent to the audio output
  */
 struct {
-    int                       error;
-    ctune_AudioOut_t        * audio_out;
-    const int64_t             out_channel_layout;
+    int                    error;
+    ctune_AudioOut_t     * audio_out;
+    struct AVChannelLayout out_channel_layout;
 
     struct {
         const enum AVSampleFormat ffmpeg;
@@ -78,7 +78,7 @@ static void ctune_Player_avLogCallback( void * avcl, int level, const char * fmt
 
     } else {
         switch( level ) {
-            case AV_LOG_PANIC: //fallthrough - (0) Something went really wrong and we will crash now.
+            case AV_LOG_PANIC: //fallthrough - (0) Something went really wrong, and we will crash now.
             case AV_LOG_FATAL: //(8) Something went wrong and recovery is not possible.
                 CTUNE_LOG( CTUNE_LOG_FATAL, line_buffer );
                 break;
@@ -149,7 +149,7 @@ static int ctune_Player_setupStreamInput( AVFormatContext * in_format_ctx, AVCod
         return -CTUNE_ERR_STREAM_INFO;
     }
 
-    *audio_stream_i = av_find_best_stream( in_format_ctx, AVMEDIA_TYPE_AUDIO, -1, -1, in_codec, 0 );
+    *audio_stream_i = av_find_best_stream( in_format_ctx, AVMEDIA_TYPE_AUDIO, -1, -1, (const AVCodec **) in_codec, 0 );
 
     if( *audio_stream_i < 0 ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
@@ -167,7 +167,7 @@ static int ctune_Player_setupStreamInput( AVFormatContext * in_format_ctx, AVCod
                "[ctune_Player_setupStreamInput( %p, %i, %p )] "
                "Input stream setup complete: { codec = '%s', channels = %d, sample-rate = %d, bit-rate = %ld, frame-size = %d }",
                in_format_ctx, *audio_stream_i, url,
-               avcodec_get_name( parameters->codec_id ), parameters->channels, parameters->sample_rate, parameters->bit_rate, parameters->frame_size
+               avcodec_get_name( parameters->codec_id ), parameters->ch_layout.nb_channels, parameters->sample_rate, parameters->bit_rate, parameters->frame_size
     );
 
     return 0;
@@ -235,7 +235,7 @@ static bool ctune_Player_setupInputCodec( AVCodecParameters * parameters, AVCode
  * @param out_sample_format Output sample format (`AV_SAMPLE_FMT_*`)
  * @return Success
  */
-static bool ctune_Player_setupResampler( SwrContext ** resample_ctx, const AVCodecParameters * codec_params, enum AVSampleFormat in_sample_format, enum AVSampleFormat out_sample_format ) {
+static bool ctune_Player_setupResampler( SwrContext ** resample_ctx, AVCodecParameters * codec_params, enum AVSampleFormat in_sample_format, enum AVSampleFormat out_sample_format ) {
     CTUNE_LOG( CTUNE_LOG_DEBUG,
                "[ctune_Player_setupResampler( %p, %p, %i )] Setting up re-sampler...",
                resample_ctx, codec_params, in_sample_format
@@ -249,30 +249,26 @@ static bool ctune_Player_setupResampler( SwrContext ** resample_ctx, const AVCod
         return false;
     }
 
-    char    channel_layout_str[200] = { 0 };
-    int     output_channels         = av_get_channel_layout_nb_channels( ffmpeg_player.out_channel_layout );
+    int  ret                     = 0; //reusable returned values container
+    char channel_layout_str[200] = { 0 };
 
-    av_get_channel_layout_string( &channel_layout_str[0], 200, output_channels, ffmpeg_player.out_channel_layout );
+    av_channel_layout_default( &ffmpeg_player.out_channel_layout, 2 );
+    av_channel_layout_describe( &ffmpeg_player.out_channel_layout, &channel_layout_str[0], 200 );
 
-    *resample_ctx = swr_alloc_set_opts( *resample_ctx,
-                                        ffmpeg_player.out_channel_layout,
-                                        out_sample_format,
-                                        codec_params->sample_rate,
-                                        codec_params->channel_layout,
-                                        in_sample_format,
-                                        codec_params->sample_rate,
-                                        0,
-                                        NULL );
+    ret = swr_alloc_set_opts2( resample_ctx,
+                               &ffmpeg_player.out_channel_layout, out_sample_format, codec_params->sample_rate,
+                               &codec_params->ch_layout, in_sample_format, codec_params->sample_rate,
+                               0, NULL );
 
-    if( *resample_ctx == NULL ) {
+    if( ret <= 0 ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_Player_setupResampler( %p, %p, %i )] Failed allocation options to the re-sampler context.",
-                   resample_ctx, codec_params, in_sample_format
+                   "[ctune_Player_setupResampler( %p, %p, %i )] Failed allocation options to the re-sampler context: %s (%d)",
+                   resample_ctx, codec_params, in_sample_format, av_err2str( ret ), AVERROR( ret )
         );
         return false;
     }
 
-    int ret = swr_init( *resample_ctx );
+    ret = swr_init( *resample_ctx );
 
     if( ret < 0 ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
@@ -286,7 +282,11 @@ static bool ctune_Player_setupResampler( SwrContext ** resample_ctx, const AVCod
                "[ctune_Player_setupResampler( %p, %p, %i )] Re-sampler setup complete: "
                "{ frame size: %d, sample format: '%s', sample rate: %d, channels: %d (%s) }",
                resample_ctx, codec_params, in_sample_format,
-               codec_params->frame_size, av_get_sample_fmt_name( out_sample_format ), codec_params->sample_rate, output_channels, channel_layout_str
+               codec_params->frame_size,
+               av_get_sample_fmt_name( out_sample_format ),
+               codec_params->sample_rate,
+               ffmpeg_player.out_channel_layout.nb_channels,
+               channel_layout_str
     );
 
     return true;
@@ -302,7 +302,7 @@ static bool ctune_Player_setupResampler( SwrContext ** resample_ctx, const AVCod
  */
 static int ctune_Player_createBuffer( uint8_t ** buffer_ptr, uint64_t channel_layout, int samples, enum AVSampleFormat sample_fmt ) {
     bool error_state     = false;
-    int  out_buffer_size = av_samples_get_buffer_size( NULL, av_get_channel_layout_nb_channels( channel_layout ), samples, sample_fmt, 1 );
+    int  out_buffer_size = av_samples_get_buffer_size( NULL, ffmpeg_player.out_channel_layout.nb_channels, samples, sample_fmt, 1 );
 
     if( buffer_ptr == NULL || *buffer_ptr != NULL ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
@@ -446,7 +446,7 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
     }
 
     //--(4) setup audio output sink--
-    if( ( ret = ffmpeg_player.audio_out->init( ffmpeg_player.out_sample_fmt.ctune, in_codec_param->sample_rate, in_codec_param->channels, in_codec_param->frame_size, volume ) ) != 0 ) {
+    if( ( ret = ffmpeg_player.audio_out->init( ffmpeg_player.out_sample_fmt.ctune, in_codec_param->sample_rate, in_codec_param->ch_layout.nb_channels, in_codec_param->frame_size, volume ) ) != 0 ) {
         ffmpeg_player.error = abs( ret );
         error_state = true;
         goto end;
@@ -458,9 +458,9 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
     //--(5) decode, resample and send to audio sink frames as they come in--
     packet          = av_packet_alloc();
     frame           = av_frame_alloc();
-    out_buffer_size = ctune_Player_createBuffer( &out_buffer, ffmpeg_player.out_channel_layout, in_codec_param->frame_size, ffmpeg_player.out_sample_fmt.ffmpeg );
+    out_buffer_size = ctune_Player_createBuffer( &out_buffer, ffmpeg_player.out_channel_layout.nb_channels, in_codec_param->frame_size, ffmpeg_player.out_sample_fmt.ffmpeg );
 
-    if( out_buffer_size <= 0 ) {
+    if( out_buffer_size <= 0 ) { //TODO uncomment once the rest of the function has depreciated stuff updated
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_Player_playRadioStream( \"%s\", %i, %is )] Error creating buffer.",
                    radio_stream_url, volume, timeout_val
@@ -512,7 +512,7 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
 
             //get decoded size
             const int data_size = av_samples_get_buffer_size( NULL,
-                                                              av_get_channel_layout_nb_channels( ffmpeg_player.out_channel_layout ),
+                                                              ffmpeg_player.out_channel_layout.nb_channels,
                                                               sample_count,
                                                               ffmpeg_player.out_sample_fmt.ffmpeg,
                                                               1 );
@@ -583,8 +583,10 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
             }
         }
 
-        if( stages[STAGE_RESAMPLER] && resample_ctx )
+        if( stages[STAGE_RESAMPLER] && resample_ctx ) {
             swr_close( resample_ctx );
+            av_channel_layout_uninit( &ffmpeg_player.out_channel_layout );
+        }
 
         if( stages[STAGE_STREAM_INPUT] ) {
             //if there was a timeout on connecting to remote stream then no info would be packed
@@ -625,10 +627,10 @@ static void ctune_Player_init(
         ctune_err.set( CTUNE_ERR_PLAYER_INIT );
     }
 
-    ffmpeg_player.error                             = CTUNE_ERR_NONE;
-    ffmpeg_player.audio_out                         = sound_server;
-    ffmpeg_player.cb.playback_ctrl_callback         = playback_ctrl_callback,
-    ffmpeg_player.cb.song_change_callback           = song_change_callback;
+    ffmpeg_player.error                     = CTUNE_ERR_NONE;
+    ffmpeg_player.audio_out                 = sound_server;
+    ffmpeg_player.cb.playback_ctrl_callback = playback_ctrl_callback,
+    ffmpeg_player.cb.song_change_callback   = song_change_callback;
 }
 
 /**
