@@ -148,7 +148,7 @@ The package is available in the AUR repository under `ctune-git`. Install using 
 >  Alternatively just download the `PKGBUILD` file into an empty staging folder and run `makepkg -si` from inside. 
    The rest should take care of itself.
 
-#### Ubuntu (tested on 22.04.1 LTS)
+#### Ubuntu (tested on 22.04.1 LTS with pulseaudio as the default server)
 
 No PPA but here are copy/paste commands to install all the required programs and development libraries you would need before compiling `ctune`:
 
@@ -189,7 +189,10 @@ A. Press `F1` to get a contextual list of key bindings in the UI.
 
 **Disclaimer: I've writen this software primarily for myself so temper your support-level expectations accordingly.**
 
-That being said, if you open a bug ticket please include the following to help diagnose the source of the issue raised:
+That being said, if you find a bug you are welcome to open a ticket.
+I'll try to deal with it time allowing. Same for bug PRs.
+
+For tickets, please include the following to help diagnose the source of the problem:
 
 1. Basic information:
     1. **(UI bugs)** Terminal/Shell used if it's a UI bug (e.g.: Konsole 21.04 using BASH 5.1.8)
@@ -207,6 +210,6 @@ Thank you.
 
 ## License
 
-Copyright @ 2020-21 E.A.Davison.
+Copyright @ 2020-23 E.A.Davison.
 
 Licensed under [AGPLv3](https://www.gnu.org/licenses/agpl-3.0.en.html)
