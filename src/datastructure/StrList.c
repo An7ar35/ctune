@@ -293,17 +293,17 @@ static ListNode * ctune_StrList_extract_node( struct StrList * list, ListNode * 
  * @return Pointer of ListNode located at given index (NULL if out-of-range)
  */
 static const ListNode * ctune_StrList_at( const struct StrList * list, size_t n ) {
-    if( list == NULL || n < 0 || n >= list->_length ) {
+    if( list == NULL || n >= list->_length ) {
         fprintf( stderr, "[StrList.at( %p, %lu )] Out of range.\n", list, n );
         return NULL;
     }
 
-    int        i    = 0;
+    size_t     i    = 0;
     ListNode * curr = list->_front;
 
     while( i < n ) {
         if( curr->next == NULL ) {
-            fprintf( stderr, "[StrList.at( %p, %lu )] Pointer to next node is NULL (i=%i).\n", list, n, i );
+            fprintf( stderr, "[StrList.at( %p, %lu )] Pointer to next node is NULL (i=%zu).\n", list, n, i );
             return NULL;
 
         } else {
