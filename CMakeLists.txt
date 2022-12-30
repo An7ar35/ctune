@@ -475,7 +475,7 @@ endif()
 #endforeach()
 
 add_executable(ctune ${SOURCE_FILES})
-add_dependencies(ctune man ctune_logger libjsonc)
+add_dependencies(ctune ctune_logger libjsonc)
 include_directories(${CMAKE_EXTERNAL_OUTPUT_DIRECTORY}/include)
 
 if(USING_FFMPEG)
@@ -500,6 +500,10 @@ endif()
 
 if(USING_SNDIO)
     add_dependencies(ctune ctune_plugin_out_sndio)
+endif()
+
+if(PANDOC AND GZIP)
+    add_dependencies(ctune man)
 endif()
 
 target_link_libraries(ctune PRIVATE
@@ -543,15 +547,17 @@ install(TARGETS
             ${CTUNE_INSTALL_LIBDIR}/${CTUNE_OUTPUT_PLUGIN_DIR}
 )
 
-install(FILES
-            ${MAN_OUT_DIR}/${MAN_OUT_FILENAME}.gz
-        DESTINATION
-            ${CTUNE_INSTALL_MANDIR}
-)
+if(PANDOC AND GZIP)
+    install(FILES
+                ${MAN_OUT_DIR}/${MAN_OUT_FILENAME}.gz
+            DESTINATION
+                ${CTUNE_INSTALL_MANDIR}
+    )
 
-install(CODE
+    install(CODE
             "execute_process(COMMAND ${CMAKE_SOURCE_DIR}/cmake/scripts/update_mandb.sh ARGS ${CMAKE_BUILD_TYPE})"
-)
+    )
+endif()
 
 #========================================== UNINSTALL =============================================#
 if(TARGET uninstall)
