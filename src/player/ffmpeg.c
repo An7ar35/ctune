@@ -260,7 +260,7 @@ static bool ctune_Player_setupResampler( SwrContext ** resample_ctx, AVCodecPara
                                &codec_params->ch_layout, in_sample_format, codec_params->sample_rate,
                                0, NULL );
 
-    if( ret <= 0 ) {
+    if( ret < 0 ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_Player_setupResampler( %p, %p, %i )] Failed allocation options to the re-sampler context: %s (%d)",
                    resample_ctx, codec_params, in_sample_format, av_err2str( ret ), AVERROR( ret )

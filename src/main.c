@@ -57,10 +57,12 @@ int main( int argc, char * argv[] ) {
 
         case CTUNE_CLI_EXIT_OK:
             ctune_CLI.free();
+            ctune_Settings.rtlock.unlock();
             exit( OK ); //EARLY EXIT
 
         case CTUNE_CLI_EXIT_ERR:
             ctune_CLI.free();
+            ctune_Settings.rtlock.unlock();
             exit( ERR ); //EARLY EXIT
 
         case CTUNE_CLI_CONTINUE_WITH_OPT: {
