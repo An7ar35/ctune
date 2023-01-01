@@ -148,7 +148,7 @@ The package is available in the AUR repository under `ctune-git`. Install using 
 >  Alternatively just download the `PKGBUILD` file into an empty staging folder and run `makepkg -si` from inside. 
    The rest should take care of itself.
 
-#### Ubuntu (tested on 22.04.1 LTS with pulseaudio as the default server)
+#### Ubuntu 22.04.1 LTS (tested with _pulseaudio_ as the default server)
 
 No PPA but here are copy/paste commands to install all the required programs and development libraries you would need before compiling `ctune`:
 
@@ -161,6 +161,11 @@ sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
 ```
 
 Once all these are on the system compiling from source should work without hiccups.
+
+## Docker
+
+Docker is only there for testing purposes and only works on linux with either `pulseaudio` or `pipewire-pulse` installed and running.
+It uses the Arch docker image as base. The `docker-compose.sh` script creates the container and runs it (final size = ~1GB).
 
 ## Platform
 
