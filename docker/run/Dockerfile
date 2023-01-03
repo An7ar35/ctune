@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
 FROM archlinux:latest
+LABEL maintainers="E.A.Davison <eadavison at protonmail dot com>"
 
 # Base install
 RUN pacman-key --init \
