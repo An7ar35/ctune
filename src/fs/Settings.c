@@ -137,7 +137,7 @@ static struct ctune_Settings_Cfg {
         .sound_server.name      = { NULL, 0 },
     },
 
-    .ui = {
+    .ui = { //defaults
         .fav_tab.hide_fav_theming = false,
         .fav_tab.large_rows       = true,
         .search_tab.large_rows    = true,

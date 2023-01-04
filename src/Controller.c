@@ -22,6 +22,7 @@ static struct {
         void (* song_change_cb)( const char * );
         void (* volume_change_cb)( int );
         void (* search_state_change_cb)( bool state );
+        void (* resize_cb)( void );
 
     } cb;
 
@@ -231,9 +232,19 @@ static void ctune_Controller_load( ctune_ArgOptions_t * opts ) {
 }
 
 /**
+ * Call the resize callback method if set
+ */
+static void ctune_Controller_resizeUI( void ) {
+    if( controller.cb.resize_cb ) {
+        controller.cb.resize_cb();
+    }
+}
+
+/**
  * Shutdown and cleanup cTune
  */
 static void ctune_Controller_free() {
+    ctune_Controller.cfg.saveUIConfig();
     ctune_Controller.cfg.saveFavourites();
     ctune_ServerList.freeServerList( &controller.radio_browser_servers );
     String.free( &cache.last_played_song );
@@ -576,6 +587,29 @@ static bool ctune_Controller_largeRowsForBrowserTab( void ) {
 }
 
 /**
+ * Gets a pointer to the internal UIConfig object
+ * @return Pointer to ctune_UIConfig_t object
+ */
+static ctune_UIConfig_t * ctune_Controller_getUIConfig( void ) {
+    return &controller.ui_config;
+}
+
+/**
+ * Saves the internal UIConfig_t object to the Settings component
+ */
+static void ctune_Controller_saveUIConfig( void ) {
+    ctune_Settings.cfg.setUIConfig( &controller.ui_config );
+}
+
+/**
+ * Sets a callback for resize events
+ * @param cb Callback method
+ */
+static void ctune_Controller_setResizeUIEventCallback( void(* cb)( void ) ) {
+    controller.cb.resize_cb = cb;
+}
+
+/**
  * [OPTIONAL] Sets a callback for the volume change event
  * @param cb Callback method
  */
@@ -621,9 +655,10 @@ static void ctune_Controller_setSearchStateChangeEvent_cb( void(* cb)( bool ) ) 
  * Constructor
  */
 const struct ctune_Controller_Instance ctune_Controller = {
-    .init = &ctune_Controller_init,
-    .load = &ctune_Controller_load,
-    .free = &ctune_Controller_free,
+    .init     = &ctune_Controller_init,
+    .load     = &ctune_Controller_load,
+    .resizeUI = &ctune_Controller_resizeUI,
+    .free     = &ctune_Controller_free,
 
     .playback = {
         .getPlaybackState = &ctune_Controller_getPlaybackState,
@@ -653,8 +688,11 @@ const struct ctune_Controller_Instance ctune_Controller = {
         .largeRowsForFavTab     = &ctune_Controller_largeRowsForFavTab,
         .largeRowsForSearchTab  = &ctune_Controller_largeRowsForSearchTab,
         .largeRowsForBrowserTab = &ctune_Controller_largeRowsForBrowserTab,
+        .getUIConfig            = &ctune_Controller_getUIConfig,
+        .saveUIConfig           = &ctune_Controller_saveUIConfig,
     },
 
+    .setResizeUIEventCallback            = &ctune_Controller_setResizeUIEventCallback,
     .setVolumeChangeEventCallback        = &ctune_Controller_setVolumeChangeEventCallback,
     .setSongChangeEventCallback          = &ctune_Controller_setSongChangeEventCallback,
     .setStationChangeEventCallback       = &ctune_Controller_setStationChangeEventCallback,

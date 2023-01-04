@@ -7,6 +7,7 @@
 #include "dto/ArgOptions.h"
 #include "dto/RadioBrowserFilter.h"
 #include "dto/RadioStationInfo.h"
+#include "dto/UIConfig.h"
 #include "enum/StationSrc.h"
 #include "enum/PlaybackCtrl.h"
 #include "enum/SearchCtrl.h"
@@ -25,6 +26,11 @@ extern const struct ctune_Controller_Instance {
      * @param opts Options
      */
     void (* load)( ctune_ArgOptions_t * opts );
+
+    /**
+     * Call the resize callback method if set
+     */
+    void (* resizeUI)( void );
 
     /**
      * Shutdown and cleanup cTune
@@ -192,7 +198,24 @@ extern const struct ctune_Controller_Instance {
          */
         bool (* largeRowsForBrowserTab)( void );
 
+        /**
+         * Gets a pointer to the internal UIConfig object
+         * @return Pointer to ctune_UIConfig_t object
+         */
+        ctune_UIConfig_t * (* getUIConfig)( void );
+
+        /**
+         * Saves the internal UIConfig_t object to the Settings component
+         */
+        void (* saveUIConfig)( void );
+
     } cfg;
+
+    /**
+     * Sets a callback for resize events
+     * @param cb Callback method
+     */
+    void (* setResizeUIEventCallback)( void(* cb)( void ) );
 
     /**
      * [OPTIONAL] Sets a callback for the volume change event

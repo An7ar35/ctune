@@ -619,7 +619,7 @@ static bool ctune_UI_RSFind_createFields( ctune_UI_RSFind_t * rsfind ) {
     if( button_line_ln < form_width ) {
         button_line_pad = ( form_width - button_line_ln ) / 2;
     }
-    //[ Buttons ]                                      rows        cols              y   x
+    //[ Buttons ]                                      rows        cols              y                                 x
     rsfind->cache.fields[ BUTTON_CANCEL ] = new_field( row_height, max_button_width, private.row_pos[ BUTTON_CANCEL ], button_line_pad, 0, 0 );
     rsfind->cache.fields[ BUTTON_SAVE   ] = new_field( row_height, max_button_width, private.row_pos[ BUTTON_SAVE   ], ( button_line_pad + max_button_width + button_separation ), 0, 0 );
     rsfind->cache.fields[ FIELD_LAST    ] = NULL;
@@ -639,19 +639,19 @@ static bool ctune_UI_RSFind_createFields( ctune_UI_RSFind_t * rsfind ) {
     if( err_state )
         return false;
 
-    set_field_opts( rsfind->cache.fields[ LABEL_EXACT         ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    set_field_opts( rsfind->cache.fields[ LABEL_NAME          ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    set_field_opts( rsfind->cache.fields[ LABEL_COUNTRY       ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    set_field_opts( rsfind->cache.fields[ LABEL_COUNTRY_CODE  ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    set_field_opts( rsfind->cache.fields[ LABEL_STATE         ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    set_field_opts( rsfind->cache.fields[ LABEL_LANGUAGE      ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    set_field_opts( rsfind->cache.fields[ LABEL_TAGS          ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    set_field_opts( rsfind->cache.fields[ LABEL_CODEC         ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    set_field_opts( rsfind->cache.fields[ LABEL_BITRATE       ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    set_field_opts( rsfind->cache.fields[ LABEL_BITRATE_TO    ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    set_field_opts( rsfind->cache.fields[ LABEL_BITRATE_UNIT  ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    set_field_opts( rsfind->cache.fields[ LABEL_ORDER_BY      ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    set_field_opts( rsfind->cache.fields[ LABEL_REVERSE       ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    set_field_opts( rsfind->cache.fields[ LABEL_EXACT          ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    set_field_opts( rsfind->cache.fields[ LABEL_NAME           ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    set_field_opts( rsfind->cache.fields[ LABEL_COUNTRY        ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    set_field_opts( rsfind->cache.fields[ LABEL_COUNTRY_CODE   ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    set_field_opts( rsfind->cache.fields[ LABEL_STATE          ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    set_field_opts( rsfind->cache.fields[ LABEL_LANGUAGE       ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    set_field_opts( rsfind->cache.fields[ LABEL_TAGS           ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    set_field_opts( rsfind->cache.fields[ LABEL_CODEC          ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    set_field_opts( rsfind->cache.fields[ LABEL_BITRATE        ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    set_field_opts( rsfind->cache.fields[ LABEL_BITRATE_TO     ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    set_field_opts( rsfind->cache.fields[ LABEL_BITRATE_UNIT   ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    set_field_opts( rsfind->cache.fields[ LABEL_ORDER_BY       ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    set_field_opts( rsfind->cache.fields[ LABEL_REVERSE        ], O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
 
     set_field_opts( rsfind->cache.fields[ INPUT_NAME           ], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE | O_NULLOK );
     set_field_opts( rsfind->cache.fields[ INPUT_COUNTRY        ], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE | O_NULLOK );
@@ -673,7 +673,7 @@ static bool ctune_UI_RSFind_createFields( ctune_UI_RSFind_t * rsfind ) {
     set_field_opts( rsfind->cache.fields[ INPUT_TAGS_EXACT     ], O_VISIBLE | O_PUBLIC | O_ACTIVE | O_STATIC );
 
     set_field_opts( rsfind->cache.fields[ BUTTON_CANCEL        ], O_VISIBLE | O_PUBLIC | O_ACTIVE | O_STATIC );
-    set_field_opts( rsfind->cache.fields[ BUTTON_SAVE        ], O_VISIBLE | O_PUBLIC | O_ACTIVE | O_STATIC );
+    set_field_opts( rsfind->cache.fields[ BUTTON_SAVE          ], O_VISIBLE | O_PUBLIC | O_ACTIVE | O_STATIC );
 
     CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_RSFind_createFields()] Fields created." );
     return true;
