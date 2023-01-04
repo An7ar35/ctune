@@ -55,30 +55,30 @@ The configuration is generated at first launch in `~/.config/ctune/ctune.cfg`. T
 
 ### Editable values
 
-| Configuration string | Value type | Default value | Description |
-| -------------------- | ---------- | ------------- | ----------- |
-| `IO::Plugin::Player` | string | `ffmpeg` | Player plugin to use (`ffmpeg`, `vlc` ) |
-| `IO::Plugin::SoundServer` | string | `pulse` | Sound output plugin to use (`pulse`, `alsa`, `sdl`, `sndio`) |
-| `IO::OverwritePlayLog` | bool | `true` | Flag to overwrite play-log instead of appending to it |
-| `IO::StreamTimeout` | unsigned int | `5` | Timeout value for streaming in seconds* |
-| `IO::NetworkTimeout` | unsigned int | `8` | Timeout value for the network calls in seconds |
-| `UI::Favourites::HideTheming` | bool | `false` | Flag to hide source theming on the Favourites tab |
-| `UI::Favourites::UseLargeRows` | bool | `true` | Flag to use large format row entries in the Favourites tab |
-| `UI::Search::UseLargeRows` | bool | `true` | Flag to use large format row entries in the Search tab |
-| `UI::Browser::UseLargeRows` | bool | `false` | Flag to use large format row entries in the Browser tab |
-| `UI::Theme` | colour pair | `{WHITE,BLACK}` | Base theme colours (foreground, background) |
-| `UI::Theme::row` | colour pair | `{WHITE,BLACK}` | Base theme colours for row entries (foreground, background) |
-| `UI::Theme::row::selected::focused` | colour pair | `{WHITE,BLUE}` | Theme colours for selected and in-focus row entries |
-| `UI::Theme::row::selected::unfocused` | colour pair | `{BLACK,WHITE}` | Theme colours for selected and out-of-focus row entries |
-| `UI::Theme::row::favourite::local` | colour | `MAGENTA` | Text colour for a local based station's name on the row entry |
-| `UI::Theme::row::favourite::remote` | colour | `YELLOW` | Text colour for a remote based station's name on the row entry |
-| `UI::Theme::icon::playback::on` | colour | `GREEN` | Text colour for the playback icon when playing state is true ( <span style="color:green">></span> ) |
-| `UI::Theme::icon::playback::off` | colour | `RED` | Text colour for the playback icon when playing state is false ( <span style="color:red">.</span> ) |
-| `UI::Theme::icon::queued` | colour | `CYAN` | Text colour for the queued indicator on the corresponding row entry ( <span style="color:cyan">></span> ) |
-| `UI::Theme::field::invalid` | colour | `RED` | Text colour for an invalid field |
-| `UI::Theme::button` | colour pair | `{WHITE,BLACK}` | Theme colours for buttons |
-| `UI::Theme::button::invalid` | colour | `RED` | Validation button colour when linked action fails |
-| `UI::Theme::button::validated` | colour | `GREEN` | Validation button colour when linked action is successful |
+| Configuration string                  | Value type | Default value   | Description                                                                                              |
+|---------------------------------------| ---------- |-----------------|----------------------------------------------------------------------------------------------------------|
+| `IO::Plugin::Player`                  | string | `ffmpeg`        | Player plugin to use (`ffmpeg`, `vlc` )                                                                  |
+| `IO::Plugin::SoundServer`             | string | `pulse`         | Sound output plugin to use (`pulse`, `alsa`, `sdl`, `sndio`)                                             |
+| `IO::OverwritePlayLog`                | bool | `true`          | Flag to overwrite play-log instead of appending to it                                                    |
+| `IO::StreamTimeout`                   | unsigned int | `5`             | Timeout value for streaming in seconds*                                                                  |
+| `IO::NetworkTimeout`                  | unsigned int | `8`             | Timeout value for the network calls in seconds                                                           |
+| `UI::Favourites::ShowTheme`           | bool | `true`            | Flag to show source theming on the Favourites tab                                                        |
+| `UI::Favourites::UseLargeRows`        | bool | `true`          | Flag to use large format row entries in the Favourites tab                                               |
+| `UI::Search::UseLargeRows`            | bool | `true`          | Flag to use large format row entries in the Search tab                                                   |
+| `UI::Browser::UseLargeRows`           | bool | `false`         | Flag to use large format row entries in the Browser tab                                                  |
+| `UI::Theme`                           | colour pair | `{WHITE,BLACK}` | Base theme colours (foreground, background)                                                              |
+| `UI::Theme::row`                      | colour pair | `{WHITE,BLACK}` | Base theme colours for row entries (foreground, background)                                              |
+| `UI::Theme::row::selected::focused`   | colour pair | `{WHITE,BLUE}`  | Theme colours for selected and in-focus row entries                                                      |
+| `UI::Theme::row::selected::unfocused` | colour pair | `{BLACK,WHITE}` | Theme colours for selected and out-of-focus row entries                                                  |
+| `UI::Theme::row::favourite::local`    | colour | `MAGENTA`       | Text colour for a local based station's name on the row entry                                            |
+| `UI::Theme::row::favourite::remote`   | colour | `YELLOW`        | Text colour for a remote based station's name on the row entry                                           |
+| `UI::Theme::icon::playback::on`       | colour | `GREEN`         | Text colour for the playback icon when playing state is true ( <span style="color:green">></span> )      |
+| `UI::Theme::icon::playback::off`      | colour | `RED`           | Text colour for the playback icon when playing state is false ( <span style="color:red">.</span> )       |
+| `UI::Theme::icon::queued`             | colour | `CYAN`          | Text colour for the queued indicator on the corresponding row entry ( <span style="color:cyan">></span> ) |
+| `UI::Theme::field::invalid`           | colour | `RED`           | Text colour for an invalid field                                                                         |
+| `UI::Theme::button`                   | colour pair | `{WHITE,BLACK}` | Theme colours for buttons                                                                                |
+| `UI::Theme::button::invalid`          | colour | `RED`           | Validation button colour when linked action fails                                                        |
+| `UI::Theme::button::validated`        | colour | `GREEN`         | Validation button colour when linked action is successful                                                |
 
 Colour values available: `BLACK`, `RED`, `GREEN`, `YELLOW`, `BLUE`, `MAGENTA`, `CYAN`, `WHITE`
 

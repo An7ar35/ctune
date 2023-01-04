@@ -555,38 +555,6 @@ struct ctune_ColourTheme * ctune_Controller_getUiTheme( void ) {
 }
 
 /**
- * Gets the theming requirements for the stations inside the 'Favourites' tab
- * @returns Flag state to use theming
- */
-static bool ctune_Controller_favTabThemingState( void ) {
-    return !controller.ui_config.fav_tab.hide_fav_theming;
-}
-
-/**
- * Gets the large row usage requirements for the Favourites tab
- * @return Flag state to use large row
- */
-static bool ctune_Controller_largeRowsForFavTab( void ) {
-    return controller.ui_config.fav_tab.large_rows;
-}
-
-/**
- * Gets the large row usage requirements for the Search Results tab
- * @return Flag state to use large row
- */
-static bool ctune_Controller_largeRowsForSearchTab( void ) {
-    return controller.ui_config.search_tab.large_rows;
-}
-
-/**
- * Gets the large row usage requirements for the Browser tab
- * @return Flag state to use large row
- */
-static bool ctune_Controller_largeRowsForBrowserTab( void ) {
-    return controller.ui_config.browse_tab.large_rows;
-}
-
-/**
  * Gets a pointer to the internal UIConfig object
  * @return Pointer to ctune_UIConfig_t object
  */
@@ -684,10 +652,6 @@ const struct ctune_Controller_Instance ctune_Controller = {
         .getListOfFavourites    = &ctune_Controller_updateFavourites,
         .setFavouriteSorting    = &ctune_Controller_setFavouriteSorting,
         .getUiTheme             = &ctune_Controller_getUiTheme,
-        .favTabThemingState     = &ctune_Controller_favTabThemingState,
-        .largeRowsForFavTab     = &ctune_Controller_largeRowsForFavTab,
-        .largeRowsForSearchTab  = &ctune_Controller_largeRowsForSearchTab,
-        .largeRowsForBrowserTab = &ctune_Controller_largeRowsForBrowserTab,
         .getUIConfig            = &ctune_Controller_getUIConfig,
         .saveUIConfig           = &ctune_Controller_saveUIConfig,
     },

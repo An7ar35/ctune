@@ -100,11 +100,24 @@ typedef struct {
  */
 extern const struct ctune_UI_Widget_SlideMenu_Namespace {
     /**
-     * Initialises a slide menu
+     * Creates a slide menu without a known canvas (use `setCanvasProperties(..)` to set one prior to usage)
+     * @return ctune_UI_SlideMenu_t object
+     */
+    ctune_UI_SlideMenu_t (* create)( void );
+
+    /**
+     * Creates a slide menu with a known canvas
      * @param canvas_property Pointer to canvas sizes to abide to
      * @return ctune_UI_SlideMenu_t object
      */
     ctune_UI_SlideMenu_t (* init)( const WindowProperty_t * canvas_property );
+
+    /**
+     * Sets a canvas for the slide menu
+     * @param menu ctune_UI_SlideMenu_t object
+     * @param canvas_property Pointer to canvas sizes to abide to
+     */
+    void (* setCanvasProperties)( ctune_UI_SlideMenu_t * menu, const WindowProperty_t * canvas_property );
 
     /**
      * Create/allocates a sub-menu
@@ -122,9 +135,9 @@ extern const struct ctune_UI_Widget_SlideMenu_Namespace {
      * @param text    Display text for item
      * @param data    Optional pointer to data associated with the menu item (NULL for none)
      * @param ctrl_fn Control function for item (or NULL for none)
-     * @return Success
+     * @return Pointer to menu item (NULL on failure)
      */
-    bool (* createMenuItem)( ctune_UI_SlideMenu_Menu_t * menu, ctune_UI_SlideMenu_ItemType_e type, const char * text, void * data, bool (* ctrl_fn)( ctune_UI_SlideMenu_Item_t * ) );
+    ctune_UI_SlideMenu_Item_t * (* createMenuItem)( ctune_UI_SlideMenu_Menu_t * menu, ctune_UI_SlideMenu_ItemType_e type, const char * text, void * data, bool (* ctrl_fn)( ctune_UI_SlideMenu_Item_t * ) );
 
     /**
      * Sets the redraw flag on

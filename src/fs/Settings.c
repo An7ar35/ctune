@@ -23,7 +23,7 @@
 #define CFG_KEY_OVERWRITE_PLAYLOG               "IO::OverwritePlayLog"
 #define CFG_KEY_STREAM_TIMEOUT                  "IO::StreamTimeout"
 #define CFG_KEY_NETWORK_TIMEOUT                 "IO::NetworkTimeout"
-#define CFG_KEY_UI_FAVTAB_HIDE_THEMING          "UI::Favourites::HideTheming"
+#define CFG_KEY_UI_FAVTAB_SHOW_THEMING          "UI::Favourites::ShowTheme"
 #define CFG_KEY_UI_FAVTAB_LRG                   "UI::Favourites::UseLargeRows"
 #define CFG_KEY_UI_FAVTAB_SORTBY                "UI::Favourites::SortBy"
 #define CFG_KEY_UI_SEARCHTAB_LRG                "UI::Search::UseLargeRows"
@@ -138,7 +138,7 @@ static struct ctune_Settings_Cfg {
     },
 
     .ui = { //defaults
-        .fav_tab.hide_fav_theming = false,
+        .fav_tab.theme_favourites = true,
         .fav_tab.large_rows       = true,
         .search_tab.large_rows    = true,
         .browse_tab.large_rows    = false,
@@ -723,8 +723,8 @@ static bool ctune_Settings_loadCfg() {
             } else if( strcmp( CFG_KEY_STREAM_TIMEOUT, key._raw ) == 0 ) { //int
                 error = !ctune_Parser_KVPairs.validateInteger( &val, &config.timeout_stream_val );
 
-            } else if( strcmp( CFG_KEY_UI_FAVTAB_HIDE_THEMING, key._raw ) == 0 ) { //bool
-                error = !ctune_Parser_KVPairs.validateBoolean( &val, &config.ui.fav_tab.hide_fav_theming );
+            } else if( strcmp( CFG_KEY_UI_FAVTAB_SHOW_THEMING, key._raw ) == 0 ) { //bool
+                error = !ctune_Parser_KVPairs.validateBoolean( &val, &config.ui.fav_tab.theme_favourites );
 
             } else if( strcmp( CFG_KEY_NETWORK_TIMEOUT, key._raw ) == 0 ) { //int
                 error = !ctune_Parser_KVPairs.validateInteger( &val, &config.timeout_network_val );
@@ -842,7 +842,7 @@ static bool ctune_Settings_writeCfg() {
     ret[ 6] = fprintf( file, "%s=%d\n", CFG_KEY_STREAM_TIMEOUT, config.timeout_stream_val );
     ret[ 7] = fprintf( file, "%s=%d\n", CFG_KEY_NETWORK_TIMEOUT, config.timeout_network_val );
 
-    ret[ 8] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_HIDE_THEMING, ( config.ui.fav_tab.hide_fav_theming ? "true" : "false" ) );
+    ret[ 8] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_SHOW_THEMING, ( config.ui.fav_tab.theme_favourites ? "true" : "false" ) );
     ret[ 9] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_LRG, ( config.ui.fav_tab.large_rows ? "true" : "false" ) );
     ret[10] = fprintf( file, "%s=%i\n", CFG_KEY_UI_FAVTAB_SORTBY, favourites.sort_id );
     ret[11] = fprintf( file, "%s=%s\n", CFG_KEY_UI_SEARCHTAB_LRG, ( config.ui.search_tab.large_rows ? "true" : "false" ) );

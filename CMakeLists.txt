@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.17)
 project(ctune
         LANGUAGES    C
-        VERSION      1.0.14
+        VERSION      1.1.0
         DESCRIPTION  "Curses based Internet radio tuner"
         HOMEPAGE_URL "eadavison.com")
 
 set(PROJECT_AUTHOR "E.A.Davison")
-set(PROJECT_YEARS  "2020-22")
+set(PROJECT_YEARS  "2020-23")
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_FLAGS "-Wall")
@@ -157,6 +157,7 @@ set(SOURCE_FILES
         src/dto/Field.h
         src/enum/ByCategory.h
         src/enum/ByCategory.c
+        src/enum/Flag.h
         src/enum/ListCategory.c
         src/enum/ListCategory.h
         src/enum/PlaybackCtrl.h

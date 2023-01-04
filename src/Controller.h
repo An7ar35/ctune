@@ -175,30 +175,6 @@ extern const struct ctune_Controller_Instance {
         struct ctune_ColourTheme * (* getUiTheme)( void );
 
         /**
-         * Gets the theming requirements for the stations inside the 'Favourites' tab
-         * @returns Flag state to use theming
-         */
-        bool (* favTabThemingState)( void );
-
-        /**
-         * Gets the large row usage requirements for the Favourites tab
-         * @return Flag state to use large row
-         */
-        bool (* largeRowsForFavTab)( void );
-
-        /**
-         * Gets the large row usage requirements for the Search Results tab
-         * @return Flag state to use large row
-         */
-        bool (* largeRowsForSearchTab)( void );
-
-        /**
-         * Gets the large row usage requirements for the Browser tab
-         * @return Flag state to use large row
-         */
-        bool (* largeRowsForBrowserTab)( void );
-
-        /**
          * Gets a pointer to the internal UIConfig object
          * @return Pointer to ctune_UIConfig_t object
          */

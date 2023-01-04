@@ -460,7 +460,7 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
     frame           = av_frame_alloc();
     out_buffer_size = ctune_Player_createBuffer( &out_buffer, ffmpeg_player.out_channel_layout.nb_channels, in_codec_param->frame_size, ffmpeg_player.out_sample_fmt.ffmpeg );
 
-    if( out_buffer_size <= 0 ) { //TODO uncomment once the rest of the function has depreciated stuff updated
+    if( out_buffer_size <= 0 ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_Player_playRadioStream( \"%s\", %i, %is )] Error creating buffer.",
                    radio_stream_url, volume, timeout_val

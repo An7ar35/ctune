@@ -1,4 +1,4 @@
-% CTUNE(1) ctune 1.0.14
+% CTUNE(1) ctune 1.1.0
 % E.A.Davison
 % June 2021
 
@@ -51,4 +51,4 @@ Please refer to the in-application help dialog (default key: F1) for key binding
 
 # COPYRIGHT
 
-Copyright @ 2020-22 E.A.Davison. License AGPLv3 <https://www.gnu.org/licenses/agpl-3.0.en.html>.
+Copyright @ 2020-23 E.A.Davison. License AGPLv3 <https://www.gnu.org/licenses/agpl-3.0.en.html>.
