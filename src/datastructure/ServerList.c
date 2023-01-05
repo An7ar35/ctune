@@ -380,12 +380,12 @@ static ServerListNode * ctune_ServerList_extract_node( struct ctune_ServerList *
  * @return Pointer of node located at given index (NULL if out-of-range)
  */
 static ServerListNode * ctune_ServerList_at( struct ctune_ServerList * list, size_t n ) {
-    if( list == NULL || n < 0 || n >= list->_length ) {
+    if( list == NULL || n >= list->_length ) {
         fprintf( stderr, "[ServerList.at( %p, %lu )] Out of range.", list, n );
         return NULL;
     }
 
-    int              i    = 0;
+    size_t           i    = 0;
     ServerListNode * curr = list->_front;
 
     while( i < n ) {

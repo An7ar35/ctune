@@ -1097,8 +1097,6 @@ static bool ctune_parser_JSON_parseRadioStationListToJSON( const struct Vector *
         const ctune_RadioStationInfo_t * rsi     = Vector.at( (Vector_t *) stations, i );
         json_object                    * station = json_object_new_object();
 
-        //TODO create an
-
         err[ 0] = json_object_object_add( station, "changeuuid", json_object_new_string( ( ctune_RadioStationInfo.get.changeUUID( rsi ) != NULL ? ctune_RadioStationInfo.get.changeUUID( rsi ) : "" ) ) );
         err[ 1] = json_object_object_add( station, "stationuuid", json_object_new_string( ( ctune_RadioStationInfo.get.stationUUID( rsi ) != NULL ? ctune_RadioStationInfo.get.stationUUID( rsi ) : "" ) ) );
         err[ 2] = json_object_object_add( station, "serveruuid", json_object_new_string( ( ctune_RadioStationInfo.get.serverUUID( rsi ) != NULL ? ctune_RadioStationInfo.get.serverUUID( rsi ) : "" ) ) );

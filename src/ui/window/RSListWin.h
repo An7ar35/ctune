@@ -28,14 +28,14 @@ typedef struct ctune_UI_Window_RSListWin {
     bool                     in_focus;
 
     struct {
-        bool               large_row;
-        bool               theme_favs;
-        int                row_height;
-        size_t             first_on_page;
-        size_t             last_on_page;
-        size_t             selected;
-        bool               show_ctrl_row;
-        bool               (* ctrl_row_fn)( struct ctune_UI_Window_RSListWin * win ); //special control row positioned after the `last` RSI row
+        bool   large_row;
+        bool   theme_favs;
+        int    row_height;
+        size_t first_on_page;
+        size_t last_on_page;
+        size_t selected;
+        bool   show_ctrl_row;
+        bool   (* ctrl_row_fn)( struct ctune_UI_Window_RSListWin * win ); //special control row positioned after the `last` RSI row
     } row;
 
     struct {

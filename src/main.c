@@ -57,10 +57,12 @@ int main( int argc, char * argv[] ) {
 
         case CTUNE_CLI_EXIT_OK:
             ctune_CLI.free();
+            ctune_Settings.rtlock.unlock();
             exit( OK ); //EARLY EXIT
 
         case CTUNE_CLI_EXIT_ERR:
             ctune_CLI.free();
+            ctune_Settings.rtlock.unlock();
             exit( ERR ); //EARLY EXIT
 
         case CTUNE_CLI_CONTINUE_WITH_OPT: {
@@ -176,6 +178,7 @@ static bool ctune_init( const ctune_ArgOptions_t * options ) {
     ctune_Controller.setVolumeChangeEventCallback( ctune_UI.printVolume );
     ctune_Controller.setPlaybackStateChangeEventCallback( ctune_UI.printPlaybackState );
     ctune_Controller.setSearchStateChangeEventCallback( ctune_UI.printSearchingState );
+    ctune_Controller.setResizeUIEventCallback( ctune_UI.resize );
 
     /* UI */
     if( !ctune_UI.setup( options->ui.show_cursor ) ) {
@@ -228,10 +231,11 @@ void ctune_setupSigHandler() {
     signal_handler.sa_sigaction = ctune_handleSignal;
     signal_handler.sa_flags     = SA_SIGINFO;
 
-    sigaction( SIGINT, &signal_handler, NULL );
-    sigaction( SIGTERM, &signal_handler, NULL );
-    sigaction( SIGQUIT, &signal_handler, NULL );
-    sigaction( SIGTSTP, &signal_handler, NULL );
+    sigaction( SIGWINCH, &signal_handler, NULL );
+    sigaction( SIGINT,   &signal_handler, NULL );
+    sigaction( SIGTERM,  &signal_handler, NULL );
+    sigaction( SIGQUIT,  &signal_handler, NULL );
+    sigaction( SIGTSTP,  &signal_handler, NULL );
 }
 
 /**
@@ -242,6 +246,10 @@ void ctune_setupSigHandler() {
  */
 void ctune_handleSignal( int signo, siginfo_t * info, void * context ) {
     switch( signo ) {
+        case SIGWINCH: //terminal resize event
+            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught interrupt signal (SIGWINCH).", signo );
+            ctune_Controller.resizeUI();
+            break;
         case SIGINT: //interrupt (^C)
             CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught interrupt signal (^C).", signo );
             ctune_shutdown();

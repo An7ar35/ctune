@@ -7,6 +7,7 @@
 #include "dto/ArgOptions.h"
 #include "dto/RadioBrowserFilter.h"
 #include "dto/RadioStationInfo.h"
+#include "dto/UIConfig.h"
 #include "enum/StationSrc.h"
 #include "enum/PlaybackCtrl.h"
 #include "enum/SearchCtrl.h"
@@ -25,6 +26,11 @@ extern const struct ctune_Controller_Instance {
      * @param opts Options
      */
     void (* load)( ctune_ArgOptions_t * opts );
+
+    /**
+     * Call the resize callback method if set
+     */
+    void (* resizeUI)( void );
 
     /**
      * Shutdown and cleanup cTune
@@ -169,30 +175,23 @@ extern const struct ctune_Controller_Instance {
         struct ctune_ColourTheme * (* getUiTheme)( void );
 
         /**
-         * Gets the theming requirements for the stations inside the 'Favourites' tab
-         * @returns Flag state to use theming
+         * Gets a pointer to the internal UIConfig object
+         * @return Pointer to ctune_UIConfig_t object
          */
-        bool (* favTabThemingState)( void );
+        ctune_UIConfig_t * (* getUIConfig)( void );
 
         /**
-         * Gets the large row usage requirements for the Favourites tab
-         * @return Flag state to use large row
+         * Saves the internal UIConfig_t object to the Settings component
          */
-        bool (* largeRowsForFavTab)( void );
-
-        /**
-         * Gets the large row usage requirements for the Search Results tab
-         * @return Flag state to use large row
-         */
-        bool (* largeRowsForSearchTab)( void );
-
-        /**
-         * Gets the large row usage requirements for the Browser tab
-         * @return Flag state to use large row
-         */
-        bool (* largeRowsForBrowserTab)( void );
+        void (* saveUIConfig)( void );
 
     } cfg;
+
+    /**
+     * Sets a callback for resize events
+     * @param cb Callback method
+     */
+    void (* setResizeUIEventCallback)( void(* cb)( void ) );
 
     /**
      * [OPTIONAL] Sets a callback for the volume change event

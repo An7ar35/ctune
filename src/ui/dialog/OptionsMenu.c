@@ -4,19 +4,16 @@
 #include "../definitions/Theme.h"
 #include "../Resizer.h"
 
-enum RootMenuItems { ROOT_ITEM_SORT = 0,    ROOT_ITEM_NEW,     ROOT_ITEM_EDIT,      ROOT_ITEM_TOGGLE,
-                     ROOT_ITEM_SYNC,        ROOT_ITEM_COUNT };
-
-enum SortMenuItems { SORT_ITEM_GO_BACK = 0, SORT_ITEM_NAME,    SORT_ITEM_NAME_R,    SORT_ITEM_TAGS,
-                     SORT_ITEM_TAGS_R,      SORT_ITEM_COUNTRY, SORT_ITEM_COUNTRY_R, SORT_ITEM_CC,
-                     SORT_ITEM_CC_R,        SORT_ITEM_STATE,   SORT_ITEM_STATE_R,   SORT_ITEM_LANGUAGE,
-                     SORT_ITEM_LANGUAGE_R,  SORT_ITEM_CODEC,   SORT_ITEM_CODEC_R,   SORT_ITEM_BITRATE,
-                     SORT_ITEM_BITRATE_R,   SORT_ITEM_SOURCE,  SORT_ITEM_SOURCE_R,  SORT_ITEM_COUNT };
-
 typedef struct {
     ctune_UI_PanelID_e * curr_panel;
     void (* action)( ctune_UI_PanelID_e tab );
-} CbPayload_t ;
+} GenericCbPayload_t;
+
+typedef struct {
+    ctune_UI_PanelID_e * curr_panel;
+    ctune_Flag_e         flag;
+    bool (* action)( ctune_UI_PanelID_e tab, ctune_Flag_e action_flag );
+} FlaggedCbPayload_t ;
 
 typedef struct {
     ctune_UI_PanelID_e            * curr_panel;
@@ -25,13 +22,17 @@ typedef struct {
 } SortCbPayload_t;
 
 /**
- * [PRIVATE] Helper method to create a CbPayload_t in the cache
- * @param om Pointer to ctune_UI_OptionsMenu_t object
- * @param fn Method callback
+ * [PRIVATE] Helper method to create a GenericCbPayload_t
+ * @param om            Pointer to ctune_UI_OptionsMenu_t object
+ * @parma payload_store Vector of payloads to add new payload to
+ * @param fn            Method callback
  * @return Pointer to created payload or NULL if error
  */
-static CbPayload_t * ctune_UI_Dialog_OptionsMenu_createCbPayload( ctune_UI_OptionsMenu_t * om, void (* fn)( ctune_UI_PanelID_e ) ) {
-    CbPayload_t * payload = Vector.emplace_back( &om->cache.lvl1_menu_payloads );
+static GenericCbPayload_t * ctune_UI_Dialog_OptionsMenu_createGenericCbPayload( ctune_UI_OptionsMenu_t * om,
+                                                                                Vector_t * payload_store,
+                                                                                void (* fn)( ctune_UI_PanelID_e ) )
+{
+    GenericCbPayload_t * payload = Vector.emplace_back( payload_store );
 
     if( payload != NULL ) {
         payload->curr_panel = &om->cache.curr_panel_id;
@@ -39,27 +40,58 @@ static CbPayload_t * ctune_UI_Dialog_OptionsMenu_createCbPayload( ctune_UI_Optio
 
     } else {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_UI_Dialog_OptionsMenu_createCbPayload( %p, %p )] "
+                   "[ctune_UI_Dialog_OptionsMenu_createGenericCbPayload( %p, %p, %p )] "
                    "Failed to create payload.",
-                   om, fn );
+                   om, payload_store, fn );
     }
 
     return payload;
 }
 
 /**
- * [PRIVATE] Helper method to create a CbPayload_t in the cache
- * @param om Pointer to ctune_UI_OptionsMenu_t object
- * @param fn Method callback
- * @param attr Station attribute to sort by
- * @param reverse Flag to reverse the sorting of the attribute
+ * [PRIVATE] Helper method to create a FlaggedCbPayload_t
+ * @param om            Pointer to ctune_UI_OptionsMenu_t object
+ * @param payload_store Vector of payloads to add new payload to
+ * @param fn            Method callback
+ * @param flag          Flag to pass to the callback
+ * @return Pointer to created payload or NULL if error
+ */
+static FlaggedCbPayload_t * ctune_UI_Dialog_OptionsMenu_createFlaggedCbPayload( ctune_UI_OptionsMenu_t * om,
+                                                                                Vector_t * payload_store,
+                                                                                bool (* fn)( ctune_UI_PanelID_e, ctune_Flag_e ),
+                                                                                ctune_Flag_e flag )
+{
+    FlaggedCbPayload_t * payload = Vector.emplace_back( payload_store );
+
+    if( payload != NULL ) {
+        payload->curr_panel = &om->cache.curr_panel_id;
+        payload->flag       = flag;
+        payload->action     = fn;
+
+    } else {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_UI_Dialog_OptionsMenu_createFlaggedCbPayload( %p, %p, %p, %i )] "
+                   "Failed to create payload.",
+                   om, payload_store, fn, flag );
+    }
+
+    return payload;
+}
+
+/**
+ * [PRIVATE] Helper method to create a SortCbPayload_t
+ * @param om            Pointer to ctune_UI_OptionsMenu_t object
+ * @param payload_store Vector of payloads to add new payload to
+ * @param fn            Method callback
+ * @param attr          Station attribute to sort by
  * @return Pointer to created payload or NULL if error
  */
 static SortCbPayload_t * ctune_UI_Dialog_OptionsMenu_createSortCbPayload( ctune_UI_OptionsMenu_t * om,
+                                                                          Vector_t * payload_store,
                                                                           void (* fn)( ctune_UI_PanelID_e, ctune_RadioStationInfo_SortBy_e ),
                                                                           ctune_RadioStationInfo_SortBy_e attr )
 {
-    SortCbPayload_t * payload = Vector.emplace_back( &om->cache.lvl2_menu_payloads );
+    SortCbPayload_t * payload = Vector.emplace_back( payload_store );
 
     if( payload != NULL ) {
         payload->curr_panel = &om->cache.curr_panel_id;
@@ -68,9 +100,9 @@ static SortCbPayload_t * ctune_UI_Dialog_OptionsMenu_createSortCbPayload( ctune_
 
     } else {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_UI_Dialog_OptionsMenu_createSortCbPayload( %p, %p, %i )] "
+                   "[ctune_UI_Dialog_OptionsMenu_createSortCbPayload( %p, %p, %p, %i )] "
                    "Failed to create payload.",
-                   om, fn, attr
+                   om, payload_store, fn, attr
         );
     }
 
@@ -78,12 +110,12 @@ static SortCbPayload_t * ctune_UI_Dialog_OptionsMenu_createSortCbPayload( ctune_
 }
 
 /**
- * [PRIVATE] Root menu control method
+ * [PRIVATE] Generic menu control method
  * @param menu_item Current menu item
  * @return Success
  */
-static bool rootCtrlMenuFunctionCb( ctune_UI_SlideMenu_Item_t * menu_item ) {
-    CbPayload_t * payload = (CbPayload_t *) menu_item->data;
+static bool genericCtrlMenuFunctionCb( ctune_UI_SlideMenu_Item_t * menu_item ) {
+    GenericCbPayload_t * payload = (GenericCbPayload_t *) menu_item->data;
 
     if( payload == NULL || payload->curr_panel == NULL )
         return false; //EARLY RETURN
@@ -93,7 +125,7 @@ static bool rootCtrlMenuFunctionCb( ctune_UI_SlideMenu_Item_t * menu_item ) {
 }
 
 /**
- * [PRIVATE] Sort sub-menu control method
+ * [PRIVATE] Flagged sub-menu control method
  * @param menu_item Current menu item
  * @return Success
  */
@@ -108,35 +140,143 @@ static bool sortByCtrlFunctionCb( ctune_UI_SlideMenu_Item_t * menu_item ) {
 }
 
 /**
- * [PRIVATE] Calculates the display properties of the SlideMenu and BorderWin
- * @param om             Pointer to ctune_UI_OptionsMenu_t object
- * @param lvl1_menu_text Array of menu item display text for 1st level menu
- * @param lvl2_menu_text Array of menu item display text for 2nd level menu
+ * [PRIVATE] Sort sub-menu control method
+ * @param menu_item Current menu item
  * @return Success
  */
-static bool ctune_UI_Dialog_OptionsMenu_calculateProperties( ctune_UI_OptionsMenu_t * om, const char **lvl1_menu_text, const char **lvl2_menu_text ) {
-    bool                   error_state = false;
-    WindowProperty_t     * content     = &om->cache.slide_menu_property;
-    WindowProperty_t     * borders     = &om->cache.border_win_property;
-    const WindowMargin_t * margins     = &om->margins;
+static bool flaggedCtrlFunctionCb( ctune_UI_SlideMenu_Item_t * menu_item ) {
+    FlaggedCbPayload_t * payload = (FlaggedCbPayload_t *) menu_item->data;
 
-    { //optimum height/width for lvl1 menu to be shown
-        size_t max_txt_width = 0;
+    if( payload == NULL || payload->curr_panel == NULL )
+        return false; //EARLY RETURN
 
-        content->rows = ROOT_ITEM_COUNT;
+    payload->action( *payload->curr_panel, payload->flag );
+    return true;
+}
 
-        for( int i = 0; i < ROOT_ITEM_COUNT; ++i )
-            max_txt_width = ctune_max_ul( max_txt_width, strlen( lvl1_menu_text[ i ] ) );
 
-        for( int i = 0; i < SORT_ITEM_COUNT; ++i )
-            max_txt_width = ctune_max_ul( max_txt_width, strlen( lvl2_menu_text[ i ] ) );
+/**
+ * [PRIVATE] Calculate the display properties for the menu items in teh context of the menu
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @param array Menu item text array
+ * @param array_len Menu item text array length
+ * @return Success
+ */
+static bool ctune_UI_Dialog_OptionsMenu_calculateMenuItemProperties( ctune_UI_OptionsMenu_t * om, const char **array, int array_len ) {
+    WindowProperty_t * content       = &om->cache.slide_menu_property;
+    size_t             max_txt_width = content->cols;
 
-        max_txt_width += 4; //to have space for the scrolling bar and '<', '>' nav indicators
+    for( int i = 0; i < array_len; ++i ) {
+        max_txt_width = ctune_max_ul( max_txt_width, strlen( array[ i ] ) );
+    }
 
-        if( !ctune_utoi( max_txt_width, &content->cols ) ) {
-            CTUNE_LOG( CTUNE_LOG_FATAL,
-                       "[ctune_UI_Dialog_OptionsMenu_calculateSlideMenuProperties( %p )] Failed to cast to integer (%lu).",
-                       om, max_txt_width
+    if( !ctune_utoi( max_txt_width, &content->cols ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL,
+                   "[ctune_UI_Dialog_OptionsMenu_calculateMenuItemProperties( %p, %p, %d )] Failed to cast to integer (%lu).",
+                   om, array, array_len, max_txt_width
+        );
+
+        return false; //EARLY RETURN
+    }
+
+    return true;
+}
+
+/**
+ * [PRIVATE] Calculate the display properties for the menu in the context of the parent display
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @return Success
+ */
+bool ctune_UI_Dialog_OptionsMenu_calculateMenuDisplayProperties( ctune_UI_OptionsMenu_t * om ) {
+    const WindowMargin_t * margins = &om->margins;
+    WindowProperty_t     * borders = &om->cache.border_win_property;
+    WindowProperty_t     * content = &om->cache.slide_menu_property;
+
+    content->rows = 6; //optimum height for root menu
+
+    size_t max_text_width = content->cols + 5; //to have space for the scrolling bar and '<', '>' nav indicators
+
+    if( !ctune_utoi( max_text_width, &content->cols ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL,
+                   "[ctune_UI_Dialog_OptionsMenu_calculateSlideMenuProperties( %p )] Failed to cast to integer (%lu).",
+                   om, max_text_width
+        );
+
+        return false; //EARLY RETURN
+    }
+
+    const int border_t = 1;
+    const int border_b = 1;
+    const int border_l = 1;
+    const int border_r = 1;
+
+    const int max_content_width  = ( om->parent->cols - margins->left - margins->right  - border_l - border_r );
+    const int max_content_height = ( om->parent->rows - margins->top  - margins->bottom - border_t - border_b );
+
+    if( content->cols > max_content_width ) {
+        CTUNE_LOG( CTUNE_LOG_WARNING,
+                   "[ctune_UI_Dialog_OptionsMenu_calculateDisplayProperties( %p )] "
+                   "SlideMenu content too wide - clipping will occur.",
+                   om
+        );
+    }
+
+    if( content->rows > max_content_height ) {
+        CTUNE_LOG( CTUNE_LOG_DEBUG,
+                   "[ctune_UI_Dialog_OptionsMenu_calculateDisplayProperties( %p )] "
+                   "SlideMenu content too tall - scrolling enabled.",
+                   om
+        );
+    }
+
+    content->rows  = ( content->rows > max_content_height ? max_content_height : content->rows );
+    content->cols  = ( content->cols > max_content_width  ? max_content_width  : content->cols );
+
+    borders->rows  = ( content->rows + margins->top  + margins->bottom + border_t + border_b );
+    borders->cols  = ( content->cols + margins->left + margins->right  + border_l + border_r );
+
+    content->pos_y = ( content->rows > max_content_height ? 0 : ( ( om->parent->rows - borders->rows ) / 2 ) );
+    content->pos_x = ( content->cols > max_content_width  ? 0 : ( ( om->parent->cols - borders->cols ) / 2 ) );
+
+    borders->pos_y = ( content->pos_y - margins->top  - border_t );
+    borders->pos_x = ( content->pos_x - margins->left - border_l );
+
+    return true;
+}
+
+/**
+ * [PRIVATE] Populates the "configuration" sub-menu
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @param root Pointer to SlideMenu item from which to spawn the menu from
+ * @return Success
+ */
+static bool ctune_UI_Dialog_OptionsMenu_populateConfigMenu( ctune_UI_OptionsMenu_t * om, ctune_UI_SlideMenu_Item_t * root ) {
+    bool error_state = false;
+
+    if( ctune_UI_SlideMenu.createMenu( &root->sub_menu, root->parent_menu, root->index ) == NULL ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_UI_Dialog_OptionsMenu_populateConfigMenu( %p, %p )] "
+                   "Failed to create sub menu for item ('%s').",
+                   om, root, root->text._raw
+        );
+
+        error_state = true;
+        goto end;
+    }
+
+    size_t max_text_width = om->cache.slide_menu_property.cols;
+
+    { //"Go back" entry
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_CONFIGURATION );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_PARENT, text, NULL, NULL );
+
+        if( menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateConfigMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
             );
 
             error_state = true;
@@ -144,42 +284,52 @@ static bool ctune_UI_Dialog_OptionsMenu_calculateProperties( ctune_UI_OptionsMen
         }
     }
 
-    { //adjust h/w based on parent screen real estate and taking into account the borders and margins
-        const int border_t = 1;
-        const int border_b = 1;
-        const int border_l = 1;
-        const int border_r = 1;
+    if( om->cb.listRowSizeLarge != NULL ) { //"Set row size" entry
+        const bool         curr_state = om->cb.listRowSizeLarge( om->cache.curr_panel_id, FLAG_GET_VALUE );
+        const ctune_Flag_e action     = ( curr_state ? FLAG_SET_OFF : FLAG_SET_ON );
+        const char *       text       = om->cb.getDisplayText( ( curr_state ? CTUNE_UI_TEXT_ROWSIZE_1X : CTUNE_UI_TEXT_ROWSIZE_2X ) );
 
-        const int max_content_width  = ( om->parent->cols - margins->left - margins->right  - border_l - border_r );
-        const int max_content_height = ( om->parent->rows - margins->top  - margins->bottom - border_t - border_b );
+        FlaggedCbPayload_t        * payload   = ctune_UI_Dialog_OptionsMenu_createFlaggedCbPayload( om, &om->cache.flagged_payloads, om->cb.listRowSizeLarge, action );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, text, payload, flaggedCtrlFunctionCb );
 
-        if( content->cols > max_content_width ) {
-            CTUNE_LOG( CTUNE_LOG_WARNING,
-                       "[ctune_UI_Dialog_OptionsMenu_calculateProperties( %p )] "
-                       "SlideMenu content too wide - clipping will occur.",
-                       om
+        if( payload && menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateFavThemingMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
             );
+            error_state = true;
         }
+    }
 
-        if( content->rows > max_content_height ) {
-            CTUNE_LOG( CTUNE_LOG_DEBUG,
-                       "[ctune_UI_Dialog_OptionsMenu_calculateProperties( %p )] "
-                       "SlideMenu content too tall - scrolling enabled.",
-                       om
+    if( om->cb.favouriteTabTheming != NULL ) { //"Toggle theming" entry
+        const bool         curr_state = om->cb.favouriteTabTheming( om->cache.curr_panel_id, FLAG_GET_VALUE );
+        const ctune_Flag_e action     = ( curr_state ? FLAG_SET_OFF : FLAG_SET_ON );
+        const char *       text       = om->cb.getDisplayText( ( curr_state ? CTUNE_UI_TEXT_FAV_THEMING_OFF : CTUNE_UI_TEXT_FAV_THEMING_ON ) );
+
+        FlaggedCbPayload_t        * payload   = ctune_UI_Dialog_OptionsMenu_createFlaggedCbPayload( om, &om->cache.flagged_payloads, om->cb.favouriteTabTheming, action );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, text, payload, flaggedCtrlFunctionCb );
+
+        if( payload && menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateFavThemingMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
             );
+            error_state = true;
         }
+    }
 
-        content->rows  = ( content->rows > max_content_height ? max_content_height : content->rows );
-        content->cols  = ( content->cols > max_content_width  ? max_content_width  : content->cols );
-
-        borders->rows  = ( content->rows + margins->top  + margins->bottom + border_t + border_b );
-        borders->cols  = ( content->cols + margins->left + margins->right  + border_l + border_r );
-
-        content->pos_y = ( content->rows > max_content_height ? 0 : ( ( om->parent->rows - borders->rows ) / 2 ) );
-        content->pos_x = ( content->cols > max_content_width  ? 0 : ( ( om->parent->cols - borders->cols ) / 2 ) );
-
-        borders->pos_y = ( content->pos_y - margins->top  - border_t );
-        borders->pos_x = ( content->pos_x - margins->left - border_l );
+    if( !ctune_utoi( max_text_width, &om->cache.slide_menu_property.cols ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL,
+                   "[ctune_UI_Dialog_OptionsMenu_populateConfigMenu( %p, %p )] Failed to cast to integer (%lu).",
+                   om, root, max_text_width
+        );
+        error_state = true;
     }
 
     end:
@@ -187,89 +337,130 @@ static bool ctune_UI_Dialog_OptionsMenu_calculateProperties( ctune_UI_OptionsMen
 }
 
 /**
- * [PRIVATE] Populates the sorting sub-menu
- * @param om        Pointer to ctune_UI_OptionsMenu_t object
- * @param root      Root of sort menu
- * @param menu_text Array of menu text
+ * [PRIVATE] Populates the "Sort stations" sub-menu
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @param root Pointer to SlideMenu item from which to spawn the menu from
  * @return Success
  */
-static bool ctune_UI_Dialog_OptionsMenu_populateSortMenu( ctune_UI_OptionsMenu_t * om, ctune_UI_SlideMenu_Item_t * root, const char **menu_text ) {
+static bool ctune_UI_Dialog_OptionsMenu_populateSortMenu( ctune_UI_OptionsMenu_t * om, ctune_UI_SlideMenu_Item_t * root ) {
     bool error_state = false;
+
+    enum SortMenuItems {
+        SORT_ITEM_GO_BACK = 0, SORT_ITEM_NAME,    SORT_ITEM_NAME_R,    SORT_ITEM_TAGS,
+        SORT_ITEM_TAGS_R,      SORT_ITEM_COUNTRY, SORT_ITEM_COUNTRY_R, SORT_ITEM_CC,
+        SORT_ITEM_CC_R,        SORT_ITEM_STATE,   SORT_ITEM_STATE_R,   SORT_ITEM_LANGUAGE,
+        SORT_ITEM_LANGUAGE_R,  SORT_ITEM_CODEC,   SORT_ITEM_CODEC_R,   SORT_ITEM_BITRATE,
+        SORT_ITEM_BITRATE_R,   SORT_ITEM_SOURCE,  SORT_ITEM_SOURCE_R,  SORT_ITEM_COUNT
+    };
+
+    const char * menu_text[SORT_ITEM_COUNT] = {
+        [SORT_ITEM_GO_BACK   ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS ),
+        [SORT_ITEM_NAME      ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_NAME ),
+        [SORT_ITEM_NAME_R    ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_NAME_R ),
+        [SORT_ITEM_TAGS      ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_TAGS ),
+        [SORT_ITEM_TAGS_R    ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_TAGS_R ),
+        [SORT_ITEM_COUNTRY   ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_COUNTRY ),
+        [SORT_ITEM_COUNTRY_R ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_COUNTRY_R ),
+        [SORT_ITEM_CC        ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_CC ),
+        [SORT_ITEM_CC_R      ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_CC_R ),
+        [SORT_ITEM_STATE     ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_STATE ),
+        [SORT_ITEM_STATE_R   ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_STATE_R ),
+        [SORT_ITEM_LANGUAGE  ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_LANGUAGE ),
+        [SORT_ITEM_LANGUAGE_R] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_LANGUAGE_R ),
+        [SORT_ITEM_CODEC     ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_CODEC ),
+        [SORT_ITEM_CODEC_R   ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_CODEC_R ),
+        [SORT_ITEM_BITRATE   ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_BITRATE ),
+        [SORT_ITEM_BITRATE_R ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_BITRATE_R ),
+        [SORT_ITEM_SOURCE    ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_SOURCE ),
+        [SORT_ITEM_SOURCE_R  ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_SOURCE_R ),
+    };
 
     if( ctune_UI_SlideMenu.createMenu( &root->sub_menu, root->parent_menu, root->index ) == NULL ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_UI_Dialog_OptionsMenu_populateSortMenu( %p, %p, %p )] "
+                   "[ctune_UI_Dialog_OptionsMenu_populateSortMenu( %p, %p )] "
                    "Failed to create sub menu for item ('%s').",
-                   om, root, menu_text, root->text._raw
+                   om, root, root->text._raw
         );
 
         error_state = true;
         goto end;
     }
 
-    bool              err     [SORT_ITEM_COUNT];
-    SortCbPayload_t * payloads[SORT_ITEM_COUNT];
+    ctune_UI_SlideMenu_Item_t * menu_items[SORT_ITEM_COUNT];
+    SortCbPayload_t           * payloads  [SORT_ITEM_COUNT];
+    Vector_t                  * payload_store = &om->cache.sorting_payloads; //shortcut
 
     payloads[SORT_ITEM_GO_BACK   ] = NULL;
-    payloads[SORT_ITEM_NAME      ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_NAME );
-    payloads[SORT_ITEM_NAME_R    ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_NAME_DESC );
-    payloads[SORT_ITEM_TAGS      ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_TAGS );
-    payloads[SORT_ITEM_TAGS_R    ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_TAGS_DESC );
-    payloads[SORT_ITEM_COUNTRY   ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_COUNTRY );
-    payloads[SORT_ITEM_COUNTRY_R ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_COUNTRY_DESC );
-    payloads[SORT_ITEM_CC        ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_COUNTRYCODE );
-    payloads[SORT_ITEM_CC_R      ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_COUNTRYCODE_DESC );
-    payloads[SORT_ITEM_STATE     ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_STATE );
-    payloads[SORT_ITEM_STATE_R   ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_STATE_DESC );
-    payloads[SORT_ITEM_LANGUAGE  ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_LANGUAGE );
-    payloads[SORT_ITEM_LANGUAGE_R] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_LANGUAGE_DESC );
-    payloads[SORT_ITEM_CODEC     ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_CODEC );
-    payloads[SORT_ITEM_CODEC_R   ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_CODEC_DESC );
-    payloads[SORT_ITEM_BITRATE   ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_BITRATE );
-    payloads[SORT_ITEM_BITRATE_R ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_BITRATE_DESC );
-    payloads[SORT_ITEM_SOURCE    ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_SOURCE );
-    payloads[SORT_ITEM_SOURCE_R  ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_SOURCE_DESC );
+    payloads[SORT_ITEM_NAME      ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_NAME );
+    payloads[SORT_ITEM_NAME_R    ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_NAME_DESC );
+    payloads[SORT_ITEM_TAGS      ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_TAGS );
+    payloads[SORT_ITEM_TAGS_R    ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_TAGS_DESC );
+    payloads[SORT_ITEM_COUNTRY   ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_COUNTRY );
+    payloads[SORT_ITEM_COUNTRY_R ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_COUNTRY_DESC );
+    payloads[SORT_ITEM_CC        ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_COUNTRYCODE );
+    payloads[SORT_ITEM_CC_R      ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_COUNTRYCODE_DESC );
+    payloads[SORT_ITEM_STATE     ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_STATE );
+    payloads[SORT_ITEM_STATE_R   ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_STATE_DESC );
+    payloads[SORT_ITEM_LANGUAGE  ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_LANGUAGE );
+    payloads[SORT_ITEM_LANGUAGE_R] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_LANGUAGE_DESC );
+    payloads[SORT_ITEM_CODEC     ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_CODEC );
+    payloads[SORT_ITEM_CODEC_R   ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_CODEC_DESC );
+    payloads[SORT_ITEM_BITRATE   ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_BITRATE );
+    payloads[SORT_ITEM_BITRATE_R ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_BITRATE_DESC );
+    payloads[SORT_ITEM_SOURCE    ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_SOURCE );
+    payloads[SORT_ITEM_SOURCE_R  ] = ctune_UI_Dialog_OptionsMenu_createSortCbPayload( om, payload_store, om->cb.sortStationList, CTUNE_RADIOSTATIONINFO_SORTBY_SOURCE_DESC );
 
-    err[SORT_ITEM_GO_BACK   ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_PARENT, menu_text[SORT_ITEM_GO_BACK], NULL, NULL );
-    err[SORT_ITEM_NAME      ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_NAME], payloads[SORT_ITEM_NAME], sortByCtrlFunctionCb );
-    err[SORT_ITEM_NAME_R    ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_NAME_R], payloads[SORT_ITEM_NAME_R], sortByCtrlFunctionCb );
-    err[SORT_ITEM_TAGS      ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_TAGS], payloads[SORT_ITEM_TAGS], sortByCtrlFunctionCb );
-    err[SORT_ITEM_TAGS_R    ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_TAGS_R], payloads[SORT_ITEM_TAGS_R], sortByCtrlFunctionCb );
-    err[SORT_ITEM_COUNTRY   ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_COUNTRY], payloads[SORT_ITEM_COUNTRY], sortByCtrlFunctionCb );
-    err[SORT_ITEM_COUNTRY_R ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_COUNTRY_R], payloads[SORT_ITEM_COUNTRY_R], sortByCtrlFunctionCb );
-    err[SORT_ITEM_CC        ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_CC], payloads[SORT_ITEM_CC], sortByCtrlFunctionCb );
-    err[SORT_ITEM_CC_R      ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_CC_R], payloads[SORT_ITEM_CC_R], sortByCtrlFunctionCb );
-    err[SORT_ITEM_STATE     ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_STATE], payloads[SORT_ITEM_STATE], sortByCtrlFunctionCb );
-    err[SORT_ITEM_STATE_R   ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_STATE_R], payloads[SORT_ITEM_STATE_R], sortByCtrlFunctionCb );
-    err[SORT_ITEM_LANGUAGE  ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_LANGUAGE], payloads[SORT_ITEM_LANGUAGE], sortByCtrlFunctionCb );
-    err[SORT_ITEM_LANGUAGE_R] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_LANGUAGE_R], payloads[SORT_ITEM_LANGUAGE_R], sortByCtrlFunctionCb );
-    err[SORT_ITEM_CODEC     ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_CODEC], payloads[SORT_ITEM_CODEC], sortByCtrlFunctionCb );
-    err[SORT_ITEM_CODEC_R   ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_CODEC_R], payloads[SORT_ITEM_CODEC_R], sortByCtrlFunctionCb );
-    err[SORT_ITEM_BITRATE   ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_BITRATE], payloads[SORT_ITEM_BITRATE], sortByCtrlFunctionCb );
-    err[SORT_ITEM_BITRATE_R ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_BITRATE_R], payloads[SORT_ITEM_BITRATE_R], sortByCtrlFunctionCb );
-    err[SORT_ITEM_SOURCE    ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_SOURCE], payloads[SORT_ITEM_SOURCE], sortByCtrlFunctionCb );
-    err[SORT_ITEM_SOURCE_R  ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_SOURCE_R], payloads[SORT_ITEM_SOURCE_R], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_GO_BACK   ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_PARENT, menu_text[SORT_ITEM_GO_BACK], NULL, NULL );
+    menu_items[SORT_ITEM_NAME      ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_NAME], payloads[SORT_ITEM_NAME], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_NAME_R    ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_NAME_R], payloads[SORT_ITEM_NAME_R], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_TAGS      ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_TAGS], payloads[SORT_ITEM_TAGS], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_TAGS_R    ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_TAGS_R], payloads[SORT_ITEM_TAGS_R], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_COUNTRY   ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_COUNTRY], payloads[SORT_ITEM_COUNTRY], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_COUNTRY_R ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_COUNTRY_R], payloads[SORT_ITEM_COUNTRY_R], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_CC        ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_CC], payloads[SORT_ITEM_CC], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_CC_R      ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_CC_R], payloads[SORT_ITEM_CC_R], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_STATE     ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_STATE], payloads[SORT_ITEM_STATE], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_STATE_R   ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_STATE_R], payloads[SORT_ITEM_STATE_R], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_LANGUAGE  ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_LANGUAGE], payloads[SORT_ITEM_LANGUAGE], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_LANGUAGE_R] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_LANGUAGE_R], payloads[SORT_ITEM_LANGUAGE_R], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_CODEC     ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_CODEC], payloads[SORT_ITEM_CODEC], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_CODEC_R   ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_CODEC_R], payloads[SORT_ITEM_CODEC_R], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_BITRATE   ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_BITRATE], payloads[SORT_ITEM_BITRATE], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_BITRATE_R ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_BITRATE_R], payloads[SORT_ITEM_BITRATE_R], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_SOURCE    ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_SOURCE], payloads[SORT_ITEM_SOURCE], sortByCtrlFunctionCb );
+    menu_items[SORT_ITEM_SOURCE_R  ] = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, menu_text[SORT_ITEM_SOURCE_R], payloads[SORT_ITEM_SOURCE_R], sortByCtrlFunctionCb );
 
     for( int i = 0; i < SORT_ITEM_COUNT; ++i ) {
         if( payloads[i] == NULL && i != SORT_ITEM_GO_BACK ) {
             error_state = true;
 
             CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[ctune_UI_Dialog_OptionsMenu_populateSortMenu( %p, %p, %p )] "
+                       "[ctune_UI_Dialog_OptionsMenu_populateSortMenu( %p, %p )] "
                        "Failed creation payload for menu item #%i ('%s').",
-                       om, root, menu_text, i, menu_text[i]
+                       om, root, i, menu_text[i]
             );
         }
 
-        if( !err[i] ) {
+        if( menu_items[i] == NULL ) {
             error_state = true;
 
             CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[ctune_UI_Dialog_OptionsMenu_populateSortMenu( %p, %p, %p )] "
+                       "[ctune_UI_Dialog_OptionsMenu_populateSortMenu( %p, %p )] "
                        "Failed creation of menu item #%i ('%s').",
-                       om, root, menu_text, i, menu_text[i]
+                       om, root, i, menu_text[i]
             );
         }
+    }
+
+    if( !ctune_UI_Dialog_OptionsMenu_calculateMenuItemProperties( om, menu_text, SORT_ITEM_COUNT ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL,
+                   "[ctune_UI_Dialog_OptionsMenu_populateSortMenu( %p, %p )] "
+                   "Failed item properties calculation.",
+                   om, root
+        );
+
+        error_state = true;
+        goto end;
     }
 
     end:
@@ -278,48 +469,120 @@ static bool ctune_UI_Dialog_OptionsMenu_populateSortMenu( ctune_UI_OptionsMenu_t
 
 /**
  * [PRIVATE] Creates root menu items
- * @param om        Pointer to ctune_UI_OptionsMenu_t object
- * @param menu_text Array containing the menu text
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
  * @return Success
  */
-static bool ctune_UI_Dialog_OptionsMenu_populateRootMenu( ctune_UI_OptionsMenu_t * om, const char **menu_text ) {
-    bool error_state = false;
+static int ctune_UI_Dialog_OptionsMenu_populateRootMenu( ctune_UI_OptionsMenu_t * om ) {
+    bool   error_state    = false;
+    size_t max_text_width = om->cache.slide_menu_property.cols;
 
-    bool          err     [ROOT_ITEM_COUNT];
-    CbPayload_t * payloads[ROOT_ITEM_COUNT];
+    if( om->cb.sortStationList != NULL ) { //Sorting menu
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( &om->menu.root, CTUNE_UI_SLIDEMENU_MENU, text, NULL, NULL );
 
-    payloads[ROOT_ITEM_SORT  ] = NULL; //only goes to sub menu/no side effects required
-    payloads[ROOT_ITEM_NEW   ] = ctune_UI_Dialog_OptionsMenu_createCbPayload( om, om->cb.addNewStation );
-    payloads[ROOT_ITEM_EDIT  ] = ctune_UI_Dialog_OptionsMenu_createCbPayload( om, om->cb.editStation );
-    payloads[ROOT_ITEM_TOGGLE] = ctune_UI_Dialog_OptionsMenu_createCbPayload( om, om->cb.toggleFavourite );
-    payloads[ROOT_ITEM_SYNC  ] = ctune_UI_Dialog_OptionsMenu_createCbPayload( om, om->cb.syncUpstream );
+        if( menu_item && ctune_UI_Dialog_OptionsMenu_populateSortMenu( om, menu_item ) ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
 
-    err[ROOT_ITEM_SORT  ] = ctune_UI_SlideMenu.createMenuItem( &om->menu.root, CTUNE_UI_SLIDEMENU_MENU, menu_text[ROOT_ITEM_SORT], payloads[ROOT_ITEM_SORT], NULL );
-    err[ROOT_ITEM_NEW   ] = ctune_UI_SlideMenu.createMenuItem( &om->menu.root, CTUNE_UI_SLIDEMENU_LEAF, menu_text[ROOT_ITEM_NEW], payloads[ROOT_ITEM_NEW], rootCtrlMenuFunctionCb );
-    err[ROOT_ITEM_EDIT  ] = ctune_UI_SlideMenu.createMenuItem( &om->menu.root, CTUNE_UI_SLIDEMENU_LEAF, menu_text[ROOT_ITEM_EDIT], payloads[ROOT_ITEM_EDIT], rootCtrlMenuFunctionCb );
-    err[ROOT_ITEM_TOGGLE] = ctune_UI_SlideMenu.createMenuItem( &om->menu.root, CTUNE_UI_SLIDEMENU_LEAF, menu_text[ROOT_ITEM_TOGGLE], payloads[ROOT_ITEM_TOGGLE], rootCtrlMenuFunctionCb );
-    err[ROOT_ITEM_SYNC  ] = ctune_UI_SlideMenu.createMenuItem( &om->menu.root, CTUNE_UI_SLIDEMENU_LEAF, menu_text[ROOT_ITEM_SYNC], payloads[ROOT_ITEM_SYNC], rootCtrlMenuFunctionCb );
-
-    for( int i = 0; i < ROOT_ITEM_COUNT; ++i ) {
-        if( payloads[i] == NULL && i != ROOT_ITEM_SORT ) {
-            error_state = true;
-
+        } else {
             CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[ctune_UI_Dialog_OptionsMenu_populateRootMenu( %p, %p )] "
-                       "Failed creation payload for menu item #%i ('%s').",
-                       om, menu_text, i, menu_text[i]
+                       "[ctune_UI_Dialog_OptionsMenu_populateRootMenu( %p )] Failed creation of menu item '%s'.",
+                       om, text
             );
-        }
-
-        if( !err[i] ) {
             error_state = true;
-
-            CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[ctune_UI_Dialog_OptionsMenu_populateRootMenu( %p, %p )] "
-                       "Failed creation of menu item #%i ('%s').",
-                       om, menu_text, i, menu_text[i]
-            );
         }
+    }
+
+    if( om->cb.addNewStation != NULL ) { //Add new Station
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_NEW_STATION );
+        GenericCbPayload_t        * payload   = ctune_UI_Dialog_OptionsMenu_createGenericCbPayload( om, &om->cache.generic_payloads, om->cb.addNewStation );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( &om->menu.root, CTUNE_UI_SLIDEMENU_LEAF, text, payload, genericCtrlMenuFunctionCb );
+
+        if( payload && menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateRootMenu( %p )] Failed creation of menu item '%s'.",
+                       om, text
+            );
+            error_state = true;
+        }
+    }
+
+    if( om->cb.editStation != NULL ) { //Edit selected station
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_EDIT_STATION );
+        GenericCbPayload_t        * payload   = ctune_UI_Dialog_OptionsMenu_createGenericCbPayload( om, &om->cache.generic_payloads, om->cb.editStation );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( &om->menu.root, CTUNE_UI_SLIDEMENU_LEAF, text, payload, genericCtrlMenuFunctionCb );
+
+        if( payload && menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateRootMenu( %p )] Failed creation of menu item '%s'.",
+                       om, text
+            );
+            error_state = true;
+        }
+    }
+
+    if( om->cb.toggleFavourite != NULL ) { //Remove selected favourite station
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_TOGGLE_FAV );
+        GenericCbPayload_t        * payload   = ctune_UI_Dialog_OptionsMenu_createGenericCbPayload( om, &om->cache.generic_payloads, om->cb.toggleFavourite );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( &om->menu.root, CTUNE_UI_SLIDEMENU_LEAF, text, payload, genericCtrlMenuFunctionCb );
+
+        if( payload && menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateRootMenu( %p )] Failed creation of menu item '%s'.",
+                       om, text
+            );
+            error_state = true;
+        }
+    }
+
+    if( om->cb.syncUpstream != NULL ) { //Synchronize selected station with upstream
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SYNC_UPSTREAM );
+        GenericCbPayload_t        * payload   = ctune_UI_Dialog_OptionsMenu_createGenericCbPayload( om, &om->cache.generic_payloads, om->cb.syncUpstream );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( &om->menu.root, CTUNE_UI_SLIDEMENU_LEAF, text, payload, genericCtrlMenuFunctionCb );
+
+        if( payload && menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateRootMenu( %p )] Failed creation of menu item '%s'.",
+                       om, text
+            );
+            error_state = true;
+        }
+    }
+
+    if( om->cb.favouriteTabTheming != NULL || om->cb.listRowSizeLarge != NULL ) { //Configuration menu
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_CONFIGURATION );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( &om->menu.root, CTUNE_UI_SLIDEMENU_MENU, text, NULL, NULL );
+
+        if( menu_item && ctune_UI_Dialog_OptionsMenu_populateConfigMenu( om, menu_item ) ) {
+            //max_text_width must be reloaded since it might have been changed in the "populate" call
+            max_text_width = ctune_max_ul( om->cache.slide_menu_property.cols, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateRootMenu( %p )] Failed creation of menu item '%s'.",
+                       om, text
+            );
+            error_state = true;
+        }
+    }
+
+    if( !ctune_utoi( max_text_width, &om->cache.slide_menu_property.cols ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL,
+                   "[ctune_UI_Dialog_OptionsMenu_populateRootMenu( %p )] Failed to cast to integer (%lu).",
+                   om, max_text_width
+        );
+        error_state = true;
     }
 
     return !( error_state );
@@ -328,21 +591,13 @@ static bool ctune_UI_Dialog_OptionsMenu_populateRootMenu( ctune_UI_OptionsMenu_t
 /**
  * Creates an uninitialised ctune_UI_OptionsMenu_t
  * @param parent          Canvas property for parent window
+ * @param parent_id       Parent panel ID
  * @param getDisplayText  Callback method to get UI text
- * @param sortStationList Callback method to sort station list
- * @param addNewStation   Callback method to open new station dialog
- * @param editStation     Callback method to open edit station dialog
- * @param toggleFavourite Callback method to toggle a station's "favourite" status
- * @param syncUpstream    Callback method to sync favourites from remote sources with their upstream counterpart
  * @return Initialised ctune_UI_OptionsMenu_t object
  */
 static ctune_UI_OptionsMenu_t ctune_UI_Dialog_OptionsMenu_create( const WindowProperty_t * parent,
-                                 const char * (* getDisplayText)( ctune_UI_TextID_e ),
-                                 void         (* sortStationList)( ctune_UI_PanelID_e, ctune_RadioStationInfo_SortBy_e ),
-                                 void         (* addNewStation)( ctune_UI_PanelID_e ),
-                                 void         (* editStation)( ctune_UI_PanelID_e ),
-                                 void         (* toggleFavourite)( ctune_UI_PanelID_e ),
-                                 void         (* syncUpstream)( ctune_UI_PanelID_e ) )
+                                                                  ctune_UI_PanelID_e parent_id,
+                                                                  const char * (* getDisplayText)( ctune_UI_TextID_e ) )
 {
     return (ctune_UI_OptionsMenu_t) {
         .initialised = false,
@@ -353,16 +608,20 @@ static ctune_UI_OptionsMenu_t ctune_UI_Dialog_OptionsMenu_create( const WindowPr
             .input_captured      = false,
             .slide_menu_property = { 0, 0, 0, 0 },
             .border_win_property = { 0, 0, 0, 0 },
-            .lvl1_menu_payloads  = Vector.init( sizeof( CbPayload_t ), NULL ),
-            .lvl2_menu_payloads  = Vector.init( sizeof( SortCbPayload_t ), NULL ),
+            .curr_panel_id       = parent_id,
+            .generic_payloads    = Vector.init( sizeof( GenericCbPayload_t ), NULL ),
+            .flagged_payloads    = Vector.init( sizeof( FlaggedCbPayload_t ), NULL ),
+            .sorting_payloads    = Vector.init( sizeof( SortCbPayload_t ), NULL ),
         },
         .cb = {
-            .getDisplayText  = getDisplayText,
-            .sortStationList = sortStationList,
-            .addNewStation   = addNewStation,
-            .editStation     = editStation,
-            .toggleFavourite = toggleFavourite,
-            .syncUpstream    = syncUpstream,
+            .getDisplayText      = getDisplayText,
+            .sortStationList     = NULL,
+            .addNewStation       = NULL,
+            .editStation         = NULL,
+            .toggleFavourite     = NULL,
+            .syncUpstream        = NULL,
+            .favouriteTabTheming = NULL,
+            .listRowSizeLarge = NULL,
         }
     };
 }
@@ -385,64 +644,21 @@ static bool ctune_UI_Dialog_OptionsMenu_init( ctune_UI_OptionsMenu_t * om ) {
 
     bool error_state = false;
 
-    const char * lvl1_menu_text[ROOT_ITEM_COUNT] = {
-        [ROOT_ITEM_SORT      ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS ),
-        [ROOT_ITEM_NEW       ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_NEW_STATION   ),
-        [ROOT_ITEM_EDIT      ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_EDIT_STATION  ),
-        [ROOT_ITEM_TOGGLE    ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_TOGGLE_FAV    ),
-        [ROOT_ITEM_SYNC      ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SYNC_UPSTREAM )
-    };
+    om->menu = ctune_UI_SlideMenu.create();
 
-    const char * lvl2_menu_text[SORT_ITEM_COUNT] = {
-        [SORT_ITEM_GO_BACK   ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS ),
-        [SORT_ITEM_NAME      ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_NAME ),
-        [SORT_ITEM_NAME_R    ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_NAME_R ),
-        [SORT_ITEM_TAGS      ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_TAGS ),
-        [SORT_ITEM_TAGS_R    ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_TAGS_R ),
-        [SORT_ITEM_COUNTRY   ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_COUNTRY ),
-        [SORT_ITEM_COUNTRY_R ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_COUNTRY_R ),
-        [SORT_ITEM_CC        ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_CC ),
-        [SORT_ITEM_CC_R      ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_CC_R ),
-        [SORT_ITEM_STATE     ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_STATE ),
-        [SORT_ITEM_STATE_R   ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_STATE_R ),
-        [SORT_ITEM_LANGUAGE  ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_LANGUAGE ),
-        [SORT_ITEM_LANGUAGE_R] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_LANGUAGE_R ),
-        [SORT_ITEM_CODEC     ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_CODEC ),
-        [SORT_ITEM_CODEC_R   ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_CODEC_R ),
-        [SORT_ITEM_BITRATE   ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_BITRATE ),
-        [SORT_ITEM_BITRATE_R ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_BITRATE_R ),
-        [SORT_ITEM_SOURCE    ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_SOURCE ),
-        [SORT_ITEM_SOURCE_R  ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_SOURCE_R ),
-    };
-
-    if( !ctune_UI_Dialog_OptionsMenu_calculateProperties( om, lvl1_menu_text, lvl2_menu_text ) ) {
-        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_Dialog_OptionsMenu_init( %p )] Failed properties calculation.", om );
+    if( !ctune_UI_Dialog_OptionsMenu_populateRootMenu( om ) ) { //starts the population chain for all relevant entries and sub menus
+        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_Dialog_OptionsMenu_init( %p )] Failed populate root menu.", om );
         error_state = true;
         goto end;
     }
 
-    om->menu = ctune_UI_SlideMenu.init( &om->cache.slide_menu_property );
-
-    if( !ctune_UI_Dialog_OptionsMenu_populateRootMenu( om, lvl1_menu_text ) ) {
-        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_Dialog_OptionsMenu_init( %p )] Failed populate menu.", om );
+    if( !ctune_UI_Dialog_OptionsMenu_calculateMenuDisplayProperties( om ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_Dialog_OptionsMenu_init( %p )] Failed display properties calculation.", om );
         error_state = true;
         goto end;
     }
 
-    ctune_UI_SlideMenu_Item_t * sort_root = Vector.at( &om->menu.root.items, 0 );
-
-    if( sort_root != NULL ) {
-        if( !ctune_UI_Dialog_OptionsMenu_populateSortMenu( om, sort_root, lvl2_menu_text ) ) {
-            CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_Dialog_OptionsMenu_init( %p )] Failed to populate sort sub-menu.", om );
-            error_state = true;
-            goto end;
-        };
-
-    } else {
-        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_Dialog_OptionsMenu_init( %p )] Root item Vector_t looks empty.", om );
-        error_state = true;
-        goto end;
-    }
+    ctune_UI_SlideMenu.setCanvasProperties( &om->menu, &om->cache.slide_menu_property );
 
     if( !ctune_UI_BorderWin.init( &om->border_win, &om->cache.border_win_property, om->cb.getDisplayText( CTUNE_UI_TEXT_WIN_TITLE_OPTIONMENU ) ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_Dialog_OptionsMenu_init( %p )] Failed to create border window.", om );
@@ -518,9 +734,7 @@ static void ctune_UI_Dialog_OptionsMenu_resize( void * om ) {
  * Pass keyboard input to the form
  * @param om Pointer to ctune_UI_OptionsMenu_t object
  */
-static void ctune_UI_Dialog_OptionsMenu_captureInput( ctune_UI_OptionsMenu_t * om, ctune_UI_PanelID_e tab ) {
-    om->cache.curr_panel_id = tab;
-
+static void ctune_UI_Dialog_OptionsMenu_captureInput( ctune_UI_OptionsMenu_t * om ) {
     resized: //without this goto tag, the input capture exits since the key-input window gets destroyed and recreated
         keypad( om->menu.canvas_win, TRUE );
         curs_set( 0 );
@@ -580,13 +794,93 @@ static void ctune_UI_Dialog_OptionsMenu_free( ctune_UI_OptionsMenu_t * om ) {
     if( om ) {
         ctune_UI_BorderWin.free( &om->border_win );
         ctune_UI_SlideMenu.free( &om->menu );
-        Vector.clear_vector( &om->cache.lvl1_menu_payloads );
-        Vector.clear_vector( &om->cache.lvl2_menu_payloads );
+        Vector.clear_vector( &om->cache.generic_payloads );
+        Vector.clear_vector( &om->cache.flagged_payloads );
+        Vector.clear_vector( &om->cache.sorting_payloads );
         om->initialised = false;
 
         CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_Dialog_OptionsMenu_free( %p )] OptionsMenu freed.", om );
     }
 }
+
+/**
+ * Sets the callback method to sort the station list
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @param fn Callback function
+ */
+static void ctune_UI_Dialog_OptionsMenu_cb_setSortStationList( ctune_UI_OptionsMenu_t * om, void (*fn)( ctune_UI_PanelID_e , ctune_RadioStationInfo_SortBy_e ) ) {
+    if( om != NULL ) {
+        om->cb.sortStationList = fn;
+    }
+}
+
+/**
+ * Sets the callback method to open new station dialog
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @param fn Callback function
+ */
+static void ctune_UI_Dialog_OptionsMenu_cb_setAddNewStation( ctune_UI_OptionsMenu_t * om, void (* fn)( ctune_UI_PanelID_e ) ) {
+    if( om != NULL ) {
+        om->cb.addNewStation = fn;
+    }
+}
+
+/**
+ * Sets the callback method to open edit station dialog
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @param fn Callback function
+ */
+static void ctune_UI_Dialog_OptionsMenu_cb_setEditStation( ctune_UI_OptionsMenu_t * om, void (* fn)( ctune_UI_PanelID_e ) ) {
+    if( om != NULL ) {
+        om->cb.editStation = fn;
+    }
+}
+
+/**
+ * Sets the callback method to toggle a station's "favourite" status
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @param fn Callback function
+ */
+static void ctune_UI_Dialog_OptionsMenu_cb_setToggleFavourite( ctune_UI_OptionsMenu_t * om, void (* fn)( ctune_UI_PanelID_e ) ) {
+    if( om != NULL ) {
+        om->cb.toggleFavourite = fn;
+    }
+}
+
+/**
+ * Sets the callback method to sync favourites from remote sources with their upstream counterpart
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @param fn Callback function
+ */
+static void ctune_UI_Dialog_OptionsMenu_cb_setSyncCurrSelectedStation( ctune_UI_OptionsMenu_t * om, void (* fn)( ctune_UI_PanelID_e ) ) {
+    if( om != NULL ) {
+        om->cb.syncUpstream = fn;
+    }
+}
+
+/**
+ * Sets the callback method to set/get the "favourite" tab's theming
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @param fn Callback function
+ */
+static void ctune_UI_Dialog_OptionsMenu_cb_favTheming( ctune_UI_OptionsMenu_t * om, bool (* fn)( ctune_UI_PanelID_e, ctune_Flag_e ) ) {
+    if( om != NULL ) {
+        om->cb.favouriteTabTheming = fn;
+    }
+}
+
+/**
+ * Sets the callback method to set the current tab station list's row size to large
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @param fn Callback function
+ */
+static void ctune_UI_Dialog_OptionsMenu_cb_setSetListRowSizeLarge( ctune_UI_OptionsMenu_t * om, bool (* fn)( ctune_UI_PanelID_e, ctune_Flag_e ) ) {
+    if( om != NULL ) {
+        om->cb.listRowSizeLarge = fn;
+    }
+}
+
+
 
 /**
  * Namespace constructor
@@ -600,4 +894,13 @@ const struct ctune_UI_Dialog_OptionsMenu_Namespace ctune_UI_OptionsMenu = {
     .captureInput = &ctune_UI_Dialog_OptionsMenu_captureInput,
     .close        = &ctune_UI_Dialog_OptionsMenu_close,
     .free         = &ctune_UI_Dialog_OptionsMenu_free,
+    .cb = {
+        .setSortStationListCallback         = &ctune_UI_Dialog_OptionsMenu_cb_setSortStationList,
+        .setAddNewStationCallback           = &ctune_UI_Dialog_OptionsMenu_cb_setAddNewStation,
+        .setEditStationCallback             = &ctune_UI_Dialog_OptionsMenu_cb_setEditStation,
+        .setToggleFavouriteCallback         = &ctune_UI_Dialog_OptionsMenu_cb_setToggleFavourite,
+        .setSyncCurrSelectedStationCallback = &ctune_UI_Dialog_OptionsMenu_cb_setSyncCurrSelectedStation,
+        .setFavouriteTabThemingCallback     = &ctune_UI_Dialog_OptionsMenu_cb_favTheming,
+        .setListRowSizeLargeCallback        = &ctune_UI_Dialog_OptionsMenu_cb_setSetListRowSizeLarge,
+    },
 };

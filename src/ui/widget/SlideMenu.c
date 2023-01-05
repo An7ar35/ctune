@@ -199,6 +199,33 @@ static void ctune_UI_SlideMenu_drawCanvas( ctune_UI_SlideMenu_t * menu, bool res
 }
 
 /**
+ * Creates a slide menu without a known canvas (use `setCanvasProperties(..)` to set one prior to usage)
+ * @return ctune_UI_SlideMenu_t object
+ */
+static ctune_UI_SlideMenu_t ctune_UI_SlideMenu_create( void ) {
+    return (ctune_UI_SlideMenu_t) {
+        .canvas_property  = NULL,
+        .canvas_panel     = NULL,
+        .canvas_win       = NULL,
+        .update_scrollbar = true,
+        .scrollbar        = {},
+        .redraw           = true,
+        .root = {
+            .parent   = NULL,
+            .parent_i = 0,
+            .items    = Vector.init( sizeof( ctune_UI_SlideMenu_Item_t ), ctune_UI_SlideMenu_freeSlideMenuItem ),
+        },
+        .row = {
+            .curr_menu     = NULL,
+            .depth         = 0,
+            .selected      = 0,
+            .first_on_page = 0,
+            .last_on_page  = 0,
+        }
+    };
+}
+
+/**
  * Initialises a slide menu
  * @param canvas_property Pointer to canvas sizes to abide to
  * @return ctune_UI_SlideMenu_t object
@@ -224,6 +251,18 @@ static ctune_UI_SlideMenu_t ctune_UI_SlideMenu_init( const WindowProperty_t * ca
             .last_on_page  = 0,
         }
     };
+}
+
+/**
+ * Sets a canvas for the slide menu
+ * @param menu ctune_UI_SlideMenu_t object
+ * @param canvas_property Pointer to canvas sizes to abide to
+ */
+static void ctune_UI_SlideMenu_setCanvasProperties( ctune_UI_SlideMenu_t * menu, const WindowProperty_t * canvas_property ) {
+    if( menu ) {
+        menu->canvas_property = canvas_property;
+        menu->scrollbar       = ctune_UI_ScrollBar.init( canvas_property, RIGHT, false );
+    }
 }
 
 /**
@@ -272,9 +311,9 @@ static ctune_UI_SlideMenu_Menu_t * ctune_UI_SlideMenu_createMenu(
  * @param text    Display text for item
  * @param data    Optional pointer to data associated with the menu item (NULL for none)
  * @param ctrl_fn Control function for item (or NULL for none)
- * @return Success
+ * @return Pointer to menu item (NULL if failed)
  */
-static bool ctune_UI_SlideMenu_createMenuItem(
+static ctune_UI_SlideMenu_Item_t * ctune_UI_SlideMenu_createMenuItem(
     ctune_UI_SlideMenu_Menu_t   * menu,
     ctune_UI_SlideMenu_ItemType_e type,
     const char                  * text,
@@ -288,7 +327,7 @@ static bool ctune_UI_SlideMenu_createMenuItem(
                    menu, text, data, type, ctrl_fn
         );
 
-        return false; //EARLY RETURN
+        return NULL; //EARLY RETURN
     }
 
     ctune_UI_SlideMenu_Item_t * item = Vector.emplace_back( &menu->items );
@@ -300,7 +339,7 @@ static bool ctune_UI_SlideMenu_createMenuItem(
                    menu, text, data, type, ctrl_fn
         );
 
-        return false; //EARLY RETURN
+        return NULL; //EARLY RETURN
     }
 
     item->index           = ( Vector.size( &menu->items ) - 1 );
@@ -315,10 +354,10 @@ static bool ctune_UI_SlideMenu_createMenuItem(
     if( !String.set( &item->text, text ) ) {
         if( !Vector.empty( &menu->items ) )
             Vector.remove( &menu->items, Vector.size( &menu->items ) - 1 );
-        return false;
+        return NULL;
     }
 
-    return true;
+    return item;
 }
 
 
@@ -574,7 +613,9 @@ static void ctune_UI_SlideMenu_free( ctune_UI_SlideMenu_t * menu ) {
  * Namespace constructor
  */
 const struct ctune_UI_Widget_SlideMenu_Namespace ctune_UI_SlideMenu = {
+    .create              = &ctune_UI_SlideMenu_create,
     .init                = &ctune_UI_SlideMenu_init,
+    .setCanvasProperties = &ctune_UI_SlideMenu_setCanvasProperties,
     .createMenu          = &ctune_UI_SlideMenu_createMenu,
     .createMenuItem      = &ctune_UI_SlideMenu_createMenuItem,
     .setRedraw           = &ctune_UI_SlideMenu_setRedraw,

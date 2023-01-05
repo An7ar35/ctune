@@ -2,6 +2,7 @@
 #define CTUNE_UI_DIALOG_OPTIONSMENU_H
 
 #include "../../dto/RadioStationInfo.h" //for sorting
+#include "../../dto/UIConfig.h"
 #include "../../enum/StationAttribute.h" //for sorting
 #include "../datastructure/WindowMargin.h"
 #include "../definitions/Language.h"
@@ -31,18 +32,21 @@ typedef struct ctune_UI_Dialog_OptionsMenu {
         WindowProperty_t   slide_menu_property;
         WindowProperty_t   border_win_property;
         ctune_UI_PanelID_e curr_panel_id;
-        Vector_t           lvl1_menu_payloads;
-        Vector_t           lvl2_menu_payloads;
+        Vector_t           generic_payloads;
+        Vector_t           flagged_payloads;
+        Vector_t           sorting_payloads;
         bool               input_captured;
     } cache;
 
     struct Callbacks {
-        const char * (* getDisplayText)( ctune_UI_TextID_e );
-        void         (* sortStationList)( ctune_UI_PanelID_e tab, ctune_RadioStationInfo_SortBy_e attr );
-        void         (* addNewStation)( ctune_UI_PanelID_e tab );
-        void         (* editStation)( ctune_UI_PanelID_e tab );
-        void         (* toggleFavourite)( ctune_UI_PanelID_e tab );
-        void         (* syncUpstream)( ctune_UI_PanelID_e tab );
+        const char *    (* getDisplayText)( ctune_UI_TextID_e );
+        void            (* sortStationList)( ctune_UI_PanelID_e tab, ctune_RadioStationInfo_SortBy_e attr );
+        void            (* addNewStation)( ctune_UI_PanelID_e tab );
+        void            (* editStation)( ctune_UI_PanelID_e tab );
+        void            (* toggleFavourite)( ctune_UI_PanelID_e tab );
+        void            (* syncUpstream)( ctune_UI_PanelID_e tab );
+        bool            (* favouriteTabTheming)( ctune_UI_PanelID_e tab, ctune_Flag_e action_flag );
+        bool            (* listRowSizeLarge)( ctune_UI_PanelID_e tab, ctune_Flag_e action_flag );
     } cb;
 
 } ctune_UI_OptionsMenu_t;
@@ -54,21 +58,11 @@ extern const struct ctune_UI_Dialog_OptionsMenu_Namespace {
     /**
      * Creates an uninitialised ctune_UI_OptionsMenu_t
      * @param parent          Canvas property for parent window
+     * @param parent_id       Parent panel ID
      * @param getDisplayText  Callback method to get UI text
-     * @param sortStationList Callback method to sort station list
-     * @param addNewStation   Callback method to open new station dialog
-     * @param editStation     Callback method to open edit station dialog
-     * @param toggleFavourite Callback method to toggle a station's "favourite" status
-     * @param syncUpstream    Callback method to sync favourites from remote sources with their upstream counterpart
      * @return Initialised ctune_UI_OptionsMenu_t object
      */
-    ctune_UI_OptionsMenu_t (* create)( const WindowProperty_t * parent,
-                                       const char * (* getDisplayText)( ctune_UI_TextID_e ),
-                                       void         (* sortStationList)( ctune_UI_PanelID_e tab, ctune_RadioStationInfo_SortBy_e attr ),
-                                       void         (* addNewStation)( ctune_UI_PanelID_e tab ),
-                                       void         (* editStation)( ctune_UI_PanelID_e tab ),
-                                       void         (* toggleFavourite)( ctune_UI_PanelID_e tab ),
-                                       void         (* syncUpstream)( ctune_UI_PanelID_e tab ) );
+    ctune_UI_OptionsMenu_t (* create)( const WindowProperty_t * parent, ctune_UI_PanelID_e parent_id, const char * (* getDisplayText)( ctune_UI_TextID_e ) );
 
     /**
      * Initialised a ctune_UI_OptionsMenu_t object
@@ -100,7 +94,7 @@ extern const struct ctune_UI_Dialog_OptionsMenu_Namespace {
      * Pass keyboard input to the form
      * @param om Pointer to ctune_UI_OptionsMenu_t object
      */
-    void (* captureInput)( ctune_UI_OptionsMenu_t * om, ctune_UI_PanelID_e tab );
+    void (* captureInput)( ctune_UI_OptionsMenu_t * om );
 
     /**
      * Exit method to break the input capture loop (can be used as external callback)
@@ -113,6 +107,57 @@ extern const struct ctune_UI_Dialog_OptionsMenu_Namespace {
      * @param om Pointer to ctune_UI_OptionsMenu_t object
      */
     void (* free)( ctune_UI_OptionsMenu_t * om );
+
+    struct {
+        /**
+         * Sets the callback method to sort the station list
+         * @param om Pointer to ctune_UI_OptionsMenu_t object
+         * @param fn Callback function
+         */
+        void (* setSortStationListCallback)( ctune_UI_OptionsMenu_t * om, void (*fn)( ctune_UI_PanelID_e , ctune_RadioStationInfo_SortBy_e ) );
+
+        /**
+         * Sets the callback method to open new station dialog
+         * @param om Pointer to ctune_UI_OptionsMenu_t object
+         * @param fn Callback function
+         */
+        void (* setAddNewStationCallback)( ctune_UI_OptionsMenu_t * om, void (*fn)( ctune_UI_PanelID_e ) );
+
+        /**
+         * Sets the callback method to open edit station dialog
+         * @param om Pointer to ctune_UI_OptionsMenu_t object
+         * @param fn Callback function
+         */
+        void (* setEditStationCallback)( ctune_UI_OptionsMenu_t * om, void (*fn)( ctune_UI_PanelID_e ) );
+
+        /**
+         * Sets the callback method to toggle a station's "favourite" status
+         * @param om Pointer to ctune_UI_OptionsMenu_t object
+         * @param fn Callback function
+         */
+        void (* setToggleFavouriteCallback)( ctune_UI_OptionsMenu_t * om, void (*fn)( ctune_UI_PanelID_e ) );
+
+        /**
+         * Sets the callback method to sync favourites from remote sources with their upstream counterpart
+         * @param om Pointer to ctune_UI_OptionsMenu_t object
+         * @param fn Callback function
+         */
+        void (* setSyncCurrSelectedStationCallback)( ctune_UI_OptionsMenu_t * om, void (*fn)( ctune_UI_PanelID_e ) );
+
+        /**
+         * Sets the callback method to set/get the "favourite" tab's theming
+         * @param om Pointer to ctune_UI_OptionsMenu_t object
+         * @param fn Callback function
+         */
+        void (* setFavouriteTabThemingCallback)( ctune_UI_OptionsMenu_t * om, bool (* fn)( ctune_UI_PanelID_e, ctune_Flag_e ) );
+
+        /**
+         * Sets the callback method to set/get the current tab station list's row 'large' property
+         * @param om Pointer to ctune_UI_OptionsMenu_t object
+         * @param fn Callback function
+         */
+        void (* setListRowSizeLargeCallback)( ctune_UI_OptionsMenu_t * om, bool (* fn)( ctune_UI_PanelID_e, ctune_Flag_e ) );
+    } cb;
 
 } ctune_UI_OptionsMenu;
 

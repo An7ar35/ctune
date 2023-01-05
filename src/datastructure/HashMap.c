@@ -18,7 +18,7 @@ static Bucket_t * HashMap_newBucket( uint64_t hash, enum NodeColour colour, Buck
 
     if( bucket != NULL ) {
         bucket->hashkey     = hash;
-        bucket->colour   = colour;
+        bucket->colour      = colour;
         bucket->count       = 0;
         bucket->items       = NULL;
         bucket->parent      = parent;
@@ -65,7 +65,7 @@ static void HashMap_swapBucketContents( Bucket_t * lhs, Bucket_t * rhs ) {
     }
 
     { //Bucket hash
-        int64_t tmp  = lhs->hashkey;
+        uint64_t tmp = lhs->hashkey;
         lhs->hashkey = rhs->hashkey;
         rhs->hashkey = tmp;
     }
@@ -273,7 +273,7 @@ static Bucket_t * HashMap_insertBST( HashMap_t * map, Bucket_t * parent, Bucket_
  * @param hash Hash key to find
  * @return Pointer to Bucket_t whose key matches the hash or NULL if no match found
  */
-static Bucket_t * HashMap_searchBST( const HashMap_t * map, Bucket_t * root, int64_t hash ) {
+static Bucket_t * HashMap_searchBST( const HashMap_t * map, Bucket_t * root, uint64_t hash ) {
     if( root == NULL )
         return NULL;
     else if( hash > root->hashkey )
@@ -303,7 +303,7 @@ static Bucket_t * HashMap_minBucket( Bucket_t * root ) {
  * @param hash Hash key to find
  * @return Pointer to Bucket_t whose key matches the hash or NULL if no match found
  */
-static Bucket_t * HashMap_searchBucket( HashMap_t * map, int64_t hash ) {
+static Bucket_t * HashMap_searchBucket( HashMap_t * map, uint64_t hash ) {
     return HashMap_searchBST( map, map->_root, hash );
 }
 
@@ -740,7 +740,7 @@ static HashMap_t HashMap_init(
  * @return Matching value for the key or NULL for no match found
  */
 static void * HashMap_at( HashMap_t * map, const void * key ) {
-    int64_t    hash   = map->hash_fn( key );
+    uint64_t    hash  = map->hash_fn( key );
     Bucket_t * bucket = HashMap_searchBucket( map, hash );
 
     if( bucket == NULL || bucket->count == 0 )
@@ -796,7 +796,7 @@ static bool HashMap_remove( HashMap_t * map, const void * key ) {
         return false; //EARLY RETURN
     }
 
-    int64_t    hash   = map->hash_fn( key );
+    uint64_t   hash   = map->hash_fn( key );
     Bucket_t * bucket = HashMap_searchBucket( map, hash );
 
     if( bucket == NULL ) {

@@ -55,30 +55,30 @@ The configuration is generated at first launch in `~/.config/ctune/ctune.cfg`. T
 
 ### Editable values
 
-| Configuration string | Value type | Default value | Description |
-| -------------------- | ---------- | ------------- | ----------- |
-| `IO::Plugin::Player` | string | `ffmpeg` | Player plugin to use (`ffmpeg`, `vlc` ) |
-| `IO::Plugin::SoundServer` | string | `pulse` | Sound output plugin to use (`pulse`, `alsa`, `sdl`, `sndio`) |
-| `IO::OverwritePlayLog` | bool | `true` | Flag to overwrite play-log instead of appending to it |
-| `IO::StreamTimeout` | unsigned int | `5` | Timeout value for streaming in seconds* |
-| `IO::NetworkTimeout` | unsigned int | `8` | Timeout value for the network calls in seconds |
-| `UI::Favourites::HideTheming` | bool | `false` | Flag to hide source theming on the Favourites tab |
-| `UI::Favourites::UseLargeRows` | bool | `true` | Flag to use large format row entries in the Favourites tab |
-| `UI::Search::UseLargeRows` | bool | `true` | Flag to use large format row entries in the Search tab |
-| `UI::Browser::UseLargeRows` | bool | `false` | Flag to use large format row entries in the Browser tab |
-| `UI::Theme` | colour pair | `{WHITE,BLACK}` | Base theme colours (foreground, background) |
-| `UI::Theme::row` | colour pair | `{WHITE,BLACK}` | Base theme colours for row entries (foreground, background) |
-| `UI::Theme::row::selected::focused` | colour pair | `{WHITE,BLUE}` | Theme colours for selected and in-focus row entries |
-| `UI::Theme::row::selected::unfocused` | colour pair | `{BLACK,WHITE}` | Theme colours for selected and out-of-focus row entries |
-| `UI::Theme::row::favourite::local` | colour | `MAGENTA` | Text colour for a local based station's name on the row entry |
-| `UI::Theme::row::favourite::remote` | colour | `YELLOW` | Text colour for a remote based station's name on the row entry |
-| `UI::Theme::icon::playback::on` | colour | `GREEN` | Text colour for the playback icon when playing state is true ( <span style="color:green">></span> ) |
-| `UI::Theme::icon::playback::off` | colour | `RED` | Text colour for the playback icon when playing state is false ( <span style="color:red">.</span> ) |
-| `UI::Theme::icon::queued` | colour | `CYAN` | Text colour for the queued indicator on the corresponding row entry ( <span style="color:cyan">></span> ) |
-| `UI::Theme::field::invalid` | colour | `RED` | Text colour for an invalid field |
-| `UI::Theme::button` | colour pair | `{WHITE,BLACK}` | Theme colours for buttons |
-| `UI::Theme::button::invalid` | colour | `RED` | Validation button colour when linked action fails |
-| `UI::Theme::button::validated` | colour | `GREEN` | Validation button colour when linked action is successful |
+| Configuration string                  | Value type | Default value   | Description                                                                                              |
+|---------------------------------------| ---------- |-----------------|----------------------------------------------------------------------------------------------------------|
+| `IO::Plugin::Player`                  | string | `ffmpeg`        | Player plugin to use (`ffmpeg`, `vlc` )                                                                  |
+| `IO::Plugin::SoundServer`             | string | `pulse`         | Sound output plugin to use (`pulse`, `alsa`, `sdl`, `sndio`)                                             |
+| `IO::OverwritePlayLog`                | bool | `true`          | Flag to overwrite play-log instead of appending to it                                                    |
+| `IO::StreamTimeout`                   | unsigned int | `5`             | Timeout value for streaming in seconds*                                                                  |
+| `IO::NetworkTimeout`                  | unsigned int | `8`             | Timeout value for the network calls in seconds                                                           |
+| `UI::Favourites::ShowTheme`           | bool | `true`            | Flag to show source theming on the Favourites tab                                                        |
+| `UI::Favourites::UseLargeRows`        | bool | `true`          | Flag to use large format row entries in the Favourites tab                                               |
+| `UI::Search::UseLargeRows`            | bool | `true`          | Flag to use large format row entries in the Search tab                                                   |
+| `UI::Browser::UseLargeRows`           | bool | `false`         | Flag to use large format row entries in the Browser tab                                                  |
+| `UI::Theme`                           | colour pair | `{WHITE,BLACK}` | Base theme colours (foreground, background)                                                              |
+| `UI::Theme::row`                      | colour pair | `{WHITE,BLACK}` | Base theme colours for row entries (foreground, background)                                              |
+| `UI::Theme::row::selected::focused`   | colour pair | `{WHITE,BLUE}`  | Theme colours for selected and in-focus row entries                                                      |
+| `UI::Theme::row::selected::unfocused` | colour pair | `{BLACK,WHITE}` | Theme colours for selected and out-of-focus row entries                                                  |
+| `UI::Theme::row::favourite::local`    | colour | `MAGENTA`       | Text colour for a local based station's name on the row entry                                            |
+| `UI::Theme::row::favourite::remote`   | colour | `YELLOW`        | Text colour for a remote based station's name on the row entry                                           |
+| `UI::Theme::icon::playback::on`       | colour | `GREEN`         | Text colour for the playback icon when playing state is true ( <span style="color:green">></span> )      |
+| `UI::Theme::icon::playback::off`      | colour | `RED`           | Text colour for the playback icon when playing state is false ( <span style="color:red">.</span> )       |
+| `UI::Theme::icon::queued`             | colour | `CYAN`          | Text colour for the queued indicator on the corresponding row entry ( <span style="color:cyan">></span> ) |
+| `UI::Theme::field::invalid`           | colour | `RED`           | Text colour for an invalid field                                                                         |
+| `UI::Theme::button`                   | colour pair | `{WHITE,BLACK}` | Theme colours for buttons                                                                                |
+| `UI::Theme::button::invalid`          | colour | `RED`           | Validation button colour when linked action fails                                                        |
+| `UI::Theme::button::validated`        | colour | `GREEN`         | Validation button colour when linked action is successful                                                |
 
 Colour values available: `BLACK`, `RED`, `GREEN`, `YELLOW`, `BLUE`, `MAGENTA`, `CYAN`, `WHITE`
 
@@ -148,7 +148,7 @@ The package is available in the AUR repository under `ctune-git`. Install using 
 >  Alternatively just download the `PKGBUILD` file into an empty staging folder and run `makepkg -si` from inside. 
    The rest should take care of itself.
 
-#### Ubuntu (tested on 22.04.1 LTS)
+#### Ubuntu 22.04.1 LTS (tested with _pulseaudio_ as the default server)
 
 No PPA but here are copy/paste commands to install all the required programs and development libraries you would need before compiling `ctune`:
 
@@ -161,6 +161,11 @@ sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
 ```
 
 Once all these are on the system compiling from source should work without hiccups.
+
+## Docker
+
+Docker is only there for testing purposes and only works on linux with either `pulseaudio` or `pipewire-pulse` installed and running.
+It uses the Arch docker image as base. The `docker-compose.sh` script creates the container and runs it (final size = ~1GB).
 
 ## Platform
 
@@ -189,7 +194,10 @@ A. Press `F1` to get a contextual list of key bindings in the UI.
 
 **Disclaimer: I've writen this software primarily for myself so temper your support-level expectations accordingly.**
 
-That being said, if you open a bug ticket please include the following to help diagnose the source of the issue raised:
+That being said, if you find a bug you are welcome to open a ticket.
+I'll try to deal with it time allowing. Same for bug PRs.
+
+For tickets, please include the following to help diagnose the source of the problem:
 
 1. Basic information:
     1. **(UI bugs)** Terminal/Shell used if it's a UI bug (e.g.: Konsole 21.04 using BASH 5.1.8)
@@ -207,6 +215,6 @@ Thank you.
 
 ## License
 
-Copyright @ 2020-21 E.A.Davison.
+Copyright @ 2020-23 E.A.Davison.
 
 Licensed under [AGPLv3](https://www.gnu.org/licenses/agpl-3.0.en.html)
