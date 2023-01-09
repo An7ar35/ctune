@@ -473,10 +473,10 @@ static bool ctune_UI_setCurrListRowSize( ctune_UI_PanelID_e tab, ctune_Flag_e ac
 }
 
 /**
- *
- * @param tab
- * @param action_flag
- * @return
+ * [PRIVATE] Sets the 'favourite' tab's theming
+ * @param tab         PanelID of the current tab
+ * @param action_flag Action to take (get/set)
+ * @return State of the "fav theming" property
  */
 static bool ctune_UI_setFavouriteTabTheming( ctune_UI_PanelID_e tab, ctune_Flag_e action_flag ) {
     ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
