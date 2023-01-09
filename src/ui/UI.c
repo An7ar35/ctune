@@ -130,14 +130,27 @@ static struct ctune_UI {
 /* ========================================== PRIVATE =========================================== */
 /* ============================================================================================== */
 /**
+ * Gets the terminal's current size from the environment variables ("COLUMNS", "LINES")
+ * @return Terminal size packaged in WindowProperty_t
+ */
+static WindowProperty_t ctune_UI_getScreenSize( void ) {
+    struct winsize w1;
+    ioctl( 0, TIOCGWINSZ, &w1 );
+
+    CTUNE_LOG( CTUNE_LOG_TRACE, "[ctune_UI_getScreenSize()] Screen size from ioctl = { w: %d, h: %d }", w1.ws_col, w1.ws_row );
+
+    return (WindowProperty_t) { ( w1.ws_row >= UI_MIN_ROWS ? w1.ws_row : UI_MIN_ROWS ),
+                                ( w1.ws_col >= UI_MIN_COLS ? w1.ws_col : UI_MIN_COLS ),
+                                0,
+                                0 };
+}
+
+/**
  * Calculates all the main UI window positions on the screen
  * @param sizes Pointer to ctune_UI_WinSizes struct Object
  */
 static void ctune_UI_calculateWinSizes( struct ctune_UI_WinSizes * sizes ) {
-    sizes->screen        = (WindowProperty_t) { ( getmaxy( stdscr ) >= UI_MIN_ROWS ? getmaxy( stdscr ) : UI_MIN_ROWS ),
-                                                ( getmaxx( stdscr ) >= UI_MIN_COLS ? getmaxx( stdscr ) : UI_MIN_COLS ),
-                                                0,
-                                                0 };
+    sizes->screen        = ctune_UI_getScreenSize();
     sizes->title_bar     = (WindowProperty_t) { 1,
                                                 sizes->screen.cols,
                                                 0,
@@ -1099,7 +1112,6 @@ static void ctune_UI_runKeyInterfaceLoop() {
         character = getch();
 
         switch( ctune_UI_KeyBinding.getAction( ui.curr_ctx, character ) ) {
-            case CTUNE_UI_ACTION_RESIZE       : { ctune_UI_Resizer.resize();                                      } break;
             case CTUNE_UI_ACTION_FIND         : { ctune_UI_openFindDialog();                                      } break;
             case CTUNE_UI_ACTION_NEW          : { ctune_UI_openNewStationDialog( ui.cache.curr_panel );           } break;
             case CTUNE_UI_ACTION_EDIT         : { ctune_UI_openEditSelectedStationDialog( ui.cache.curr_panel );  } break;
@@ -1210,8 +1222,7 @@ static void ctune_UI_runKeyInterfaceLoop() {
             default:
                 break;
         }
-//        mvprintw( 2, 2, "%s %d", keyname( ch ), ch );
-//        refresh();
+
         doupdate();
     }
 }
@@ -1512,27 +1523,29 @@ static void ctune_UI_resize() {
     endwin();
     ctune_UI_destroyPanels();
     ctune_UI_calculateWinSizes( &ui.size );
-    ctune_UI_createPanels();
 
     switch( ui.cache.curr_panel ) {
         case CTUNE_UI_PANEL_FAVOURITES: {
             ctune_UI_RSListWin.resize( &ui.tabs.search );
             ctune_UI_BrowserWin.resize( &ui.tabs.browser );
-            top_panel( ui.panels[CTUNE_UI_PANEL_FAVOURITES] );
+            ctune_UI_createPanels();
+            top_panel( ui.panels[ui.cache.curr_panel] );
             ctune_UI_RSListWin.resize( &ui.tabs.favourites );
         } break;
 
         case CTUNE_UI_PANEL_SEARCH: {
             ctune_UI_RSListWin.resize( &ui.tabs.favourites );
             ctune_UI_BrowserWin.resize( &ui.tabs.browser );
-            top_panel( ui.panels[CTUNE_UI_PANEL_SEARCH] );
+            ctune_UI_createPanels();
+            top_panel( ui.panels[ui.cache.curr_panel] );
             ctune_UI_RSListWin.resize( &ui.tabs.search );
         } break;
 
         case CTUNE_UI_PANEL_BROWSER: {
             ctune_UI_RSListWin.resize( &ui.tabs.favourites );
             ctune_UI_RSListWin.resize( &ui.tabs.search );
-            top_panel( ui.panels[CTUNE_UI_PANEL_BROWSER] );
+            ctune_UI_createPanels();
+            top_panel( ui.panels[ui.cache.curr_panel] );
             ctune_UI_BrowserWin.resize( &ui.tabs.browser );
         } break;
 
@@ -1554,10 +1567,8 @@ static void ctune_UI_resize() {
         }
     }
 
-    wrefresh( ui.panel_windows[ui.cache.curr_panel] );
     update_panels();
     doupdate();
-    refresh();
 }
 
 /**
