@@ -10,6 +10,7 @@
  *       before it can be used.
  */
 const ctune_UI_KeyDescription_t keys[CTUNE_UI_KEYBOARD_COUNT] = {
+    [CTUNE_UI_KEYBOARD_ERR           ] = { .ncurses_key = ERR,                     .text = "Error" },
     [CTUNE_UI_KEYBOARD_ESC           ] = { .ncurses_key = CTUNE_KEY_ESC,           .text = "Esc" },
     [CTUNE_UI_KEYBOARD_F1            ] = { .ncurses_key = KEY_F( 1 ),              .text = "F1" },
     [CTUNE_UI_KEYBOARD_F2            ] = { .ncurses_key = KEY_F( 2 ),              .text = "F2" },

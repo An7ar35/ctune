@@ -357,9 +357,11 @@ static void ctune_UI_ContextHelp_captureInput() {
         ch = wgetch( private.cache.dialogs[ctx].canvas.pad );
 
         switch( ch ) {
-            case KEY_RESIZE: {
-                ctune_UI_Resizer.resize();
+            case ERR: {
+                keypad( private.cache.dialogs[ctx].canvas.pad, TRUE );
             } break;
+
+            case KEY_RESIZE: break;
 
             case KEY_UP: {
                 if( ctune_UI_Dialog.isScrollableY( &private.cache.dialogs[ctx] ) )

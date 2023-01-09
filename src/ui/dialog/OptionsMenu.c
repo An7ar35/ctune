@@ -727,7 +727,9 @@ static void ctune_UI_Dialog_OptionsMenu_resize( void * om ) {
     }
 
     ctune_UI_SlideMenu.resize( &opt_menu->menu );
-    keypad( opt_menu->menu.canvas_win, FALSE );
+    ctune_UI_BorderWin.show( &opt_menu->border_win );
+    ctune_UI_SlideMenu.show( &opt_menu->menu );
+    keypad( opt_menu->menu.canvas_win, TRUE ); //reinit since `ctune_UI_SlideMenu.resize(..)` will re-create its `canvas_win`
 }
 
 /**
@@ -735,47 +737,47 @@ static void ctune_UI_Dialog_OptionsMenu_resize( void * om ) {
  * @param om Pointer to ctune_UI_OptionsMenu_t object
  */
 static void ctune_UI_Dialog_OptionsMenu_captureInput( ctune_UI_OptionsMenu_t * om ) {
-    resized: //without this goto tag, the input capture exits since the key-input window gets destroyed and recreated
-        keypad( om->menu.canvas_win, TRUE );
-        curs_set( 0 );
+    keypad( om->menu.canvas_win, TRUE );
+    curs_set( 0 );
 
-        om->cache.input_captured = true;
-        volatile int character;
+    om->cache.input_captured = true;
+    volatile int character;
 
-        while( om->cache.input_captured ) {
-            character = wgetch( om->menu.canvas_win );
+    while( om->cache.input_captured ) {
+        character = wgetch( om->menu.canvas_win );
 
-            switch( ctune_UI_KeyBinding.getAction( CTUNE_UI_CTX_OPT_MENU, character ) ) {
-                case CTUNE_UI_ACTION_RESIZE      : { ctune_UI_Resizer.resize();                      } goto resized;
-                case CTUNE_UI_ACTION_ESC         : { om->cache.input_captured = false;               } break;
-                case CTUNE_UI_ACTION_SELECT_PREV : { ctune_UI_SlideMenu.navKeyUp( &om->menu );       } break;
-                case CTUNE_UI_ACTION_SELECT_NEXT : { ctune_UI_SlideMenu.navKeyDown( &om->menu );     } break;
-                case CTUNE_UI_ACTION_GO_LEFT     : { ctune_UI_SlideMenu.navKeyLeft( &om->menu );     } break;
-                case CTUNE_UI_ACTION_GO_RIGHT    : { ctune_UI_SlideMenu.navKeyRight( &om->menu );    } break;
-                case CTUNE_UI_ACTION_SELECT_FIRST: { ctune_UI_SlideMenu.navKeyFirst( &om->menu );    } break;
-                case CTUNE_UI_ACTION_SELECT_LAST : { ctune_UI_SlideMenu.navKeyLast( &om->menu);      } break;
-                case CTUNE_UI_ACTION_PAGE_UP     : { ctune_UI_SlideMenu.navKeyPageUp( &om->menu );   } break;
-                case CTUNE_UI_ACTION_PAGE_DOWN   : { ctune_UI_SlideMenu.navKeyPageDown( &om->menu ); } break;
-                case CTUNE_UI_ACTION_TRIGGER     : { ctune_UI_SlideMenu.navKeyEnter( &om->menu );    } break;
-                default                          : { om->cache.input_captured = false;               } break;
-            }
-
-            if( om->cache.input_captured ) {
-                ctune_UI_BorderWin.show( &om->border_win );
-                ctune_UI_SlideMenu.show( &om->menu );
-            }
+        switch( ctune_UI_KeyBinding.getAction( CTUNE_UI_CTX_OPT_MENU, character ) ) {
+            case CTUNE_UI_ACTION_ERR         : //fallthrough
+            case CTUNE_UI_ACTION_RESIZE      : break;
+            case CTUNE_UI_ACTION_ESC         : { om->cache.input_captured = false;               } break;
+            case CTUNE_UI_ACTION_SELECT_PREV : { ctune_UI_SlideMenu.navKeyUp( &om->menu );       } break;
+            case CTUNE_UI_ACTION_SELECT_NEXT : { ctune_UI_SlideMenu.navKeyDown( &om->menu );     } break;
+            case CTUNE_UI_ACTION_GO_LEFT     : { ctune_UI_SlideMenu.navKeyLeft( &om->menu );     } break;
+            case CTUNE_UI_ACTION_GO_RIGHT    : { ctune_UI_SlideMenu.navKeyRight( &om->menu );    } break;
+            case CTUNE_UI_ACTION_SELECT_FIRST: { ctune_UI_SlideMenu.navKeyFirst( &om->menu );    } break;
+            case CTUNE_UI_ACTION_SELECT_LAST : { ctune_UI_SlideMenu.navKeyLast( &om->menu);      } break;
+            case CTUNE_UI_ACTION_PAGE_UP     : { ctune_UI_SlideMenu.navKeyPageUp( &om->menu );   } break;
+            case CTUNE_UI_ACTION_PAGE_DOWN   : { ctune_UI_SlideMenu.navKeyPageDown( &om->menu ); } break;
+            case CTUNE_UI_ACTION_TRIGGER     : { ctune_UI_SlideMenu.navKeyEnter( &om->menu );    } break;
+            default                          : { om->cache.input_captured = false;               } break;
         }
 
-        ctune_UI_SlideMenu.hide( &om->menu );
-        ctune_UI_SlideMenu.reset( &om->menu );
-        ctune_UI_BorderWin.hide( &om->border_win );
+        if( om->cache.input_captured ) {
+            ctune_UI_BorderWin.show( &om->border_win );
+            ctune_UI_SlideMenu.show( &om->menu );
+        }
+    }
 
-        update_panels();
-        doupdate();
+    ctune_UI_SlideMenu.hide( &om->menu );
+    ctune_UI_SlideMenu.reset( &om->menu );
+    ctune_UI_BorderWin.hide( &om->border_win );
 
-        ctune_UI_Resizer.pop();
+    update_panels();
+    doupdate();
 
-        keypad( om->menu.canvas_win, FALSE );
+    ctune_UI_Resizer.pop();
+    CTUNE_LOG( CTUNE_LOG_TRACE, "Exiting OptionsMenu %p", om );
+    keypad( om->menu.canvas_win, FALSE );
 }
 
 /**
