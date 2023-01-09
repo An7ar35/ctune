@@ -10,6 +10,7 @@
 #include "fs/PlaybackLog.h"
 #include "Controller.h"
 #include "ui/UI.h"
+#include "ui/Resizer.h"
 
 //TODO [major functionality] playlist tab + functionality (load csv files from cmd args/dialog box?)
 //TODO [medium functionality] Playlog viewer tab with stations played by descending order on the left and tracks played on the right inc timestamp
@@ -178,7 +179,7 @@ static bool ctune_init( const ctune_ArgOptions_t * options ) {
     ctune_Controller.setVolumeChangeEventCallback( ctune_UI.printVolume );
     ctune_Controller.setPlaybackStateChangeEventCallback( ctune_UI.printPlaybackState );
     ctune_Controller.setSearchStateChangeEventCallback( ctune_UI.printSearchingState );
-    ctune_Controller.setResizeUIEventCallback( ctune_UI.resize );
+    ctune_Controller.setResizeUIEventCallback( ctune_UI_Resizer.resize );
 
     /* UI */
     if( !ctune_UI.setup( options->ui.show_cursor ) ) {
