@@ -933,9 +933,8 @@ static ctune_FormExit_e ctune_UI_RSFind_captureInput( ctune_UI_RSFind_t * rsfind
         character = wgetch( rsfind->dialog.canvas.pad );
 
         switch( ctune_UI_KeyBinding.getAction( CTUNE_UI_CTX_RSFIND, character ) ) {
-            case CTUNE_UI_ACTION_RESIZE: {
-                ctune_UI_Resizer.resize();
-            } break;
+            case CTUNE_UI_ACTION_ERR   : //fallthrough
+            case CTUNE_UI_ACTION_RESIZE: break;
 
             case CTUNE_UI_ACTION_HELP: {
                 ctune_UI_ContextHelp.show( CTUNE_UI_CTX_RSFIND );

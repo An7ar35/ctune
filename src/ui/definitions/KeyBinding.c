@@ -335,9 +335,13 @@ static ctune_UI_ActionID_e ctune_UI_KeyBinding_getAction( ctune_UI_Context_e ctx
     if( ncurses_key >= KEY_MAX ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_KeyBinding_getAction( %i, %i )] Key exceeds upper limit (%i)", ctx, ncurses_key, KEY_MAX );
         return CTUNE_UI_ACTION_NONE; //EARLY RETURN
-    }
 
-    return keymap_cache[ctx][ncurses_key];
+    } else if( ncurses_key < 0 ) {
+        return CTUNE_UI_ACTION_ERR;
+
+    } else {
+        return keymap_cache[ ctx ][ ncurses_key ];
+    }
 }
 
 /**

@@ -731,9 +731,8 @@ static void ctune_UI_RSInfo_captureInput( ctune_UI_RSInfo_t * rsinfo ) {
         ch = wgetch( rsinfo->dialog.canvas.pad );
 
         switch( ctune_UI_KeyBinding.getAction( CTUNE_UI_CTX_RSINFO, ch ) ) {
-            case CTUNE_UI_ACTION_RESIZE: {
-                ctune_UI_Resizer.resize();
-            } break;
+            case CTUNE_UI_ACTION_ERR   : //fallthrough
+            case CTUNE_UI_ACTION_RESIZE: break;
 
             case CTUNE_UI_ACTION_ESC: {
                 exit = true;

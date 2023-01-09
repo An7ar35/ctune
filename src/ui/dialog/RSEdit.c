@@ -1135,9 +1135,8 @@ static ctune_FormExit_e ctune_UI_RSEdit_captureInput( ctune_UI_RSEdit_t * rsedit
         character = wgetch( rsedit->dialog.canvas.pad );
 
         switch( ctune_UI_KeyBinding.getAction( CTUNE_UI_CTX_RSEDIT, character ) ) {
-            case CTUNE_UI_ACTION_RESIZE: {
-                ctune_UI_Resizer.resize();
-            } break;
+            case CTUNE_UI_ACTION_ERR   : //fallthrough
+            case CTUNE_UI_ACTION_RESIZE: break;
 
             //FIXME left/right key on sequential input fields on the same line will jump to the prev/next field: look into that and block that behaviour!
             case CTUNE_UI_ACTION_HELP: { //Contextual help

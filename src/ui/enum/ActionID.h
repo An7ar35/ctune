@@ -2,7 +2,8 @@
 #define CTUNE_UI_ENUM_ACTIONID_H
 
 typedef enum ctune_UI_ActionID {
-    CTUNE_UI_ACTION_NONE = 0,
+    CTUNE_UI_ACTION_ERR  = -1,
+    CTUNE_UI_ACTION_NONE =  0,
 
     CTUNE_UI_ACTION_ESC,
     CTUNE_UI_ACTION_GO_BACK,
