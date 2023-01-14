@@ -1,6 +1,8 @@
 #ifndef CTUNE_DTO_COLOURTHEME_H
 #define CTUNE_DTO_COLOURTHEME_H
 
+#include "../enum/UIPreset.h"
+
 /**
  * Container for theme colour settings
  */
@@ -44,9 +46,10 @@ struct ctune_ColourTheme {
 extern const struct ctune_ColourTheme_Namespace {
     /**
      * Initiate a colour theme object with default values
+     * @param theme Theme preset enum
      * @return Initiated ColourTheme
      */
-    struct ctune_ColourTheme (* init)( void );
+    struct ctune_ColourTheme (* init)( ctune_UIPreset_e theme );
 
     /**
      * Gets the string representation of a colour code

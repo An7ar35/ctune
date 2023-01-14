@@ -4,42 +4,6 @@
 
 #include "../../logger/Logger.h"
 
-/*
- * Default theme variables
- */
-static const ctune_UI_Theme_t default_theme = {
-    .background = COLOR_BLACK,
-    .foreground = COLOR_WHITE,
-
-    .rows = {
-        .background            = COLOR_BLACK,
-        .foreground            = COLOR_WHITE,
-        .selected_focused_bg   = COLOR_BLUE,
-        .selected_focused_fg   = COLOR_WHITE,
-        .selected_unfocused_bg = COLOR_WHITE,
-        .selected_unfocused_fg = COLOR_BLACK,
-        .favourite_local_fg    = COLOR_MAGENTA,
-        .favourite_remote_fg   = COLOR_YELLOW,
-    },
-
-    .icons = {
-        .playback_on    = COLOR_GREEN,
-        .playback_off   = COLOR_RED,
-        .queued_station = COLOR_CYAN,
-    },
-
-    .field = {
-        .invalid_fg = COLOR_RED,
-    },
-
-    .button = {
-        .background   = COLOR_BLACK,
-        .foreground   = COLOR_WHITE,
-        .invalid_fg   = COLOR_RED,
-        .validated_fg = COLOR_GREEN,
-    },
-};
-
 /**
  * Theme items
  */
@@ -103,6 +67,36 @@ static int attributes[CTUNE_UI_ITEM_COUNT] = {
 };
 
 /**
+ * [PRIVATE]
+ * @param theme Theme to set
+ */
+static void ctune_UI_Theme_set( ctune_UI_Theme_t * theme ) {
+    //         theme item                                   foreground                         background
+    init_pair( THEME_STD,                                   theme->foreground,                 theme->background                 );
+    init_pair( THEME_STD_INV,                               theme->background,                 theme->foreground                 );
+    init_pair( THEME_ROW,                                   theme->rows.foreground,            theme->rows.background            );
+    init_pair( THEME_ROW_SELECTED_FOCUSED,                  theme->rows.selected_focused_fg,   theme->rows.selected_focused_bg   );
+    init_pair( THEME_ROW_SELECTED_UNFOCUSED,                theme->rows.selected_unfocused_fg, theme->rows.selected_unfocused_bg );
+    init_pair( THEME_ROW_LOCAL_FAV_TXT,                     theme->rows.favourite_local_fg,    theme->rows.background            );
+    init_pair( THEME_ROW_LOCAL_FAV_TXT_SELECTED_FOCUSED,    theme->rows.favourite_local_fg,    theme->rows.selected_focused_bg   );
+    init_pair( THEME_ROW_LOCAL_FAV_TXT_SELECTED_UNFOCUSED,  theme->rows.favourite_local_fg,    theme->rows.selected_unfocused_bg );
+    init_pair( THEME_ROW_REMOTE_FAV_TXT,                    theme->rows.favourite_remote_fg,   theme->rows.background            );
+    init_pair( THEME_ROW_REMOTE_FAV_TXT_SELECTED_FOCUSED,   theme->rows.favourite_remote_fg,   theme->rows.selected_focused_bg   );
+    init_pair( THEME_ROW_REMOTE_FAV_TXT_SELECTED_UNFOCUSED, theme->rows.favourite_remote_fg,   theme->rows.selected_unfocused_bg );
+    init_pair( THEME_QUEUED,                                theme->icons.queued_station,       theme->rows.background            );
+    init_pair( THEME_QUEUED_FAV,                            theme->icons.queued_station,       theme->rows.background            );
+    init_pair( THEME_QUEUED_INV_FOCUSED,                    theme->icons.queued_station,       theme->rows.selected_focused_bg   );
+    init_pair( THEME_QUEUED_INV_UNFOCUSED,                  theme->icons.queued_station,       theme->rows.selected_unfocused_bg );
+    init_pair( THEME_ICON_OFF,                              theme->icons.playback_off,         theme->foreground                 );
+    init_pair( THEME_ICON_ON,                               theme->icons.playback_on,          theme->foreground                 );
+    init_pair( THEME_FIELD_DFLT,                            theme->foreground,                 theme->background                 );
+    init_pair( THEME_FIELD_INVALID,                         theme->field.invalid_fg,           theme->background                 );
+    init_pair( THEME_BUTTON_DFLT,                           theme->button.foreground,          theme->button.background          );
+    init_pair( THEME_BUTTON_VALID,                          theme->button.validated_fg,        theme->button.background          );
+    init_pair( THEME_BUTTON_INVALID,                        theme->button.invalid_fg,          theme->button.background          );
+}
+
+/**
  * Initiates the theming attributes
  * @param theme Theme to use
  */
@@ -110,34 +104,18 @@ static void ctune_UI_Theme_init( ctune_UI_Theme_t * theme ) {
     if( !is_initialised ) {
         start_color();
 
-        if( theme == NULL )
-            CTUNE_LOG( CTUNE_LOG_WARNING, "[ctune_UI_Theme_init( %p )] NULL theme: using default values.", theme );
+        if( theme == NULL ) {
+            CTUNE_LOG( CTUNE_LOG_WARNING,
+                       "[ctune_UI_Theme_init( %p )] NULL theme: using default values.",
+                       theme
+            );
 
-        const ctune_UI_Theme_t * t = ( theme != NULL ? theme : &default_theme );
+            ctune_UI_Theme_t default_theme = ctune_ColourTheme.init( CTUNE_UITHEME_DEFAULT );
+            ctune_UI_Theme_set( &default_theme );
 
-        //         theme item                                   foreground                     background
-        init_pair( THEME_STD,                                   t->foreground,                 t->background                 );
-        init_pair( THEME_STD_INV,                               t->background,                 t->foreground                 );
-        init_pair( THEME_ROW,                                   t->rows.foreground,            t->rows.background            );
-        init_pair( THEME_ROW_SELECTED_FOCUSED,                  t->rows.selected_focused_fg,   t->rows.selected_focused_bg   );
-        init_pair( THEME_ROW_SELECTED_UNFOCUSED,                t->rows.selected_unfocused_fg, t->rows.selected_unfocused_bg );
-        init_pair( THEME_ROW_LOCAL_FAV_TXT,                     t->rows.favourite_local_fg,    t->rows.background            );
-        init_pair( THEME_ROW_LOCAL_FAV_TXT_SELECTED_FOCUSED,    t->rows.favourite_local_fg,    t->rows.selected_focused_bg   );
-        init_pair( THEME_ROW_LOCAL_FAV_TXT_SELECTED_UNFOCUSED,  t->rows.favourite_local_fg,    t->rows.selected_unfocused_bg );
-        init_pair( THEME_ROW_REMOTE_FAV_TXT,                    t->rows.favourite_remote_fg,   t->rows.background            );
-        init_pair( THEME_ROW_REMOTE_FAV_TXT_SELECTED_FOCUSED,   t->rows.favourite_remote_fg,   t->rows.selected_focused_bg   );
-        init_pair( THEME_ROW_REMOTE_FAV_TXT_SELECTED_UNFOCUSED, t->rows.favourite_remote_fg,   t->rows.selected_unfocused_bg );
-        init_pair( THEME_QUEUED,                                t->icons.queued_station,       t->rows.background            );
-        init_pair( THEME_QUEUED_FAV,                            t->icons.queued_station,       t->rows.background            );
-        init_pair( THEME_QUEUED_INV_FOCUSED,                    t->icons.queued_station,       t->rows.selected_focused_bg   );
-        init_pair( THEME_QUEUED_INV_UNFOCUSED,                  t->icons.queued_station,       t->rows.selected_unfocused_bg );
-        init_pair( THEME_ICON_OFF,                              t->icons.playback_off,         t->foreground                 );
-        init_pair( THEME_ICON_ON,                               t->icons.playback_on,          t->foreground                 );
-        init_pair( THEME_FIELD_DFLT,                            t->foreground,                 t->background                 );
-        init_pair( THEME_FIELD_INVALID,                         t->field.invalid_fg,           t->background                 );
-        init_pair( THEME_BUTTON_DFLT,                           t->button.foreground,          t->button.background          );
-        init_pair( THEME_BUTTON_VALID,                          t->button.validated_fg,        t->button.background          );
-        init_pair( THEME_BUTTON_INVALID,                        t->button.invalid_fg,          t->button.background          );
+        } else {
+            ctune_UI_Theme_set( theme );
+        }
 
         CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_Theme_init( %p )] Theming initialised.", theme )
         is_initialised = true;

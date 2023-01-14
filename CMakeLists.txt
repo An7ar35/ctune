@@ -157,6 +157,7 @@ set(SOURCE_FILES
         src/dto/Field.h
         src/enum/ByCategory.h
         src/enum/ByCategory.c
+        src/enum/FileState.h
         src/enum/Flag.h
         src/enum/ListCategory.c
         src/enum/ListCategory.h
@@ -166,6 +167,8 @@ set(SOURCE_FILES
         src/enum/StationAttribute.h
         src/enum/StationSrc.h
         src/enum/StationSrc.c
+        src/enum/UIPreset.h
+        src/enum/UIPreset.c
         src/parser/JSON.c
         src/parser/JSON.h
         src/parser/KVPairs.c
@@ -176,12 +179,16 @@ set(SOURCE_FILES
         src/player/Player.h
         src/player/RadioPlayer.c
         src/player/RadioPlayer.h
+        src/fs/fs.h
+        src/fs/fs.c
         src/fs/PlaybackLog.c
         src/fs/PlaybackLog.h
         src/fs/Settings.c
         src/fs/Settings.h
         src/fs/Plugin.c
         src/fs/Plugin.h
+        src/fs/XDG.c
+        src/fs/XDG.h
         src/ui/UI.c
         src/ui/UI.h
         src/ui/Resizer.c

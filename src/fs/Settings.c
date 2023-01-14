@@ -1,11 +1,10 @@
 #include "Settings.h"
 
-#include <stdlib.h>
 #include <stdio.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <errno.h>
 
+#include "fs.h"
+#include "XDG.h"
 #include "Plugin.h"
 #include "../datastructure/HashMap.h"
 #include "../logger/Logger.h"
@@ -28,6 +27,7 @@
 #define CFG_KEY_UI_FAVTAB_SORTBY                "UI::Favourites::SortBy"
 #define CFG_KEY_UI_SEARCHTAB_LRG                "UI::Search::UseLargeRows"
 #define CFG_KEY_UI_BROWSERTAB_LRG               "UI::Browser::UseLargeRows"
+#define CFG_KEY_UI_THEME_PRESET                 "UI::Theme::preset"
 #define CFG_KEY_UI_THEME                        "UI::Theme"
 #define CFG_KEY_UI_THEME_ROW                    "UI::Theme::row"
 #define CFG_KEY_UI_THEME_ROW_SELECTED_FOCUSED   "UI::Theme::row::selected::focused"
@@ -47,12 +47,6 @@
 #define CTUNE_SOUND_OUTPUT_PLUGIN_COUNT 4
 #define CTUNE_LOCK_FILENAME             "ctune.lock"
 
-typedef enum {
-    CTUNE_FILE_ERR      = -1,
-    CTUNE_FILE_NOTFOUND =  0,
-    CTUNE_FILE_FOUND    =  1
-} ctune_FileState;
-
 /**
  * List of supported input plugin names (i.e.: players)
  */
@@ -71,23 +65,8 @@ static const char * sound_output_plugins[CTUNE_SOUND_OUTPUT_PLUGIN_COUNT] = {
     "sndio",
 };
 
-static struct ctune_Settings_XDG {
-    //https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
-    const char * fallback_data_path;
-    const char * fallback_cfg_path;
-    String_t     resolved_data_path;
-    String_t     resolved_cfg_path;
-
-} xdg = {
-    .fallback_data_path = ".local/share/",
-    .fallback_cfg_path  = ".config/",
-    .resolved_data_path = { ._raw = NULL, ._length = 0 }, //i.e. String.init()
-    .resolved_cfg_path  = { ._raw = NULL, ._length = 0 }  //i.e. String.init()
-};
-
 static struct ctune_Settings_Cfg {
     bool             loaded;
-    const char *     dir_name;
     const char *     file_name;
     int              resume_volume;
     bool             play_log_overwrite;
@@ -117,53 +96,15 @@ static struct ctune_Settings_Cfg {
         String_t           uuid;
         ctune_StationSrc_e src;
     } last_station;
-
-} config = {
-    .loaded                 = false,
-    .dir_name               = "ctune/",
-    .file_name              = "ctune.cfg",
-    .resume_volume          = 100,
-    .play_log_overwrite     = true,
-    .timeout_stream_val     = 5, //in seconds
-    .timeout_network_val    = 8, //in seconds
-
-    .io_libs = {
-        .sys_lib_path           = CTUNE_SYSLIB_PATH,
-        .player.dir_name        = "/player/",
-        .player.dflt_name       = CTUNE_PLUGIN_PLAYER_DFLT,
-        .player.name            = { NULL, 0 },
-        .sound_server.dir_name  = "/output/",
-        .sound_server.dflt_name = CTUNE_PLUGIN_SNDSRV_DFLT,
-        .sound_server.name      = { NULL, 0 },
-    },
-
-    .ui = { //defaults
-        .fav_tab.theme_favourites = true,
-        .fav_tab.large_rows       = true,
-        .search_tab.large_rows    = true,
-        .browse_tab.large_rows    = false,
-    },
-
-    .last_station = {
-        .uuid = { ._raw = NULL, ._length = 0 },
-        .src  = CTUNE_STATIONSRC_LOCAL,
-    },
-};
+} config;
 
 static struct ctune_Settings_Fav {
-    const char * dir_name;
     const char * file_name;
     const char * backup_name;
     HashMap_t    favs[CTUNE_STATIONSRC_COUNT];
 
     ctune_RadioStationInfo_SortBy_e sort_id;
-
-} favourites = {
-    .dir_name    = "ctune/",
-    .file_name   = "ctune.fav",
-    .backup_name = "ctune.fav.bck",
-    .sort_id     = CTUNE_RADIOSTATIONINFO_SORTBY_NONE,
-};
+} favourites;
 
 /**
  * [PRIVATE] Checks if there are no favourites
@@ -195,322 +136,40 @@ static size_t ctune_Settings_favouriteCount( void ) {
 }
 
 /**
- * [PRIVATE] Get file state
- * @param filename File path/name
- * @param size Pointer to container to set the found file size (only on CTUNE_FILE_FOUND)
- * @return CTUNE_FILE_*
+ * Initialises all the variables for the Settings instance
  */
-static ctune_FileState ctune_Settings_getFileState( const char * filename, ssize_t * size ) {
-    struct stat file_stat;
-    const int err    = stat( filename, &file_stat );
-    const int err_no = errno;
-
-    if( err == 0 ) {
-        if( size != NULL )
-            *size = file_stat.st_size;
-
-        return CTUNE_FILE_FOUND;
-
-    } else if( err == -1 && err_no == ENOENT ) {
-        return CTUNE_FILE_NOTFOUND;
-
-    } else {
-        CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_Settings_getFileState( \"%s\" )] Failed to get stats: %s",
-                   filename,
-                   strerror( err_no )
-        );
-
-        return CTUNE_FILE_ERR;
-    }
-}
-
-/**
- * Create a copy of a file's content
- * @param src Source filepath
- * @param target Target filepath
- * @param buff_size Size of buffer to use
- * @return Success
- */
-static bool ctune_Settings_duplicateFile( const char * src, const char * target, size_t buff_size ) {
-    bool   error_state      = false;
-    FILE * from_fd          = NULL;
-    FILE * to_fd            = NULL;
-    size_t source_size      = 0;
-    size_t read_from_src    = 0;
-    size_t writen_to_target = 0;
-    char   buffer[buff_size];
-
-    if( ctune_Settings_getFileState( src, &source_size ) != CTUNE_FILE_FOUND ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_duplicateFile( \"%s\", \"%s\" )] Failed to get stats for source: %s", src, target, strerror( errno ) );
-        goto end;
-    }
-
-    if( ( from_fd = fopen( src, "r" ) ) == NULL ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_duplicateFile( \"%s\", \"%s\" )] Failed to open source: %s", src, target, strerror( errno ) );
-        error_state = true;
-        goto end;
-    }
-
-    if( ( to_fd = fopen( target, "w" ) ) == NULL ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_duplicateFile( \"%s\", \"%s\" )] Failed to open target: %s", src, target, strerror( errno ) );
-        error_state = true;
-        goto end;
-    }
-
-    size_t read = 0;
-
-    while( ( read = fread( buffer, 1, sizeof( buffer ), from_fd ) ) > 0 ) {
-        read_from_src    += read;
-        writen_to_target += fwrite( buffer, 1, read,to_fd );
-    }
-
-    if( source_size != writen_to_target ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_duplicateFile( \"%s\", \"%s\" )] Read/Write mismatch: %lu/%lu", src, target, writen_to_target, source_size );
-        error_state = true;
-    } else {
-        CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_Settings_duplicateFile( \"%s\", \"%s\" )] Copied %lu/%lu successfully.", src, target, writen_to_target, source_size );
-    }
-
-    end:
-        if( from_fd )
-            fclose( from_fd );
-        if( to_fd )
-            fclose( to_fd );
-
-        return !( error_state );
-}
-
-/**
- * [PRIVATE] Checks and creates a directory path if absent
- * @param dir_path Directory path to create
- * @return Success/Path exists
- */
-static bool ctune_Settings_createDirectory( String_t * dir_path ) {
-    struct stat st = { 0 };
-
-    if( stat( dir_path->_raw, &st ) == -1 ) {
-        CTUNE_LOG( CTUNE_LOG_MSG,
-                   "[ctune_Settings_createDirectory( \"%s\" )] "
-                   "Directory does not exist - creating it.",
-                   dir_path->_raw
-        );
-
-        if( mkdir( dir_path->_raw, 0700 ) != 0 ) { //read/write/execute for owner
-            CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[ctune_Settings_createDirectory( \"%s\" )] "
-                       "Could not create directory via stat call: %s",
-                       dir_path->_raw, strerror( errno )
-            );
-
-            String_t cmd = String.init();
-            String.set( &cmd, "mkdir -m 0700 -p " );
-            String.append_back( &cmd, dir_path->_raw );
-
-            int sys_ret = system( cmd._raw );
-
-            if( sys_ret != 0 ) {
-                CTUNE_LOG( CTUNE_LOG_ERROR,
-                           "[ctune_Settings_createDirectory( \"%s\" )] "
-                           "Could not create directory via system call: %s",
-                           cmd._raw, strerror( errno )
-                );
-            }
-
-            String.free( &cmd );
-
-            return ( sys_ret == 0 );
-        }
-    }
-
-    return true;
-}
-
-/**
- * [PRIVATE] Reads a file into a String_t object
- * @param file_path File path
- * @param content   String_t object to dump file content into (assumed to be pre-initialised)
- * @return Success
- */
-static bool ctune_Settings_readFile( const char * file_path, String_t * content ) {
-    FILE * file        = fopen( file_path , "r" );
-    bool   error_state = false;
-
-    if( file == NULL ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_readFile( \"%s\", %p )] Error opening file.", file_path, content );
-        return false; //EARLY RETURN
-    }
-
-    fseek( file, 0, SEEK_END );
-    size_t length = ftell( file );
-    size_t read   = 0;
-    fseek( file, 0, SEEK_SET );
-
-    char buffer[ (length + 1) ];
-    read = fread( &buffer[0], 1, length, file ); //note: ctune input files should be < 4GB so we're fine with this.
-
-    if( read == 0 ) {
-        CTUNE_LOG( CTUNE_LOG_WARNING, "[ctune_Settings_readFile( \"%s\", %p )] Nothing to read in file.", file_path, content );
-        error_state = true;
-
-    } else if( read != length ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_readFile( \"%s\", %p )] Error reading file content.", file_path, content );
-        error_state = true;
-
-    } else {
-        buffer[ length ] = '\0';
-    }
-
-    fclose( file );
-
-    if( !String.set( content, &buffer[0] ) ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_readFile( \"%s\", %p )] Failed to parse buffer to String_t.", file_path, content );
-        error_state = true;
+static void ctune_Settings_init( void ) {
+    favourites = (struct ctune_Settings_Fav) {
+        .file_name   = "ctune.fav",
+        .backup_name = "ctune.fav.bck",
+        .sort_id     = CTUNE_RADIOSTATIONINFO_SORTBY_NONE,
     };
 
-    return !( error_state );
-}
+    config = (struct ctune_Settings_Cfg) {
+        .loaded                 = false,
+        .file_name              = "ctune.cfg",
+        .resume_volume          = 100,
+        .play_log_overwrite     = true,
+        .timeout_stream_val     = 5, //in seconds
+        .timeout_network_val    = 8, //in seconds
 
-//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> XDG Directory Paths >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-/**
- * [PRIVATE] Gets the XDG or fallback configuration directory path for the application
- * @param path_str String container
- * @return Success
- */
-static bool ctune_Settings_getCfgBaseDir( String_t * path_str ) {
-    const char * xdg_cfg_home = getenv( "XDG_CONFIG_HOME" );
-    bool         error_state  = false;
+        .io_libs = {
+            .sys_lib_path           = CTUNE_SYSLIB_PATH,
+            .player.dir_name        = "/player/",
+            .player.dflt_name       = CTUNE_PLUGIN_PLAYER_DFLT,
+            .player.name            = { NULL, 0 },
+            .sound_server.dir_name  = "/output/",
+            .sound_server.dflt_name = CTUNE_PLUGIN_SNDSRV_DFLT,
+            .sound_server.name      = { NULL, 0 },
+        },
 
-    if( xdg_cfg_home != NULL && strlen( xdg_cfg_home ) > 0 ) {
-        String.append_back( path_str, xdg_cfg_home );
-        String.append_back( path_str, "/" );
+        .last_station = {
+            .uuid = { ._raw = NULL, ._length = 0 },
+            .src  = CTUNE_STATIONSRC_LOCAL,
+        },
+    };
 
-    } else {
-        CTUNE_LOG( CTUNE_LOG_WARNING,
-                   "[ctune_Settings_getCfgBaseDir( String_t * )] "
-                   "Env. variable 'XDG_CONFIG_HOME' not set, using default ('${HOME}/%s%s').",
-                   xdg.fallback_cfg_path, config.dir_name
-        );
-
-        char * home_dir = getenv( "HOME" );
-
-        if( home_dir == NULL || strlen( home_dir ) <= 0 ) { //place in running directory as fallback
-            CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_getCfgBaseDir( String_t * )] Env. variable 'HOME' not found.\"" )
-            error_state = true;
-
-        } else {
-            String.append_back( path_str, home_dir );
-            String.append_back( path_str, "/" );
-            String.append_back( path_str, xdg.fallback_cfg_path );
-        }
-    }
-
-    String.append_back( path_str, config.dir_name );
-    CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_Settings_getCfgBaseDir( String_t * )] Base config dir set as: %s", path_str->_raw );
-
-    return !( error_state );
-}
-
-/**
- * [PRIVATE] Gets the XDG or fallback data directory path for the application
- * @param path_str String container
- * @return Success
- */
-static bool ctune_Settings_getDataBaseDir( String_t * path_str ) {
-    const char * xdg_data_home = getenv( "XDG_DATA_HOME" );
-    bool         error_state   = false;
-
-    if( xdg_data_home != NULL && strlen( xdg_data_home ) > 0 ) {
-        String.append_back( path_str, xdg_data_home );
-        String.append_back( path_str, "/" );
-
-    } else {
-        CTUNE_LOG( CTUNE_LOG_WARNING,
-                   "[ctune_Settings_getDataBaseDir( String_t * )] "
-                   "Env. variable 'XDG_DATA_HOME' not set, using default (${HOME}/%s%s).",
-                   xdg.fallback_data_path, favourites.dir_name
-        );
-
-        char * home_dir = getenv( "HOME" );
-
-        if( home_dir == NULL || strlen( home_dir ) <= 0 ) { //place in running directory as fallback
-            CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_getDataBaseDir( String_t * )] Env. variable 'HOME' not found.\"" )
-            error_state = true;
-
-        } else {
-            String.append_back( path_str, home_dir );
-            String.append_back( path_str, "/" );
-            String.append_back( path_str, xdg.fallback_data_path );
-        }
-    }
-
-    String.append_back( path_str, favourites.dir_name );
-    CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_Settings_getDataBaseDir( String_t * )] Base data dir set as: %s", path_str->_raw );
-
-    return !( error_state );
-}
-//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< XDG Directory Paths <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-/**
- * Resolves the application configuration directory path and append given filename to it
- * @param file_name     File name to resolve on the application's configuration directory
- * @param resolved_path Container for the resolved file path to be stored in
- */
-static void ctune_Settings_resolveCfgFilePath( const char * file_name, String_t * resolved_path ) {
-    bool error_state = false;
-
-    if( String.empty( &xdg.resolved_cfg_path ) ) {
-        //cfg path never been resolved
-        if( !ctune_Settings_getCfgBaseDir( &xdg.resolved_cfg_path ) ) {
-            CTUNE_LOG( CTUNE_LOG_WARNING,
-                       "[ctune_Settings_resolveCfgFilePath( \"%s\", %p )] "
-                       "Failed to resolve config data path: using current directory as base.",
-                       file_name, resolved_path
-            );
-
-            error_state = true;
-        }
-    }
-
-    ctune_Settings_createDirectory( &xdg.resolved_cfg_path );
-
-    //copy resolved ${config dir path}/${file_name}
-    String.set( resolved_path, xdg.resolved_cfg_path._raw );
-    String.append_back( resolved_path, file_name );
-
-    if( error_state )
-        String.free( &xdg.resolved_cfg_path );
-}
-
-/**
- * Resolves the application data directory path and append given filename to it
- * @param file_name     File name to resolve on the application's configuration directory
- * @param resolved_path Container for the resolved file path to be stored in
- */
-static void ctune_Settings_resolveDataFilePath( const char * file_name, String_t * resolved_path ) {
-    bool error_state = false;
-
-    if( String.empty( &xdg.resolved_data_path ) ) {
-        //data path never been resolved
-        if( !ctune_Settings_getDataBaseDir( &xdg.resolved_data_path ) ) {
-            CTUNE_LOG( CTUNE_LOG_WARNING,
-                       "[ctune_Settings_resolveDataFilePath( \"%s\", %p )] "
-                       "Failed to resolve config data path: using current directory as base.",
-                       file_name, resolved_path
-            );
-
-            error_state = true;
-        }
-    }
-
-    ctune_Settings_createDirectory( &xdg.resolved_data_path );
-
-    //copy resolved ${data dir path}/${file_name}
-    String.set( resolved_path, xdg.resolved_data_path._raw );
-    String.append_back( resolved_path, file_name );
-
-    if( error_state )
-        String.free( &xdg.resolved_data_path );
+    config.ui = ctune_UIConfig.create(); //init with default variables and theme
 }
 
 //=================================== CTUNE RUNTIME LOCK ===========================================
@@ -522,9 +181,9 @@ static void ctune_Settings_resolveDataFilePath( const char * file_name, String_t
 static bool ctune_Settings_rtlock_lock( void ) {
     String_t lockfile_path = String.init();
 
-    ctune_Settings_resolveDataFilePath( CTUNE_LOCK_FILENAME, &lockfile_path );
+    ctune_XDG.resolveDataFilePath( CTUNE_LOCK_FILENAME, &lockfile_path );
 
-    int file_state = ctune_Settings_getFileState( lockfile_path._raw, NULL );
+    int file_state = ctune_fs.getFileState( lockfile_path._raw, NULL );
 
     switch( file_state ) {
         case CTUNE_FILE_NOTFOUND: {
@@ -568,9 +227,9 @@ static bool ctune_Settings_rtlock_unlock( void ) {
     String_t lockfile_path = String.init();
     bool     error_state = false;
 
-    ctune_Settings_resolveDataFilePath( CTUNE_LOCK_FILENAME, &lockfile_path );
+    ctune_XDG.resolveDataFilePath( CTUNE_LOCK_FILENAME, &lockfile_path );
 
-    const int file_state = ctune_Settings_getFileState( lockfile_path._raw, NULL );
+    const int file_state = ctune_fs.getFileState( lockfile_path._raw, NULL );
 
     if( file_state == CTUNE_FILE_FOUND ) {
         if( remove( lockfile_path._raw ) == 0 ) {
@@ -605,17 +264,15 @@ static bool ctune_Settings_rtlock_unlock( void ) {
  * @return Success
  */
 static bool ctune_Settings_loadCfg() {
-    config.ui.theme       = ctune_ColourTheme.init(); //init with default theme
-
     String_t file_path    = String.init();
     String_t file_content = String.init();
     String_t key          = String.init();
     String_t val          = String.init();
     bool     error_state  = false;
 
-    ctune_Settings_resolveCfgFilePath( config.file_name, &file_path );
+    ctune_XDG.resolveCfgFilePath( config.file_name, &file_path );
 
-    if( !ctune_Settings_readFile( file_path._raw, &file_content ) ) {
+    if( !ctune_fs.readFile( file_path._raw, &file_content ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_loadCfg()] Error reading configuration file into String_t object." );
         error_state = true;
         goto end_fail;
@@ -729,44 +386,55 @@ static bool ctune_Settings_loadCfg() {
             } else if( strcmp( CFG_KEY_NETWORK_TIMEOUT, key._raw ) == 0 ) { //int
                 error = !ctune_Parser_KVPairs.validateInteger( &val, &config.timeout_network_val );
 
+            } else if( strcmp( CFG_KEY_UI_THEME_PRESET, key._raw ) == 0 ) { //string
+                ctune_UIPreset_e preset = ctune_Parser_KVPairs.validateString( &val, ctune_UIPreset.presetList(), CTUNE_UIPRESET_COUNT, false );
+
+                if( !( error = ( preset == CTUNE_UIPRESET_UNKNOWN ) ) ) {
+                    config.ui.theme.preset = preset;
+
+                    if( preset != CTUNE_UIPRESET_CUSTOM ) {
+                        config.ui.theme.preset_pallet = ctune_ColourTheme.init( preset );
+                    }
+                }
+
             } else if( strcmp( CFG_KEY_UI_THEME, key._raw ) == 0 ) { //colour str pair
-                error = !ctune_Parser_KVPairs.validateColourPair( &val, &config.ui.theme.foreground, &config.ui.theme.background );
+                error = !ctune_Parser_KVPairs.validateColourPair( &val, &config.ui.theme.custom_pallet.foreground, &config.ui.theme.custom_pallet.background );
 
             } else if( strcmp( CFG_KEY_UI_THEME_ROW, key._raw ) == 0 ) { //colour str pair
-                error = !ctune_Parser_KVPairs.validateColourPair( &val, &config.ui.theme.rows.foreground, &config.ui.theme.rows.background );
+                error = !ctune_Parser_KVPairs.validateColourPair( &val, &config.ui.theme.custom_pallet.rows.foreground, &config.ui.theme.custom_pallet.rows.background );
 
             } else if( strcmp( CFG_KEY_UI_THEME_ROW_SELECTED_FOCUSED, key._raw ) == 0 ) { //colour str pair
-                error = !ctune_Parser_KVPairs.validateColourPair( &val, &config.ui.theme.rows.selected_focused_fg, &config.ui.theme.rows.selected_focused_bg );
+                error = !ctune_Parser_KVPairs.validateColourPair( &val, &config.ui.theme.custom_pallet.rows.selected_focused_fg, &config.ui.theme.custom_pallet.rows.selected_focused_bg );
 
             } else if( strcmp( CFG_KEY_UI_THEME_ROW_SELECTED_UNFOCUSED, key._raw ) == 0 ) { //colour str pair
-                error = !ctune_Parser_KVPairs.validateColourPair( &val, &config.ui.theme.rows.selected_unfocused_fg, &config.ui.theme.rows.selected_unfocused_bg );
+                error = !ctune_Parser_KVPairs.validateColourPair( &val, &config.ui.theme.custom_pallet.rows.selected_unfocused_fg, &config.ui.theme.custom_pallet.rows.selected_unfocused_bg );
 
             } else if( strcmp( CFG_KEY_UI_THEME_ROW_FAVOURITE_LOCAL, key._raw ) == 0 ) { //colour str
-                error = !ctune_Parser_KVPairs.validateColour( &val, &config.ui.theme.rows.favourite_local_fg );
+                error = !ctune_Parser_KVPairs.validateColour( &val, &config.ui.theme.custom_pallet.rows.favourite_local_fg );
 
             } else if( strcmp( CFG_KEY_UI_THEME_ROW_FAVOURITE_REMOTE, key._raw ) == 0 ) { //colour str
-                error = !ctune_Parser_KVPairs.validateColour( &val, &config.ui.theme.rows.favourite_remote_fg );
+                error = !ctune_Parser_KVPairs.validateColour( &val, &config.ui.theme.custom_pallet.rows.favourite_remote_fg );
 
             } else if( strcmp( CFG_KEY_UI_THEME_ICON_PLAYBACK_ON, key._raw ) == 0 ) { //colour str
-                error = !ctune_Parser_KVPairs.validateColour( &val, &config.ui.theme.icons.playback_on );
+                error = !ctune_Parser_KVPairs.validateColour( &val, &config.ui.theme.custom_pallet.icons.playback_on );
 
             } else if( strcmp( CFG_KEY_UI_THEME_ICON_PLAYBACK_OFF, key._raw ) == 0 ) { //colour str
-                error = !ctune_Parser_KVPairs.validateColour( &val, &config.ui.theme.icons.playback_off );
+                error = !ctune_Parser_KVPairs.validateColour( &val, &config.ui.theme.custom_pallet.icons.playback_off );
 
             } else if( strcmp( CFG_KEY_UI_THEME_ICON_QUEUED, key._raw ) == 0 ) { //colour str
-                error = !ctune_Parser_KVPairs.validateColour( &val, &config.ui.theme.icons.queued_station );
+                error = !ctune_Parser_KVPairs.validateColour( &val, &config.ui.theme.custom_pallet.icons.queued_station );
 
             } else if( strcmp( CFG_KEY_UI_THEME_FIELD_INVALID, key._raw ) == 0 ) { //colour str
-                error = !ctune_Parser_KVPairs.validateColour( &val, &config.ui.theme.field.invalid_fg );
+                error = !ctune_Parser_KVPairs.validateColour( &val, &config.ui.theme.custom_pallet.field.invalid_fg );
 
             } else if( strcmp( CFG_KEY_UI_THEME_BUTTON, key._raw ) == 0 ) { //colour str pair
-                error = !ctune_Parser_KVPairs.validateColourPair( &val, &config.ui.theme.button.foreground, &config.ui.theme.button.background );
+                error = !ctune_Parser_KVPairs.validateColourPair( &val, &config.ui.theme.custom_pallet.button.foreground, &config.ui.theme.custom_pallet.button.background );
 
             } else if( strcmp( CFG_KEY_UI_THEME_BUTTON_INVALID, key._raw ) == 0 ) { //colour str
-                error = !ctune_Parser_KVPairs.validateColour( &val, &config.ui.theme.button.invalid_fg );
+                error = !ctune_Parser_KVPairs.validateColour( &val, &config.ui.theme.custom_pallet.button.invalid_fg );
 
             } else if( strcmp( CFG_KEY_UI_THEME_BUTTON_VALIDATED, key._raw ) == 0 ) { //colour str
-                error = !ctune_Parser_KVPairs.validateColour( &val, &config.ui.theme.button.validated_fg );
+                error = !ctune_Parser_KVPairs.validateColour( &val, &config.ui.theme.custom_pallet.button.validated_fg );
 
             } else {
                 CTUNE_LOG( CTUNE_LOG_ERROR,
@@ -821,7 +489,7 @@ static bool ctune_Settings_writeCfg() {
     FILE   * file        = NULL;
     bool     error_state = false;
 
-    ctune_Settings_resolveCfgFilePath( config.file_name, &file_path );
+    ctune_XDG.resolveCfgFilePath( config.file_name, &file_path );
 
     file = fopen( file_path._raw, "w" );
 
@@ -831,7 +499,7 @@ static bool ctune_Settings_writeCfg() {
         goto end;
     }
 
-    int ret[26];
+    int ret[27];
 
     ret[ 0] = fprintf( file, "%s=%s\n", CFG_KEY_LAST_STATION_PLAYED_UUID, config.last_station.uuid._raw );
     ret[ 1] = fprintf( file, "%s=%i\n", CFG_KEY_LAST_STATION_PLAYED_SRC, config.last_station.src );
@@ -848,23 +516,23 @@ static bool ctune_Settings_writeCfg() {
     ret[11] = fprintf( file, "%s=%s\n", CFG_KEY_UI_SEARCHTAB_LRG, ( config.ui.search_tab.large_rows ? "true" : "false" ) );
     ret[12] = fprintf( file, "%s=%s\n", CFG_KEY_UI_BROWSERTAB_LRG, ( config.ui.browse_tab.large_rows ? "true" : "false" ) );
 
-    ret[13] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME, ctune_ColourTheme.str( config.ui.theme.foreground ), ctune_ColourTheme.str( config.ui.theme.background ) );
+    ret[13] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_PRESET, ctune_ColourTheme.str( config.ui.theme.preset ) );
+    ret[14] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME, ctune_ColourTheme.str( config.ui.theme.custom_pallet.foreground ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.background ) );
+    ret[15] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.foreground ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.background ) );
+    ret[16] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW_SELECTED_FOCUSED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_focused_fg ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_focused_bg ) );
+    ret[17] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW_SELECTED_UNFOCUSED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_unfocused_fg ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_unfocused_bg ) );
+    ret[18] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ROW_FAVOURITE_LOCAL, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.favourite_local_fg ) );
+    ret[19] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ROW_FAVOURITE_REMOTE, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.favourite_remote_fg ) );
 
-    ret[14] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW, ctune_ColourTheme.str( config.ui.theme.rows.foreground ), ctune_ColourTheme.str( config.ui.theme.rows.background ) );
-    ret[15] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW_SELECTED_FOCUSED, ctune_ColourTheme.str( config.ui.theme.rows.selected_focused_fg ), ctune_ColourTheme.str( config.ui.theme.rows.selected_focused_bg ) );
-    ret[16] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW_SELECTED_UNFOCUSED, ctune_ColourTheme.str( config.ui.theme.rows.selected_unfocused_fg ), ctune_ColourTheme.str( config.ui.theme.rows.selected_unfocused_bg ) );
-    ret[17] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ROW_FAVOURITE_LOCAL, ctune_ColourTheme.str( config.ui.theme.rows.favourite_local_fg ) );
-    ret[18] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ROW_FAVOURITE_REMOTE, ctune_ColourTheme.str( config.ui.theme.rows.favourite_remote_fg ) );
+    ret[20] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_PLAYBACK_ON, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.playback_on ) );
+    ret[21] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_PLAYBACK_OFF, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.playback_off ) );
+    ret[22] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_QUEUED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.queued_station ) );
 
-    ret[19] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_PLAYBACK_ON, ctune_ColourTheme.str( config.ui.theme.icons.playback_on ) );
-    ret[20] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_PLAYBACK_OFF, ctune_ColourTheme.str( config.ui.theme.icons.playback_off ) );
-    ret[21] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_QUEUED, ctune_ColourTheme.str( config.ui.theme.icons.queued_station ) );
+    ret[23] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_FIELD_INVALID, ctune_ColourTheme.str( config.ui.theme.custom_pallet.field.invalid_fg ) );
 
-    ret[22] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_FIELD_INVALID, ctune_ColourTheme.str( config.ui.theme.field.invalid_fg ) );
-
-    ret[23] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_BUTTON, ctune_ColourTheme.str( config.ui.theme.button.foreground ), ctune_ColourTheme.str( config.ui.theme.button.background ) );
-    ret[24] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_BUTTON_INVALID, ctune_ColourTheme.str( config.ui.theme.button.invalid_fg ) );
-    ret[25] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_BUTTON_VALIDATED, ctune_ColourTheme.str( config.ui.theme.button.validated_fg ) );
+    ret[24] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_BUTTON, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.foreground ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.background ) );
+    ret[25] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_BUTTON_INVALID, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.invalid_fg ) );
+    ret[26] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_BUTTON_VALIDATED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.validated_fg ) );
 
     for( size_t item_no = 0; item_no < 16; ++item_no ) {
         if( ret[item_no] < 0 ) {
@@ -984,7 +652,7 @@ static bool ctune_Settings_setUIConfig( const ctune_UIConfig_t * cfg ) {
 static bool ctune_Settings_backupFavourites( const char * fav_path, const char * backup_path ) {
     bool error_state = false;
 
-    if( ctune_Settings_getFileState( backup_path, NULL ) == CTUNE_FILE_FOUND ) {
+    if( ctune_fs.getFileState( backup_path, NULL ) == CTUNE_FILE_FOUND ) {
         if( remove( backup_path ) != 0 ) {
             CTUNE_LOG( CTUNE_LOG_ERROR,
                        "[ctune_Settings_backupFavourites()] Failed to remove old backup file (\"%s\"): %s",
@@ -1007,7 +675,7 @@ static bool ctune_Settings_backupFavourites( const char * fav_path, const char *
         goto end;
     }
 
-    if( !ctune_Settings_duplicateFile( backup_path, fav_path, 1024 ) ) {
+    if( !ctune_fs.duplicateFile( backup_path, fav_path, 1024 ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_Settings_backupFavourites()] Failed to duplicate file: \"%s\" -> \"%s\"",
                    backup_path,
@@ -1050,10 +718,10 @@ static bool ctune_Settings_loadFavourites() {
     String_t file_content = String.init();
     Vector_t station_list = Vector.init( sizeof( ctune_RadioStationInfo_t ), ctune_RadioStationInfo.freeContent );
 
-    ctune_Settings_resolveCfgFilePath( favourites.file_name, &file_path );
-    ctune_Settings_resolveCfgFilePath( favourites.backup_name, &backup_path );
+    ctune_XDG.resolveCfgFilePath( favourites.file_name, &file_path );
+    ctune_XDG.resolveCfgFilePath( favourites.backup_name, &backup_path );
 
-    if( !ctune_Settings_readFile( file_path._raw, &file_content ) ) {
+    if( !ctune_fs.readFile( file_path._raw, &file_content ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_loadFavourites()] Failed to load file content." );
         error_state = true;
         goto end;
@@ -1127,7 +795,7 @@ static bool ctune_Settings_saveFavourites() {
     String_t json         = String.init();
     Vector_t station_list  = Vector.init( sizeof( ctune_RadioStationInfo_t ), ctune_RadioStationInfo.freeContent );
 
-    ctune_Settings_resolveCfgFilePath( favourites.file_name, &file_path );
+    ctune_XDG.resolveCfgFilePath( favourites.file_name, &file_path );
 
     file = fopen( file_path._raw , "w" );
 
@@ -1318,16 +986,16 @@ static ctune_Player_t * ctune_Settings_getPlayer( void ) {
  * De-allocates anything stored on the heap
  */
 static void ctune_Settings_free() {
-    String.free( &xdg.resolved_cfg_path );
-    String.free( &xdg.resolved_data_path );
+    ctune_XDG.free();
     String.free( &config.io_libs.player.name );
     String.free( &config.io_libs.sound_server.name );
     String.free( &config.last_station.uuid );
 
     ctune_Plugin.free();
 
-    for( int i = 0; i < CTUNE_STATIONSRC_COUNT; ++i )
-        HashMap.clear( &favourites.favs[i] );
+    for( int i = 0; i < CTUNE_STATIONSRC_COUNT; ++i ) {
+        HashMap.clear( &favourites.favs[ i ] );
+    }
 
     CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_Settings_free()] Settings freed." );
 }
@@ -1337,10 +1005,7 @@ static void ctune_Settings_free() {
  * Namespace constructor
  */
 const struct ctune_Settings_Instance ctune_Settings = {
-    .xdg = {
-        .resolveCfgFilePath   = &ctune_Settings_resolveCfgFilePath,
-        .resolveDataFilePath  = &ctune_Settings_resolveDataFilePath,
-    },
+    .init = &ctune_Settings_init,
 
     .rtlock = {
         .lock                 = &ctune_Settings_rtlock_lock,
