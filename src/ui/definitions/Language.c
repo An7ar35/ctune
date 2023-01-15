@@ -122,6 +122,7 @@ static const char * field_str[CTUNE_UI_TEXT_ENUM_COUNT] = {
     [CTUNE_UI_TEXT_MENU_SYNC_UPSTREAM_BULK          ] = "Sync all",
     [CTUNE_UI_TEXT_MENU_SYNC_UPSTREAM               ] = "Sync selected",
     [CTUNE_UI_TEXT_MENU_CONFIGURATION               ] = "Configuration",
+    [CTUNE_UI_TEXT_MENU_UI_THEME                    ] = "UI Theme",
     [CTUNE_UI_TEXT_TRUE                             ] = "Yes",
     [CTUNE_UI_TEXT_FALSE                            ] = "No",
     [CTUNE_UI_TEXT_OK                               ] = "OK",
