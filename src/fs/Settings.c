@@ -516,7 +516,7 @@ static bool ctune_Settings_writeCfg() {
     ret[11] = fprintf( file, "%s=%s\n", CFG_KEY_UI_SEARCHTAB_LRG, ( config.ui.search_tab.large_rows ? "true" : "false" ) );
     ret[12] = fprintf( file, "%s=%s\n", CFG_KEY_UI_BROWSERTAB_LRG, ( config.ui.browse_tab.large_rows ? "true" : "false" ) );
 
-    ret[13] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_PRESET, ctune_ColourTheme.str( config.ui.theme.preset ) );
+    ret[13] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_PRESET, ctune_UIPreset.str( config.ui.theme.preset ) );
     ret[14] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME, ctune_ColourTheme.str( config.ui.theme.custom_pallet.foreground ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.background ) );
     ret[15] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.foreground ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.background ) );
     ret[16] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW_SELECTED_FOCUSED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_focused_fg ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_focused_bg ) );

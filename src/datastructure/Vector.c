@@ -177,7 +177,7 @@ void * Vector_init_back( struct Vector * v, void(* init_fn)( void * ) ) {
 /**
  * Access an element
  * @param v   Vector instance
- * @param pos Index position or element to access
+ * @param pos Index position of element to access
  * @return Pointer to element or NULL if error
  */
 static void * Vector_at( struct Vector * v, size_t pos ) {

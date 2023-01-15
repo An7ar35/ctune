@@ -1,7 +1,9 @@
 #ifndef CTUNE_ENUM_UIPRESET_H
 #define CTUNE_ENUM_UIPRESET_H
 
-typedef enum ctune_UIPreset {
+#include <stdbool.h>
+
+typedef enum {
     CTUNE_UIPRESET_UNKNOWN = -1,
     CTUNE_UIPRESET_DEFAULT =  0,
     CTUNE_UIPRESET_HACKERMAN,
@@ -12,6 +14,11 @@ typedef enum ctune_UIPreset {
     CTUNE_UIPRESET_COUNT
 } ctune_UIPreset_e;
 
+typedef struct {
+    ctune_UIPreset_e id;
+    const char *     name;
+    bool             in_use;
+} ctune_UIPreset_t;
 
 extern const struct ctune_UIPreset_Namespace {
     /**

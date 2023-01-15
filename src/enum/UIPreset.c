@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <string.h>
 
-static const char * THEME_NAMES[CTUNE_UIPRESET_COUNT] = {
+static const char * PRESET_NAMES[CTUNE_UIPRESET_COUNT] = {
     [CTUNE_UIPRESET_DEFAULT  ] = "default",
     [CTUNE_UIPRESET_HACKERMAN] = "hackerman",
     [CTUNE_UIPRESET_REDZONE  ] = "red-zone",
@@ -16,8 +16,8 @@ static const char * THEME_NAMES[CTUNE_UIPRESET_COUNT] = {
  * Gets the list of UI theme presets
  * @return Pointer to first item in list
  */
-static const char ** ctune_UITheme_presetList( void ) {
-    return &THEME_NAMES[0];
+static const char ** ctune_UIPreset_presetList( void ) {
+    return &PRESET_NAMES[0];
 }
 
 /**
@@ -25,9 +25,9 @@ static const char ** ctune_UITheme_presetList( void ) {
  * @param e UITheme enum
  * @return String
  */
-static const char * ctune_UITheme_str( ctune_UIPreset_e e ) {
+static const char * ctune_UIPreset_str( ctune_UIPreset_e e ) {
     assert( (int) e >= 0 && (int) e < CTUNE_UIPRESET_COUNT );
-    return THEME_NAMES[ (int) e ];
+    return PRESET_NAMES[ (int) e ];
 }
 
 /**
@@ -35,9 +35,9 @@ static const char * ctune_UITheme_str( ctune_UIPreset_e e ) {
  * @param str String to convert
  * @return Associated enum or `CTUNE_UIPRESET_UNKNOWN`
  */
-static ctune_UIPreset_e ctune_UITheme_toEnum( const char * str ) {
+static ctune_UIPreset_e ctune_UIPreset_toEnum( const char * str ) {
     for( ctune_UIPreset_e i = 0; i < CTUNE_UIPRESET_COUNT; ++i ) {
-        if( strcmp( str, THEME_NAMES[i] ) == 0 ) {
+        if( strcmp( str, PRESET_NAMES[i] ) == 0 ) {
             return i;
         }
     }
@@ -49,7 +49,7 @@ static ctune_UIPreset_e ctune_UITheme_toEnum( const char * str ) {
  * Namespace constructor
  */
 const struct ctune_UIPreset_Namespace ctune_UIPreset = {
-    .presetList = &ctune_UITheme_presetList,
-    .str        = &ctune_UITheme_str,
-    .toEnum     = &ctune_UITheme_toEnum,
+    .presetList  = &ctune_UIPreset_presetList,
+    .str         = &ctune_UIPreset_str,
+    .toEnum      = &ctune_UIPreset_toEnum,
 };
