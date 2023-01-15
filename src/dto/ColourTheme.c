@@ -70,10 +70,10 @@ struct ctune_ColourTheme ctune_ColourTheme_init( ctune_UIPreset_e theme ) {
             };
         } break;
 
-        case CTUNE_UIPRESET_HACKERMAN: { //TODO
+        case CTUNE_UIPRESET_HACKERMAN: {
             return (struct ctune_ColourTheme) {
                 .background = CTUNE_COLOUR_BLACK,
-                .foreground = CTUNE_COLOUR_WHITE,
+                .foreground = CTUNE_COLOUR_GREEN,
 
                 .rows = {
                     .background            = CTUNE_COLOUR_BLACK,
@@ -88,7 +88,7 @@ struct ctune_ColourTheme ctune_ColourTheme_init( ctune_UIPreset_e theme ) {
                 },
 
                 .icons = {
-                    .playback_on    = CTUNE_COLOUR_GREEN,
+                    .playback_on    = CTUNE_COLOUR_WHITE,
                     .playback_off   = CTUNE_COLOUR_RED,
                     .queued_station = CTUNE_COLOUR_CYAN,
                 },
@@ -99,17 +99,53 @@ struct ctune_ColourTheme ctune_ColourTheme_init( ctune_UIPreset_e theme ) {
 
                 .button = {
                     .background   = CTUNE_COLOUR_BLACK,
-                    .foreground   = CTUNE_COLOUR_GREEN,
+                    .foreground   = CTUNE_COLOUR_CYAN,
                     .invalid_fg   = CTUNE_COLOUR_RED,
                     .validated_fg = CTUNE_COLOUR_GREEN,
                 },
             };
         } break;
 
-        case CTUNE_UIPRESET_REDZONE: { //TODO
+        case CTUNE_UIPRESET_REDZONE: {
             return (struct ctune_ColourTheme) {
                 .background = CTUNE_COLOUR_BLACK,
-                .foreground = CTUNE_COLOUR_WHITE,
+                .foreground = CTUNE_COLOUR_RED,
+
+                .rows = {
+                    .background            = CTUNE_COLOUR_BLACK,
+                    .foreground            = CTUNE_COLOUR_WHITE,
+                    .selected_focused_bg   = CTUNE_COLOUR_RED,
+                    .selected_focused_fg   = CTUNE_COLOUR_WHITE,
+                    .selected_unfocused_bg = CTUNE_COLOUR_WHITE,
+                    .selected_unfocused_fg = CTUNE_COLOUR_BLACK,
+                    .favourite_local_fg    = CTUNE_COLOUR_MAGENTA,
+                    .favourite_remote_fg   = CTUNE_COLOUR_YELLOW,
+                    .broken_fg             = CTUNE_COLOUR_RED,
+                },
+
+                .icons = {
+                    .playback_on    = CTUNE_COLOUR_GREEN,
+                    .playback_off   = CTUNE_COLOUR_WHITE,
+                    .queued_station = CTUNE_COLOUR_CYAN,
+                },
+
+                .field = {
+                    .invalid_fg = CTUNE_COLOUR_RED,
+                },
+
+                .button = {
+                    .background   = CTUNE_COLOUR_BLACK,
+                    .foreground   = CTUNE_COLOUR_YELLOW,
+                    .invalid_fg   = CTUNE_COLOUR_RED,
+                    .validated_fg = CTUNE_COLOUR_GREEN,
+                },
+            };
+        } break;
+
+        case CTUNE_UIPRESET_DEEPBLUE: {
+            return (struct ctune_ColourTheme) {
+                .background = CTUNE_COLOUR_BLACK,
+                .foreground = CTUNE_COLOUR_BLUE,
 
                 .rows = {
                     .background            = CTUNE_COLOUR_BLACK,
@@ -135,43 +171,7 @@ struct ctune_ColourTheme ctune_ColourTheme_init( ctune_UIPreset_e theme ) {
 
                 .button = {
                     .background   = CTUNE_COLOUR_BLACK,
-                    .foreground   = CTUNE_COLOUR_WHITE,
-                    .invalid_fg   = CTUNE_COLOUR_RED,
-                    .validated_fg = CTUNE_COLOUR_GREEN,
-                },
-            };
-        } break;
-
-        case CTUNE_UIPRESET_DEEPBLUE: { //TODO
-            return (struct ctune_ColourTheme) {
-                .background = CTUNE_COLOUR_BLACK,
-                .foreground = CTUNE_COLOUR_WHITE,
-
-                .rows = {
-                    .background            = CTUNE_COLOUR_BLACK,
-                    .foreground            = CTUNE_COLOUR_WHITE,
-                    .selected_focused_bg   = CTUNE_COLOUR_BLUE,
-                    .selected_focused_fg   = CTUNE_COLOUR_WHITE,
-                    .selected_unfocused_bg = CTUNE_COLOUR_WHITE,
-                    .selected_unfocused_fg = CTUNE_COLOUR_BLACK,
-                    .favourite_local_fg    = CTUNE_COLOUR_MAGENTA,
-                    .favourite_remote_fg   = CTUNE_COLOUR_YELLOW,
-                    .broken_fg             = CTUNE_COLOUR_RED,
-                },
-
-                .icons = {
-                    .playback_on    = CTUNE_COLOUR_GREEN,
-                    .playback_off   = CTUNE_COLOUR_RED,
-                    .queued_station = CTUNE_COLOUR_CYAN,
-                },
-
-                .field = {
-                    .invalid_fg = CTUNE_COLOUR_RED,
-                },
-
-                .button = {
-                    .background   = CTUNE_COLOUR_BLACK,
-                    .foreground   = CTUNE_COLOUR_WHITE,
+                    .foreground   = CTUNE_COLOUR_BLUE,
                     .invalid_fg   = CTUNE_COLOUR_RED,
                     .validated_fg = CTUNE_COLOUR_GREEN,
                 },
