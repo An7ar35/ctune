@@ -12,22 +12,10 @@
 #include "../player/Player.h"
 
 extern const struct ctune_Settings_Instance {
-    struct { /* XDG paths */
-        /**
-         * Resolves the application configuration directory path and append given filename to it
-         * @param file_name     File name to resolve on the application's configuration directory
-         * @param resolved_path Container for the resolved file path to be stored in
-         */
-        void (* resolveCfgFilePath)( const char *file_name, String_t *resolved_path );
-
-        /**
-         * Resolves the application data directory path and append given filename to it
-         * @param file_name     File name to resolve on the application's configuration directory
-         * @param resolved_path Container for the resolved file path to be stored in
-         */
-        void (* resolveDataFilePath)( const char *file_name, String_t *resolved_path );
-
-    } xdg;
+    /**
+     * Initialises all the variables for the Settings instance
+     */
+    void (* init)( void );
 
     struct { /* Runtime lock file*/
         /**

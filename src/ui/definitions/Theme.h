@@ -39,7 +39,10 @@ typedef enum ctune_UI_ThemeItem {
     CTUNE_UI_ITEM_COUNT
 } ctune_UI_ThemeItem_e;
 
-
+/**
+ * UI theming instance which uses a `ctune_ColourTheme` struct
+ * (aliased to `ctune_UI_Theme_t`) to initialize its internal state
+ */
 extern const struct ctune_UI_Theme_Instance {
     /**
      * Initiates the theming attributes

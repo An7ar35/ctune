@@ -7,6 +7,7 @@
 #include "ctune_err.h"
 #include "cli/CLI.h"
 #include "fs/Settings.h"
+#include "fs/XDG.h"
 #include "fs/PlaybackLog.h"
 #include "Controller.h"
 #include "ui/UI.h"
@@ -140,7 +141,8 @@ static bool ctune_init( const ctune_ArgOptions_t * options ) {
     CTUNE_LOG( CTUNE_LOG_TRACE, "[INIT] cTune initialising..." );
 
     /* ERROR LOG */
-    ctune_Settings.xdg.resolveDataFilePath( "ctune.log", &err_log_path );
+    ctune_Settings.init();
+    ctune_XDG.resolveDataFilePath( "ctune.log", &err_log_path );
 
     if( !ctune_Logger.init( err_log_path._raw, "w", options->log_level ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[INIT] Failed to initialise the logger." );
@@ -161,7 +163,7 @@ static bool ctune_init( const ctune_ArgOptions_t * options ) {
     }
 
     /* PLAY LOG */
-    ctune_Settings.xdg.resolveDataFilePath( "playlog.txt", &playback_log_path );
+    ctune_XDG.resolveDataFilePath( "playlog.txt", &playback_log_path );
 
     if( !ctune_PlaybackLog.open( playback_log_path._raw, ctune_Settings.cfg.playbackLogOverwrite() ) ) {
         ctune_err.set( CTUNE_ERR_IO_PLAYLOG_OPEN );

@@ -64,7 +64,7 @@ extern const struct ctune_Parser_KVPairs_Namespace {
      * @param list           String array containing acceptable values
      * @param list_ln        String array length
      * @param case_sensitive Flag for case sensitivity
-     * @return Index of list matching value
+     * @return Index of list matching value (-1 on error/failure)
      */
     int (* validateString)( const String_t * src, const char * list[], int list_ln, bool case_sensitive );
 

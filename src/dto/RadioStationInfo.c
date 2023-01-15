@@ -694,7 +694,7 @@ static int ctune_RadioStationInfo_compare_by_name_r( const void * lhs, const voi
     if( comp == 0 )
         return ctune_RadioStationInfo.compareBy( lhs, rhs, CTUNE_RADIOSTATIONINFO_SORTBY_BITRATE );
     else
-        return comp;
+        return ctune_inverseComparison( comp );
 }
 
 static int ctune_RadioStationInfo_compare_by_tags( const void * lhs, const void * rhs ) {

@@ -36,14 +36,14 @@ Click on picture to view a small "in-action" video (~6Mb).
 
 ## Application files
 
-| type | file name    | path | description |
-| ---- | ------------ | ---- | ----------- |
-| executable | `ctune` | `/usr/bin/` | cTune application binary |
-| man | `ctune.1.gz` | `/usr/share/man/man1/` | cTune man page |
-| configuration |`ctune.cfg` | `~/.config/ctune/` | where the configuration is stored |
-| configuration |`ctune.fav` | `~/.config/ctune/` | where the favourite stations are stored |
-| logging |`ctune.log` | `~/.local/share/ctune/` | log file for last runtime (date/timestamps inside are UTC) |
-| logging |`playlog.txt` | `~/.local/share/ctune/` | playback log containing the stations and songs streamed during last runtime* |
+| type          | file name     | path                    | description                                                                  |
+|---------------|---------------|-------------------------|------------------------------------------------------------------------------|
+| executable    | `ctune`       | `/usr/bin/`             | cTune application binary                                                     |
+| man           | `ctune.1.gz`  | `/usr/share/man/man1/`  | cTune man page                                                               |
+| configuration | `ctune.cfg`   | `~/.config/ctune/`      | where the configuration is stored                                            |
+| configuration | `ctune.fav`   | `~/.config/ctune/`      | where the favourite stations are stored                                      |
+| logging       | `ctune.log`   | `~/.local/share/ctune/` | log file for last runtime (date/timestamps inside are UTC)                   |
+| logging       | `playlog.txt` | `~/.local/share/ctune/` | playback log containing the stations and songs streamed during last runtime* |
 
 *In case you want to find the name of a song/station that you liked and forgot to write down or favourite.
 
@@ -55,32 +55,35 @@ The configuration is generated at first launch in `~/.config/ctune/ctune.cfg`. T
 
 ### Editable values
 
-| Configuration string                  | Value type | Default value   | Description                                                                                              |
-|---------------------------------------| ---------- |-----------------|----------------------------------------------------------------------------------------------------------|
-| `IO::Plugin::Player`                  | string | `ffmpeg`        | Player plugin to use (`ffmpeg`, `vlc` )                                                                  |
-| `IO::Plugin::SoundServer`             | string | `pulse`         | Sound output plugin to use (`pulse`, `alsa`, `sdl`, `sndio`)                                             |
-| `IO::OverwritePlayLog`                | bool | `true`          | Flag to overwrite play-log instead of appending to it                                                    |
-| `IO::StreamTimeout`                   | unsigned int | `5`             | Timeout value for streaming in seconds*                                                                  |
-| `IO::NetworkTimeout`                  | unsigned int | `8`             | Timeout value for the network calls in seconds                                                           |
-| `UI::Favourites::ShowTheme`           | bool | `true`            | Flag to show source theming on the Favourites tab                                                        |
-| `UI::Favourites::UseLargeRows`        | bool | `true`          | Flag to use large format row entries in the Favourites tab                                               |
-| `UI::Search::UseLargeRows`            | bool | `true`          | Flag to use large format row entries in the Search tab                                                   |
-| `UI::Browser::UseLargeRows`           | bool | `false`         | Flag to use large format row entries in the Browser tab                                                  |
-| `UI::Theme`                           | colour pair | `{WHITE,BLACK}` | Base theme colours (foreground, background)                                                              |
-| `UI::Theme::row`                      | colour pair | `{WHITE,BLACK}` | Base theme colours for row entries (foreground, background)                                              |
-| `UI::Theme::row::selected::focused`   | colour pair | `{WHITE,BLUE}`  | Theme colours for selected and in-focus row entries                                                      |
-| `UI::Theme::row::selected::unfocused` | colour pair | `{BLACK,WHITE}` | Theme colours for selected and out-of-focus row entries                                                  |
-| `UI::Theme::row::favourite::local`    | colour | `MAGENTA`       | Text colour for a local based station's name on the row entry                                            |
-| `UI::Theme::row::favourite::remote`   | colour | `YELLOW`        | Text colour for a remote based station's name on the row entry                                           |
-| `UI::Theme::icon::playback::on`       | colour | `GREEN`         | Text colour for the playback icon when playing state is true ( <span style="color:green">></span> )      |
-| `UI::Theme::icon::playback::off`      | colour | `RED`           | Text colour for the playback icon when playing state is false ( <span style="color:red">.</span> )       |
-| `UI::Theme::icon::queued`             | colour | `CYAN`          | Text colour for the queued indicator on the corresponding row entry ( <span style="color:cyan">></span> ) |
-| `UI::Theme::field::invalid`           | colour | `RED`           | Text colour for an invalid field                                                                         |
-| `UI::Theme::button`                   | colour pair | `{WHITE,BLACK}` | Theme colours for buttons                                                                                |
-| `UI::Theme::button::invalid`          | colour | `RED`           | Validation button colour when linked action fails                                                        |
-| `UI::Theme::button::validated`        | colour | `GREEN`         | Validation button colour when linked action is successful                                                |
+| Configuration string                  | Value type   | Default value   | Description                                                                                               |
+|---------------------------------------|--------------|-----------------|-----------------------------------------------------------------------------------------------------------|
+| `IO::Plugin::Player`                  | string       | `ffmpeg`        | Player plugin to use (`ffmpeg`, `vlc` )                                                                   |
+| `IO::Plugin::SoundServer`             | string       | `pulse`         | Sound output plugin to use (`pulse`, `alsa`, `sdl`, `sndio`)                                              |
+| `IO::OverwritePlayLog`                | bool         | `true`          | Flag to overwrite play-log instead of appending to it                                                     |
+| `IO::StreamTimeout`                   | unsigned int | `5`             | Timeout value for streaming in seconds*                                                                   |
+| `IO::NetworkTimeout`                  | unsigned int | `8`             | Timeout value for the network calls in seconds                                                            |
+| `UI::Favourites::ShowTheme`           | bool         | `true`          | Flag to show source theming on the Favourites tab                                                         |
+| `UI::Favourites::UseLargeRows`        | bool         | `true`          | Flag to use large format row entries in the Favourites tab                                                |
+| `UI::Search::UseLargeRows`            | bool         | `true`          | Flag to use large format row entries in the Search tab                                                    |
+| `UI::Browser::UseLargeRows`           | bool         | `false`         | Flag to use large format row entries in the Browser tab                                                   |
+ | `UI::Theme::preset`                   | string       | `default`       | Theme preset name                                                                                         |
+| `UI::Theme`                           | colour pair  | `{WHITE,BLACK}` | Base theme colours (foreground, background)                                                               |
+| `UI::Theme::row`                      | colour pair  | `{WHITE,BLACK}` | Base theme colours for row entries (foreground, background)                                               |
+| `UI::Theme::row::selected::focused`   | colour pair  | `{WHITE,BLUE}`  | Theme colours for selected and in-focus row entries                                                       |
+| `UI::Theme::row::selected::unfocused` | colour pair  | `{BLACK,WHITE}` | Theme colours for selected and out-of-focus row entries                                                   |
+| `UI::Theme::row::favourite::local`    | colour       | `MAGENTA`       | Text colour for a local based station's name on the row entry                                             |
+| `UI::Theme::row::favourite::remote`   | colour       | `YELLOW`        | Text colour for a remote based station's name on the row entry                                            |
+| `UI::Theme::icon::playback::on`       | colour       | `GREEN`         | Text colour for the playback icon when playing state is true ( <span style="color:green">></span> )       |
+| `UI::Theme::icon::playback::off`      | colour       | `RED`           | Text colour for the playback icon when playing state is false ( <span style="color:red">.</span> )        |
+| `UI::Theme::icon::queued`             | colour       | `CYAN`          | Text colour for the queued indicator on the corresponding row entry ( <span style="color:cyan">></span> ) |
+| `UI::Theme::field::invalid`           | colour       | `RED`           | Text colour for an invalid field                                                                          |
+| `UI::Theme::button`                   | colour pair  | `{WHITE,BLACK}` | Theme colours for buttons                                                                                 |
+| `UI::Theme::button::invalid`          | colour       | `RED`           | Validation button colour when linked action fails                                                         |
+| `UI::Theme::button::validated`        | colour       | `GREEN`         | Validation button colour when linked action is successful                                                 |
 
 Colour values available: `BLACK`, `RED`, `GREEN`, `YELLOW`, `BLUE`, `MAGENTA`, `CYAN`, `WHITE`
+
+Available theme preset values: "`default`", "`hackerman`", "`red-zone`", "`deep-blue`", "`custom`" (<- this will use the `UI::Theme::*` values in the configuration file)
 
 (*) `StreamTimeout` fully works with the `ffmpeg` player currently and only stream testing with `vlc` (LibVLC doesn't have a call to set a custom value on the player).
 
@@ -88,20 +91,20 @@ Colour values available: `BLACK`, `RED`, `GREEN`, `YELLOW`, `BLUE`, `MAGENTA`, `
 
 ### Auto-generated values
 
-| Configuration string | Value type | Description |
-| -------------------- | ---------- | ----------- |
-| `Resume::UUID` | UUID string | UUID of the last station playing during previous session |
-| `Resume::SourceID` | unsigned int | Source of the last station playing during previous session (local/radiobrowser/etc) |
-| `Resume::Volume` | unsigned int | Volume at last exit (`0`-`100`) |
-| `UI::Favourites::SortBy` | unsigned int | In-application selected default sorting for the entries in the Favourites tab |
+| Configuration string     | Value type   | Description                                                                         |
+|--------------------------|--------------|-------------------------------------------------------------------------------------|
+| `Resume::UUID`           | UUID string  | UUID of the last station playing during previous session                            |
+| `Resume::SourceID`       | unsigned int | Source of the last station playing during previous session (local/radiobrowser/etc) |
+| `Resume::Volume`         | unsigned int | Volume at last exit (`0`-`100`)                                                     |
+| `UI::Favourites::SortBy` | unsigned int | In-application selected default sorting for the entries in the Favourites tab       |
 
 ## Dependencies
 
-| functionality | libraries |
-|----------|-----------------------------------|
-| Network  | OpenSSL, POSIX sockets, Curl      |
-| Playback | FFMpeg/VLC, SDL2/PulseAudio/ALSA/sndio  |
-| Parsing  | json-c (static)                   |
+| functionality | libraries                              |
+|---------------|----------------------------------------|
+| Network       | OpenSSL, POSIX sockets, Curl           |
+| Playback      | FFMpeg/VLC, SDL2/PulseAudio/ALSA/sndio |
+| Parsing       | json-c (static)                        |
 
 
 ## Installation

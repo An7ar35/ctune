@@ -93,6 +93,26 @@ extern const struct StrListClass {
     ListNode * (* extract_node)( struct StrList * list, ListNode * node );
 
     /**
+     * Copies ListNodes to the end of another list
+     * @param from   Origin StrList
+     * @param to     Destination StrList
+     * @param offset Offset from which to copy nodes at origin
+     * @param n      Number of nodes to copy
+     * @return Number of successfully copied nodes
+     */
+    size_t (* copy)( const struct StrList * from, struct StrList * to, size_t offset, size_t n );
+
+    /**
+     * Moves ListNodes to the end of another list
+     * @param from   Origin StrList
+     * @param to     Destination StrList
+     * @param offset Offset from which to move nodes at origin
+     * @param n      Number of nodes to move
+     * @return Number of successfully moved nodes
+     */
+    size_t (* move)( struct StrList * from, struct StrList * to, size_t offset, size_t n );
+
+    /**
      * Gets the ListNode at a specified index
      * @param list StrList instance
      * @param n    Index of node

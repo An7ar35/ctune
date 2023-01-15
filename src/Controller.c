@@ -551,7 +551,16 @@ static void ctune_Controller_setFavouriteSorting( ctune_RadioStationInfo_SortBy_
  * @return Colour theme
  */
 struct ctune_ColourTheme * ctune_Controller_getUiTheme( void ) {
-    return &controller.ui_config.theme;
+    struct ctune_ColourTheme * pallet = ctune_UIConfig.theming.getCurrentThemePallet( &controller.ui_config );
+
+    if( pallet == NULL ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL,
+                   "[ctune_Controller_getUiTheme()] "
+                   "Failed to get a pointer to the active UI colour pallet."
+        );
+    }
+
+    return pallet;
 }
 
 /**

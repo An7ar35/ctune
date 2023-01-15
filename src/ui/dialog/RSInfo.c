@@ -326,155 +326,155 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
     const char * false_str = rsinfo->cb.getDisplayText( CTUNE_UI_TEXT_FALSE );
 
     //Station name
-    wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+    wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
     mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_STATION_NAME], rsinfo->col_separator_str );
-    wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+    wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
     mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_fallbackStr( ctune_RadioStationInfo.get.stationName( rsi ), "" ) );
 
     //Change UUID
     if( ctune_RadioStationInfo.get.changeUUID( rsi ) != NULL ) {
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_CHANGE_UUID], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_RadioStationInfo.get.changeUUID( rsi ) );
     }
 
     //Station UUID
-    wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+    wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
     mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_STATION_UUID], rsinfo->col_separator_str );
-    wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+    wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
     mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_fallbackStr( ctune_RadioStationInfo.get.stationUUID( rsi ), "" ) );
 
     //URL
-    wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+    wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
     mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_URL], rsinfo->col_separator_str );
-    wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+    wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
     mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_fallbackStr( ctune_RadioStationInfo.get.stationURL( rsi ), "" )  );
 
     //URL RESOLVED
     if( ctune_RadioStationInfo.get.resolvedURL( rsi ) != NULL ) {
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_URL_RESOLVED], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_RadioStationInfo.get.resolvedURL( rsi ) );
     }
 
     //HOMEPAGE URL
     if( ctune_RadioStationInfo.get.homepage( rsi ) != NULL ) {
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_URL_HOMEPAGE], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_RadioStationInfo.get.homepage( rsi ) );
     }
 
     //FAVICON URL
     if( ctune_RadioStationInfo.get.faviconURL( rsi ) != NULL ) {
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_URL_FAVICON], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_RadioStationInfo.get.faviconURL( rsi ) );
     }
 
     //TAGS
     if( ctune_RadioStationInfo.get.tags( rsi ) != NULL ) {
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_TAGS], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_RadioStationInfo.get.tags( rsi ) );
     }
 
     //COUNTRY
     if( ctune_RadioStationInfo.get.country( rsi ) != NULL ) {
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_COUNTRY], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_RadioStationInfo.get.country( rsi ) );
     }
 
     //COUNTRY CODE
     if( ctune_RadioStationInfo.get.countryCode( rsi ) != NULL ) {
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_COUNTRY_CODE], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%.*s", 2, ctune_RadioStationInfo.get.countryCode( rsi ) );
     }
 
     //STATE
     if( ctune_RadioStationInfo.get.state( rsi ) != NULL ) {
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_STATE], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_RadioStationInfo.get.state( rsi ) );
     }
 
     //LANGUAGE
     if( ctune_RadioStationInfo.get.language( rsi ) != NULL ) {
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LANGUAGE], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_RadioStationInfo.get.language( rsi ) );
     }
 
     //LANGUAGE CODE
     if( ctune_RadioStationInfo.get.languageCodes( rsi ) != NULL ) {
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LANGUAGE_CODES], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_RadioStationInfo.get.languageCodes( rsi ) );
     }
 
     //VOTES
     if( ctune_RadioStationInfo.get.stationSource( rsi ) != CTUNE_STATIONSRC_LOCAL ) {
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_VOTES], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%lu", ctune_RadioStationInfo.get.votes( rsi ) );
     }
 
     //LAST CHANGE TIMESTAMP
     if( ctune_RadioStationInfo.get.lastChangeTS( rsi ) != NULL ) {
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LAST_CHANGED_TS_ISO], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_RadioStationInfo.get.lastChangeTS( rsi ) );
 
     } else if ( rsi->last_change_time != NULL ) { //FIXME DEPRECIATED timestamps
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LAST_CHANGED_TS], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", rsi->last_change_time );
     }
 
     //CODEC
-    wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+    wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
     mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_CODEC], rsinfo->col_separator_str );
-    wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+    wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
     mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s",
                ctune_fallbackStr( ctune_RadioStationInfo.get.codec( rsi ), "" ) );
 
     //BITRATE
-    wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+    wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
     mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_BITRATE], rsinfo->col_separator_str );
-    wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+    wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
     mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%lu Kbps", ctune_RadioStationInfo.get.bitrate( rsi ) );
 
     //HTTP LIVE STREAMING FLAG
     if( ctune_RadioStationInfo.get.stationSource( rsi ) != CTUNE_STATIONSRC_LOCAL ) {
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_HLS], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ( ctune_RadioStationInfo.get.hls( rsi ) ? true_str : false_str ) );
     }
 
     //LAST CHECK TIMESTAMPS (OK FLAG, LAST CHECK, LAST OK CHECK, LAST CHECK LOCAL)
     if( ctune_RadioStationInfo.get.lastCheckTS( rsi ) != NULL ) {
         int y_start = y;
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y_start++ ), x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LAST_CHECK_OK], rsinfo->col_separator_str );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y_start++ ), x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LAST_CHECK_TS_ISO], rsinfo->col_separator_str );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y_start++ ), x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LAST_CHECK_OK_TS_ISO], rsinfo->col_separator_str );
         mvwprintw( rsinfo->dialog.canvas.pad,   y_start,     x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LAST_CHECK_TS_LOCAL_ISO], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ( ctune_RadioStationInfo.get.lastCheckOK( rsi ) ? true_str : false_str ) );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_fallbackStr( ctune_RadioStationInfo.get.lastCheckTS( rsi ), "" ) );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_fallbackStr( ctune_RadioStationInfo.get.lastCheckOkTS( rsi ), "" ) );
@@ -482,12 +482,12 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
 
     } else if( rsi->last_check_time != NULL ) { //FIXME DEPRECIATED timestamps
         int y_start = y;
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y_start++ ), x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LAST_CHECK_OK], rsinfo->col_separator_str );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y_start++ ), x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LAST_CHECK_TS], rsinfo->col_separator_str );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y_start++ ), x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LAST_CHECK_OK_TS], rsinfo->col_separator_str );
         mvwprintw( rsinfo->dialog.canvas.pad,   y_start,     x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LAST_CHECK_TS_LOCAL], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ( ctune_RadioStationInfo.get.lastCheckOK( rsi ) ? true_str : false_str ) );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_fallbackStr( rsi->last_check_time, "" ) );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_fallbackStr( rsi->last_check_ok_time, "" ) );
@@ -497,47 +497,47 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
     if( ctune_RadioStationInfo.get.stationSource( rsi ) != CTUNE_STATIONSRC_LOCAL ) {
         //CLICK TIMESTAMP
         if( ctune_RadioStationInfo.get.clickTS( rsi ) != NULL ) {
-            wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+            wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
             mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_CLICK_TS_ISO], rsinfo->col_separator_str );
-            wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+            wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
             mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_RadioStationInfo.get.clickTS( rsi ) );
 
         } else if( rsi->click_timestamp != NULL ) { //FIXME DEPRECIATED timestamps
-            wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+            wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
             mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_CLICK_TS], rsinfo->col_separator_str );
-            wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+            wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
             mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", rsi->click_timestamp );
         }
 
         //CLICK COUNT
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_CLICKCOUNT], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%lu", ctune_RadioStationInfo.get.clickCount( rsi ) );
 
         //CLICK TREND
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_CLICKTREND], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%ld", ctune_RadioStationInfo.get.clickTrend( rsi ) );
 
         //SSL ERROR CODE
-        wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_SSL_ERROR], rsinfo->col_separator_str );
-        wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+        wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%ld", ctune_RadioStationInfo.get.sslErrCode( rsi ) );
     }
 
     //GEO COORDINATES
-    wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+    wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
     mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_GEO_COORDS], rsinfo->col_separator_str );
-    wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+    wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
     mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "(%f, %f)", ctune_RadioStationInfo.get.geoLatitude( rsi ), ctune_RadioStationInfo.get.geoLongitude( rsi ) );
 
     //STATION SOURCE
-    wattron( rsinfo->dialog.canvas.pad, A_BOLD );
+    wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
     mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_STATION_SOURCE], rsinfo->col_separator_str );
-    wattroff( rsinfo->dialog.canvas.pad, A_BOLD );
+    wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
     mvwprintw( rsinfo->dialog.canvas.pad, y, col_offset, "%s", ctune_UI_RSInfo_getStationSrcUIText( rsinfo->cb.getDisplayText, ctune_RadioStationInfo.get.stationSource( rsi ) ) );
 }
 

@@ -287,6 +287,105 @@ static ListNode * ctune_StrList_extract_node( struct StrList * list, ListNode * 
 }
 
 /**
+ * Copies ListNodes to the end of another list
+ * @param from   Origin StrList
+ * @param to     Destination StrList
+ * @param offset Offset from which to copy nodes at origin
+ * @param n      Number of nodes to copy
+ * @return Number of successfully copied nodes
+ */
+size_t ctune_StrList_copy( const struct StrList * from, struct StrList * to, size_t offset, size_t n ) {
+    if( from == NULL || to == NULL || offset >= StrList.size( to ) || n == 0 ) {
+        return 0; //EARLY RETURN
+    }
+
+    ListNode * curr = from->_front;
+
+    for( size_t i = 0; i < offset; ++i ) {
+        if( curr->next == NULL ) {
+            fprintf( stderr,
+                     "[StrList.copy( %p, %p, %lu, %lu )] Pointer to next node is NULL (i=%zu).\n",
+                     from, to, offset, n, i
+            );
+
+            return 0; //EARLY RETURN
+
+        } else {
+            curr = curr->next;
+        }
+    }
+
+    size_t count = 0;
+
+    while( curr  != NULL
+        && count <  n
+        && StrList.insert_back( to, curr->data ) != NULL )
+    {
+        curr = curr->next;
+        ++count;
+    }
+
+    return count;
+}
+
+/**
+ * Moves ListNodes to the end of another list
+ * @param from   Origin StrList
+ * @param to     Destination StrList
+ * @param offset Offset from which to move nodes at origin
+ * @param n      Number of nodes to move
+ * @return Number of successfully moved nodes
+ */
+size_t ctune_StrList_move( struct StrList * from, struct StrList * to, size_t offset, size_t n ) { //TODO
+    if( from == NULL || to == NULL || offset >= StrList.size( to ) || n == 0 ) {
+        return 0; //EARLY RETURN
+    }
+
+    ListNode * curr = from->_front;
+
+    for( size_t i = 0; i < offset; ++i ) {
+        if( curr->next == NULL ) {
+            fprintf( stderr,
+                     "[StrList.move( %p, %p, %lu, %lu )] Pointer to next node is NULL (i=%zu).\n",
+                     from, to, offset, n, i
+            );
+
+            return 0; //EARLY RETURN
+
+        } else {
+            curr = curr->next;
+        }
+    }
+
+    size_t count = 0;
+
+    while( curr  != NULL
+        && count <  n
+        && StrList.insert_back( to, curr->data ) != NULL )
+    {
+        ListNode * next = curr->next;
+        ListNode * node = StrList.extract_node( from, curr );
+
+        if( node == NULL ) {
+            fprintf( stderr,
+                     "[StrList.move( %p, %p, %lu, %lu )] Pointer to extracted node is NULL (i=%zu).\n",
+                     from, to, offset, n, ( offset + count )
+            );
+
+            return count; //EARLY RETURN
+        }
+
+        free( node->data );
+        free( node );
+
+        curr = next;
+        ++count;
+    }
+
+    return count;
+}
+
+/**
  * Gets the ListNode at a specified index
  * @param list StrList instance
  * @param n    Index of node
@@ -402,6 +501,8 @@ const struct StrListClass StrList = {
     .emplace_front = &ctune_StrList_emplace_front,
     .emplace_back  = &ctune_StrList_emplace_back,
     .extract_node  = &ctune_StrList_extract_node,
+    .copy          = &ctune_StrList_copy,
+    .move          = &ctune_StrList_move,
     .at            = &ctune_StrList_at,
     .size          = &ctune_StrList_size,
     .empty         = &ctune_StrList_empty,
