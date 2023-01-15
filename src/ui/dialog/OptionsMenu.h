@@ -12,6 +12,11 @@
 #include "../widget/BorderWin.h"
 
 /**
+ * Callback method signature used in ctune_UI_Dialog_OptionsMenu to trigger menu item events
+ */
+typedef int (* OptionsMenuCb_fn)( ctune_UI_PanelID_e, int );
+
+/**
  * OptionsMenu object
  * @param initialised Initialisation flag
  * @param parent      Parent window properties
@@ -32,21 +37,21 @@ typedef struct ctune_UI_Dialog_OptionsMenu {
         WindowProperty_t   slide_menu_property;
         WindowProperty_t   border_win_property;
         ctune_UI_PanelID_e curr_panel_id;
-        Vector_t           generic_payloads;
-        Vector_t           flagged_payloads;
-        Vector_t           sorting_payloads;
+        Vector_t           payloads;
         bool               input_captured;
     } cache;
 
     struct Callbacks {
         const char *    (* getDisplayText)( ctune_UI_TextID_e );
-        void            (* sortStationList)( ctune_UI_PanelID_e tab, ctune_RadioStationInfo_SortBy_e attr );
-        void            (* addNewStation)( ctune_UI_PanelID_e tab );
-        void            (* editStation)( ctune_UI_PanelID_e tab );
-        void            (* toggleFavourite)( ctune_UI_PanelID_e tab );
-        void            (* syncUpstream)( ctune_UI_PanelID_e tab );
-        bool            (* favouriteTabTheming)( ctune_UI_PanelID_e tab, ctune_Flag_e action_flag );
-        bool            (* listRowSizeLarge)( ctune_UI_PanelID_e tab, ctune_Flag_e action_flag );
+        int             (* sortStationList)( ctune_UI_PanelID_e tab, int sort_by_e );
+        int             (* addNewStation)( ctune_UI_PanelID_e tab, int /* unused */ );
+        int             (* editStation)( ctune_UI_PanelID_e tab, int /* unused */ );
+        int             (* toggleFavourite)( ctune_UI_PanelID_e tab, int /* unused */ );
+        int             (* syncUpstream)( ctune_UI_PanelID_e tab, int /* unused */ );
+        int             (* favouriteTabTheming)( ctune_UI_PanelID_e tab, int action_flag_e );
+        int             (* listRowSizeLarge)( ctune_UI_PanelID_e tab, int action_flag_e );
+        void            (* getUIPresets)( Vector_t * presets );
+        int             (* setUIPreset)( ctune_UI_PanelID_e tab, int preset_e );
     } cb;
 
 } ctune_UI_OptionsMenu_t;
@@ -111,52 +116,67 @@ extern const struct ctune_UI_Dialog_OptionsMenu_Namespace {
     struct {
         /**
          * Sets the callback method to sort the station list
-         * @param om Pointer to ctune_UI_OptionsMenu_t object
-         * @param fn Callback function
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
          */
-        void (* setSortStationListCallback)( ctune_UI_OptionsMenu_t * om, void (*fn)( ctune_UI_PanelID_e , ctune_RadioStationInfo_SortBy_e ) );
+        void (* setSortStationListCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
 
         /**
          * Sets the callback method to open new station dialog
-         * @param om Pointer to ctune_UI_OptionsMenu_t object
-         * @param fn Callback function
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
          */
-        void (* setAddNewStationCallback)( ctune_UI_OptionsMenu_t * om, void (*fn)( ctune_UI_PanelID_e ) );
+        void (* setAddNewStationCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
 
         /**
          * Sets the callback method to open edit station dialog
-         * @param om Pointer to ctune_UI_OptionsMenu_t object
-         * @param fn Callback function
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
          */
-        void (* setEditStationCallback)( ctune_UI_OptionsMenu_t * om, void (*fn)( ctune_UI_PanelID_e ) );
+        void (* setEditStationCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
 
         /**
          * Sets the callback method to toggle a station's "favourite" status
-         * @param om Pointer to ctune_UI_OptionsMenu_t object
-         * @param fn Callback function
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
          */
-        void (* setToggleFavouriteCallback)( ctune_UI_OptionsMenu_t * om, void (*fn)( ctune_UI_PanelID_e ) );
+        void (* setToggleFavouriteCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
 
         /**
          * Sets the callback method to sync favourites from remote sources with their upstream counterpart
-         * @param om Pointer to ctune_UI_OptionsMenu_t object
-         * @param fn Callback function
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
          */
-        void (* setSyncCurrSelectedStationCallback)( ctune_UI_OptionsMenu_t * om, void (*fn)( ctune_UI_PanelID_e ) );
+        void (* setSyncCurrSelectedStationCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
 
         /**
          * Sets the callback method to set/get the "favourite" tab's theming
-         * @param om Pointer to ctune_UI_OptionsMenu_t object
-         * @param fn Callback function
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
          */
-        void (* setFavouriteTabThemingCallback)( ctune_UI_OptionsMenu_t * om, bool (* fn)( ctune_UI_PanelID_e, ctune_Flag_e ) );
+        void (* setFavouriteTabThemingCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
 
         /**
          * Sets the callback method to set/get the current tab station list's row 'large' property
-         * @param om Pointer to ctune_UI_OptionsMenu_t object
-         * @param fn Callback function
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
          */
-        void (* setListRowSizeLargeCallback)( ctune_UI_OptionsMenu_t * om, bool (* fn)( ctune_UI_PanelID_e, ctune_Flag_e ) );
+        void (* setListRowSizeLargeCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
+
+        /**
+         * Sets the callback method to get the list of available UI colour pallet presets
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
+         */
+        void (* setGetUIPresetCallback)( ctune_UI_OptionsMenu_t * om, void (* callback)( Vector_t * ) );
+
+        /**
+         * Sets the callback method to set a UI colour pallet preset
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
+         */
+        void (* setSetUIPresetCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
+
     } cb;
 
 } ctune_UI_OptionsMenu;

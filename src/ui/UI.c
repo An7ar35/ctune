@@ -361,23 +361,28 @@ static void ctune_UI_playSelectedStation( ctune_UI_PanelID_e tab ) {
  * [PRIVATE] Sorts the on-screen list of radio stations
  * @param tab  PanelID of the current tab
  * @param attr Sorting attribute ID
+ * @return Success (unused)
  */
-static void ctune_UI_sortStationList( ctune_UI_PanelID_e tab, ctune_RadioStationInfo_SortBy_e attr ) {
+static int ctune_UI_sortStationList( ctune_UI_PanelID_e tab, int sort_by ) {
     ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
 
     if( tab == CTUNE_UI_PANEL_FAVOURITES ) {
-        ctune_Controller.cfg.setFavouriteSorting( attr );
+        ctune_Controller.cfg.setFavouriteSorting( sort_by );
         ctune_Controller.cfg.getListOfFavourites( &ui.cache.favourites );
         ctune_UI_RSListWin.loadResults( &ui.tabs.favourites, &ui.cache.favourites, NULL );
         ctune_UI_RSListWin.show( &ui.tabs.favourites );
     }
+
+    return 1;
 }
 
 /**
  * [PRIVATE] Synchronises the selected favourite station from a remote source to its remote counterpart
  * @param tab PanelID of the current tab
+ * @param arg (unused)
+ * @return 1 (unused)
  */
-static void ctune_UI_syncRemoteStation( ctune_UI_PanelID_e tab ) {
+static int ctune_UI_syncRemoteStation( ctune_UI_PanelID_e tab, int arg ) {
     ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
 
     const ctune_RadioStationInfo_t * rsi    = NULL;
@@ -417,46 +422,47 @@ static void ctune_UI_syncRemoteStation( ctune_UI_PanelID_e tab ) {
     }
 
     Vector.clear_vector( &vector );
+    return 1;
 }
 
 /**
  * [PRIVATE] Sets the current pane's list row size
- * @param tab PanelID of the current tab
- * @param action_flag Action to take (get/set)
+ * @param tab           PanelID of the current tab
+ * @param action_flag_e Action to take (get/set)
  * @return State of the "large row" property or the action flag on error
  */
-static bool ctune_UI_setCurrListRowSize( ctune_UI_PanelID_e tab, ctune_Flag_e action_flag ) {
+static int ctune_UI_setCurrListRowSize( ctune_UI_PanelID_e tab, int action_flag_e ) {
     ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
 
     ctune_UIConfig_t * ui_config = ctune_Controller.cfg.getUIConfig();
-    bool               state     = action_flag;
+    bool               state     = action_flag_e;
 
     switch( tab ) {
         case CTUNE_UI_PANEL_FAVOURITES: {
-            state = ctune_UIConfig.fav_tab.largeRowSize( ui_config, action_flag );
+            state = ctune_UIConfig.fav_tab.largeRowSize( ui_config, action_flag_e );
 
-            if( action_flag != FLAG_GET_VALUE ) {
-                ctune_UI_RSListWin.setLargeRow( &ui.tabs.favourites, action_flag );
+            if( action_flag_e != FLAG_GET_VALUE ) {
+                ctune_UI_RSListWin.setLargeRow( &ui.tabs.favourites, action_flag_e );
                 ctune_UI_RSListWin.resize( &ui.tabs.favourites );
                 ctune_UI.show( CTUNE_UI_PANEL_FAVOURITES ); //force hard redraw
             }
         } break;
 
         case CTUNE_UI_PANEL_SEARCH: {
-            state = ctune_UIConfig.search_tab.largeRowSize( ui_config, action_flag );
+            state = ctune_UIConfig.search_tab.largeRowSize( ui_config, action_flag_e );
 
-            if( action_flag != FLAG_GET_VALUE ) {
-                ctune_UI_RSListWin.setLargeRow( &ui.tabs.search, action_flag );
+            if( action_flag_e != FLAG_GET_VALUE ) {
+                ctune_UI_RSListWin.setLargeRow( &ui.tabs.search, action_flag_e );
                 ctune_UI_RSListWin.resize( &ui.tabs.search );
                 ctune_UI.show( CTUNE_UI_PANEL_SEARCH ); //force hard redraw
             }
         } break;
 
         case CTUNE_UI_PANEL_BROWSER: {
-            state = ctune_UIConfig.browse_tab.largeRowSize( ui_config, action_flag );
+            state = ctune_UIConfig.browse_tab.largeRowSize( ui_config, action_flag_e );
 
-            if( action_flag != FLAG_GET_VALUE ) {
-                ctune_UI_RSListWin.setLargeRow( &ui.tabs.browser.right_pane, action_flag );
+            if( action_flag_e != FLAG_GET_VALUE ) {
+                ctune_UI_RSListWin.setLargeRow( &ui.tabs.browser.right_pane, action_flag_e );
                 ctune_UI_RSListWin.resize( &ui.tabs.browser.right_pane );
                 ctune_UI.show( CTUNE_UI_PANEL_BROWSER ); //force hard redraw
             }
@@ -465,7 +471,7 @@ static bool ctune_UI_setCurrListRowSize( ctune_UI_PanelID_e tab, ctune_Flag_e ac
         default: {
             CTUNE_LOG( CTUNE_LOG_FATAL,
                        "[ctune_UI_setCurrListRowSize( %d, %d )] Invalid PanelID passed.",
-                       tab, action_flag );
+                       tab, action_flag_e );
         } break;
     }
 
@@ -474,34 +480,93 @@ static bool ctune_UI_setCurrListRowSize( ctune_UI_PanelID_e tab, ctune_Flag_e ac
 
 /**
  * [PRIVATE] Sets the 'favourite' tab's theming
- * @param tab         PanelID of the current tab
- * @param action_flag Action to take (get/set)
+ * @param tab           PanelID of the current tab
+ * @param action_flag_e Action to take (get/set)
  * @return State of the "fav theming" property
  */
-static bool ctune_UI_setFavouriteTabTheming( ctune_UI_PanelID_e tab, ctune_Flag_e action_flag ) {
+static int ctune_UI_setFavouriteTabTheming( ctune_UI_PanelID_e tab, int action_flag_e ) {
     ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
 
     ctune_UIConfig_t * ui_config = ctune_Controller.cfg.getUIConfig();
 
     if( tab == CTUNE_UI_PANEL_FAVOURITES ) {
-        bool state = ctune_UIConfig.fav_tab.theming( ui_config, action_flag );
+        bool state = ctune_UIConfig.fav_tab.theming( ui_config, action_flag_e );
 
-        if( action_flag != FLAG_GET_VALUE ) {
-            ctune_UI_RSListWin.themeFavourites( &ui.tabs.favourites, (bool) action_flag );
+        if( action_flag_e != FLAG_GET_VALUE ) {
+            ctune_UI_RSListWin.themeFavourites( &ui.tabs.favourites, (bool) action_flag_e );
             ctune_UI.show( CTUNE_UI_PANEL_FAVOURITES ); //force hard redraw
         }
 
         return state;
     }
 
-    return action_flag;
+    return action_flag_e;
+}
+
+/**
+ * [PRIVATE] Get all available colour pallet presets
+ * @param list Pointer to Vector_t where append presets to (expected to be already initialised)
+ */
+static void ctune_UI_getUIThemes( Vector_t * list ) {
+    ctune_UIPreset_e curr = ctune_Controller.cfg.getUIConfig()->theme.preset;
+
+    for( int i = CTUNE_UIPRESET_DEFAULT; i < CTUNE_UIPRESET_COUNT; ++i ) {
+        ctune_UIPreset_t * preset = Vector.emplace_back( list );
+
+        if( preset ) {
+            ( *preset ) = ( ctune_UIPreset_t ) {
+                .id     = i,
+                .name   = ctune_UIPreset.str( i ),
+                .in_use = ( i == curr ),
+            };
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_getUIThemes( %p )] Failed to add new preset to list ('%s').",
+                       list, ctune_UIPreset.str( i )
+            );
+        }
+    }
+}
+
+/**
+ * [PRIVATE] Sets the current colour pallet theme for the UI
+ * @param tab            PanelID of the current tab
+ * @param ui_preset_enum ctune_UIPreset_e value to set
+ * @return Success
+ */
+static int ctune_UI_setUITheme( ctune_UI_PanelID_e tab, int ui_preset_enum ) {
+    ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
+
+    ctune_UIConfig_t * ui_config = ctune_Controller.cfg.getUIConfig();
+
+    if( !ctune_UIConfig.theming.setPreset( ui_config, ui_preset_enum ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_UI_setUITheme( %d, %d )] Failed to set UI colour pallet preset '%s'.",
+                   tab, ui_preset_enum, ctune_UIPreset.str( ui_preset_enum )
+        );
+
+        return 0; //EARLY RETURN
+    }
+
+    CTUNE_LOG( CTUNE_LOG_MSG,
+               "[ctune_UI_setUITheme( %d, %d )] UI colour pallet preset '%s' set.",
+               tab, ui_preset_enum, ctune_UIPreset.str( ui_preset_enum )
+    );
+
+    ctune_UI_Theme.init( ctune_UIConfig.theming.getCurrentThemePallet( ui_config ) );
+    ctune_UI_Resizer.resize();
+
+    return 1;
 }
 
 /**
  * [PRIVATE] Toggles the favourite state of a selected station in any of the tabs
  * @param tab PanelID of the current tab
+ * @param arg (unused)
+ * @return 1 (unused)
  */
-static void ctune_UI_toggleFavourite( ctune_UI_PanelID_e tab ) {
+static int ctune_UI_toggleFavourite( ctune_UI_PanelID_e tab, int arg /*unused*/ ) {
     ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
 
     int  ch;
@@ -567,6 +632,7 @@ static void ctune_UI_toggleFavourite( ctune_UI_PanelID_e tab ) {
     }
 
     ctune_UI_clearMsgLine();
+    return 1;
 }
 
 /**
@@ -622,21 +688,23 @@ static void ctune_UI_openFindDialog( void ) {
 /**
  * [PRIVATE] Opens the 'add/edit station' dialog window for a new station
  * @param tab PanelID of the current tab
+ * @param arg (unused)
+ * @return Success
  */
-static void ctune_UI_openNewStationDialog( ctune_UI_PanelID_e tab ) {
+static int ctune_UI_openNewStationDialog( ctune_UI_PanelID_e tab, int arg /*unused*/ ) {
     ctune_UI_clearMsgLine();
     ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
 
     if( tab == CTUNE_UI_PANEL_FAVOURITES ) {
         if( !ctune_UI_RSEdit.newStation( &ui.dialogs.rsedit ) ) {
             CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_openNewStationDialog()] Failed to set new station init state." );
-            return; //EARLY RETURN
+            return 0; //EARLY RETURN
         }
 
         if( !ctune_UI_RSEdit.show( &ui.dialogs.rsedit ) ) {
             CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_openNewStationDialog()] Failed to show RSFind window." );
             ctune_err.set( CTUNE_ERR_UI );
-            return; //EARLY RETURN
+            return 0; //EARLY RETURN
         }
 
         if( ctune_UI_RSEdit.captureInput( &ui.dialogs.rsedit ) == CTUNE_UI_FORM_SUBMIT ) {
@@ -647,13 +715,17 @@ static void ctune_UI_openNewStationDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_RSListWin.show( &ui.tabs.favourites );
         }
     }
+
+    return 1;
 }
 
 /**
  * [PRIVATE] Opens the 'add/edit station' dialog window for an existing station
  * @param tab PanelID of the current tab
+ * @param arg (unused)
+ * @return Success
  */
-static void ctune_UI_openEditSelectedStationDialog( ctune_UI_PanelID_e tab ) {
+static int ctune_UI_openEditSelectedStationDialog( ctune_UI_PanelID_e tab, int arg /*unused*/ ) {
     ctune_UI_clearMsgLine();
     ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
 
@@ -662,7 +734,7 @@ static void ctune_UI_openEditSelectedStationDialog( ctune_UI_PanelID_e tab ) {
 
         if( rsi == NULL ) {
             ctune_UI.printError( ctune_UI_Language.text( CTUNE_UI_TEXT_STATION_NOT_EDITABLE ), CTUNE_ERR_ACTION_UNSUPPORTED );
-            return; //EARLY RETURN
+            return 1; //EARLY RETURN
         }
 
         if( ctune_RadioStationInfo.get.stationSource( rsi ) == CTUNE_STATIONSRC_LOCAL ) {
@@ -671,7 +743,7 @@ static void ctune_UI_openEditSelectedStationDialog( ctune_UI_PanelID_e tab ) {
             if( !ctune_UI_RSEdit.show( &ui.dialogs.rsedit ) ) {
                 CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_openEditSelectedStationDialog()] Failed to show RSFind window." );
                 ctune_err.set( CTUNE_ERR_UI );
-                return; //EARLY RETURN
+                return 0; //EARLY RETURN
             }
 
             if( ctune_UI_RSEdit.captureInput( &ui.dialogs.rsedit ) == CTUNE_UI_FORM_SUBMIT ) {
@@ -685,7 +757,7 @@ static void ctune_UI_openEditSelectedStationDialog( ctune_UI_PanelID_e tab ) {
             if( !ctune_UI_RSEdit.show( &ui.dialogs.rsedit ) ) {
                 CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_openEditSelectedStationDialog()] Failed to show RSFind window." );
                 ctune_err.set( CTUNE_ERR_UI );
-                return; //EARLY RETURN
+                return 0; //EARLY RETURN
             }
 
             if( ctune_UI_RSEdit.captureInput( &ui.dialogs.rsedit ) == CTUNE_UI_FORM_SUBMIT ) {
@@ -695,13 +767,15 @@ static void ctune_UI_openEditSelectedStationDialog( ctune_UI_PanelID_e tab ) {
 
         } else {
             ctune_UI.printError( ctune_UI_Language.text( CTUNE_UI_TEXT_STATION_NOT_EDITABLE ), CTUNE_ERR_ACTION_UNSUPPORTED );
-            return; //EARLY RETURN
+            return 1; //EARLY RETURN
         }
 
         ctune_Controller.cfg.getListOfFavourites( &ui.cache.favourites );
         ctune_UI_RSListWin.loadResults( &ui.tabs.favourites, &ui.cache.favourites, NULL );
         ctune_UI_RSListWin.show( &ui.tabs.favourites );
     }
+
+    return 1;
 }
 
 /**
@@ -723,6 +797,8 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_OptionsMenu.cb.setSyncCurrSelectedStationCallback( &ui.dialogs.optmenu, ctune_UI_syncRemoteStation );
             ctune_UI_OptionsMenu.cb.setFavouriteTabThemingCallback( &ui.dialogs.optmenu, ctune_UI_setFavouriteTabTheming );
             ctune_UI_OptionsMenu.cb.setListRowSizeLargeCallback( &ui.dialogs.optmenu, ctune_UI_setCurrListRowSize );
+            ctune_UI_OptionsMenu.cb.setGetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_getUIThemes );
+            ctune_UI_OptionsMenu.cb.setSetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_setUITheme );
 
             if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu ) ) {
                 ctune_UI_OptionsMenu.show( &ui.dialogs.optmenu );
@@ -740,6 +816,8 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
 
             ui.dialogs.optmenu = ctune_UI_OptionsMenu.create( &ui.size.screen, tab, ctune_UI_Language.text );
             ctune_UI_OptionsMenu.cb.setListRowSizeLargeCallback( &ui.dialogs.optmenu, ctune_UI_setCurrListRowSize );
+            ctune_UI_OptionsMenu.cb.setGetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_getUIThemes );
+            ctune_UI_OptionsMenu.cb.setSetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_setUITheme );
 
             if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu ) ) {
                 ctune_UI_OptionsMenu.show( &ui.dialogs.optmenu );
@@ -1112,21 +1190,21 @@ static void ctune_UI_runKeyInterfaceLoop() {
         character = getch();
 
         switch( ctune_UI_KeyBinding.getAction( ui.curr_ctx, character ) ) {
-            case CTUNE_UI_ACTION_FIND         : { ctune_UI_openFindDialog();                                      } break;
-            case CTUNE_UI_ACTION_NEW          : { ctune_UI_openNewStationDialog( ui.cache.curr_panel );           } break;
-            case CTUNE_UI_ACTION_EDIT         : { ctune_UI_openEditSelectedStationDialog( ui.cache.curr_panel );  } break;
-            case CTUNE_UI_ACTION_RSI_SELECTED : { ctune_UI_openSelectedStationInformation( ui.cache.curr_panel ); } break;
-            case CTUNE_UI_ACTION_OPTIONS      : { ctune_UI_openOptionsMenuDialog( ui.cache.curr_panel );          } break;
-            case CTUNE_UI_ACTION_GO_RIGHT     : { ctune_UI_navSelectRight( ui.cache.curr_panel );                 } break;
-            case CTUNE_UI_ACTION_GO_LEFT      : { ctune_UI_navSelectLeft( ui.cache.curr_panel );                  } break;
-            case CTUNE_UI_ACTION_SELECT_PREV  : { ctune_UI_navSelectUp( ui.cache.curr_panel );                    } break;
-            case CTUNE_UI_ACTION_SELECT_NEXT  : { ctune_UI_navSelectDown( ui.cache.curr_panel );                  } break;
-            case CTUNE_UI_ACTION_PAGE_UP      : { ctune_UI_navSelectPageUp( ui.cache.curr_panel );                } break;
-            case CTUNE_UI_ACTION_PAGE_DOWN    : { ctune_UI_navSelectPageDown( ui.cache.curr_panel );              } break;
-            case CTUNE_UI_ACTION_SELECT_FIRST : { ctune_UI_navSelectHome( ui.cache.curr_panel );                  } break;
-            case CTUNE_UI_ACTION_SELECT_LAST  : { ctune_UI_navSelectEnd( ui.cache.curr_panel );                   } break;
+            case CTUNE_UI_ACTION_FIND         : { ctune_UI_openFindDialog();                                        } break;
+            case CTUNE_UI_ACTION_NEW          : { ctune_UI_openNewStationDialog( ui.cache.curr_panel, 0 );          } break;
+            case CTUNE_UI_ACTION_EDIT         : { ctune_UI_openEditSelectedStationDialog( ui.cache.curr_panel, 0 ); } break;
+            case CTUNE_UI_ACTION_RSI_SELECTED : { ctune_UI_openSelectedStationInformation( ui.cache.curr_panel );   } break;
+            case CTUNE_UI_ACTION_OPTIONS      : { ctune_UI_openOptionsMenuDialog( ui.cache.curr_panel );            } break;
+            case CTUNE_UI_ACTION_GO_RIGHT     : { ctune_UI_navSelectRight( ui.cache.curr_panel );                   } break;
+            case CTUNE_UI_ACTION_GO_LEFT      : { ctune_UI_navSelectLeft( ui.cache.curr_panel );                    } break;
+            case CTUNE_UI_ACTION_SELECT_PREV  : { ctune_UI_navSelectUp( ui.cache.curr_panel );                      } break;
+            case CTUNE_UI_ACTION_SELECT_NEXT  : { ctune_UI_navSelectDown( ui.cache.curr_panel );                    } break;
+            case CTUNE_UI_ACTION_PAGE_UP      : { ctune_UI_navSelectPageUp( ui.cache.curr_panel );                  } break;
+            case CTUNE_UI_ACTION_PAGE_DOWN    : { ctune_UI_navSelectPageDown( ui.cache.curr_panel );                } break;
+            case CTUNE_UI_ACTION_SELECT_FIRST : { ctune_UI_navSelectHome( ui.cache.curr_panel );                    } break;
+            case CTUNE_UI_ACTION_SELECT_LAST  : { ctune_UI_navSelectEnd( ui.cache.curr_panel );                     } break;
             case CTUNE_UI_ACTION_FOCUS_LEFT   : //fallthrough
-            case CTUNE_UI_ACTION_FOCUS_RIGHT  : { ctune_UI_navSwitchFocus( ui.cache.curr_panel );                 } break;
+            case CTUNE_UI_ACTION_FOCUS_RIGHT  : { ctune_UI_navSwitchFocus( ui.cache.curr_panel );                   } break;
 
             case CTUNE_UI_ACTION_HELP: {
                 ctune_UI_clearMsgLine();
@@ -1216,7 +1294,7 @@ static void ctune_UI_runKeyInterfaceLoop() {
 
             case CTUNE_UI_ACTION_FAV: { //Toggle favourite state on currently selected station
                 ctune_UI_clearMsgLine();
-                ctune_UI_toggleFavourite( ui.cache.curr_panel );
+                ctune_UI_toggleFavourite( ui.cache.curr_panel, 0 );
             } break;
 
             default:

@@ -110,7 +110,7 @@ static void ctune_UI_Theme_init( ctune_UI_Theme_t * theme ) {
                        theme
             );
 
-            ctune_UI_Theme_t default_theme = ctune_ColourTheme.init( CTUNE_UITHEME_DEFAULT );
+            ctune_UI_Theme_t default_theme = ctune_ColourTheme.init( CTUNE_UIPRESET_DEFAULT );
             ctune_UI_Theme_set( &default_theme );
 
         } else {
@@ -119,6 +119,10 @@ static void ctune_UI_Theme_init( ctune_UI_Theme_t * theme ) {
 
         CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_Theme_init( %p )] Theming initialised.", theme )
         is_initialised = true;
+
+    } else if( theme ) {
+        ctune_UI_Theme_set( theme );
+        CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_Theme_init( %p )] Theming re-initialised.", theme )
     }
 }
 

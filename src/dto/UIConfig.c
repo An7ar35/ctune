@@ -52,7 +52,7 @@ static bool ctune_UIConfig_copy( const ctune_UIConfig_t * from, ctune_UIConfig_t
  * @param cfg Pointer to ctune_UIConfig_t object
  * @return Pointer to active theme pallet or NULL if the pointer to the config is NULL
  */
-struct ctune_ColourTheme * ctune_UIConfig_getThemePallet( ctune_UIConfig_t * cfg ) {
+struct ctune_ColourTheme * ctune_UIConfig_theming_getCurrentThemePallet( ctune_UIConfig_t * cfg ) {
     if( cfg ) {
         return cfg->theme.preset == CTUNE_UIPRESET_CUSTOM
              ? &cfg->theme.custom_pallet
@@ -60,6 +60,26 @@ struct ctune_ColourTheme * ctune_UIConfig_getThemePallet( ctune_UIConfig_t * cfg
     }
 
     return NULL;
+}
+
+/**
+ * Sets the current active theme pallet
+ * @param cfg Pointer to ctune_UIConfig_t object
+ * @param preset ctune_UIPreset_e preset
+ * @return Success
+ */
+bool ctune_UIConfig_theming_setPreset( ctune_UIConfig_t * cfg, ctune_UIPreset_e preset ) {
+    if( cfg && preset >= 0 && preset < CTUNE_UIPRESET_COUNT ) {
+        cfg->theme.preset = preset;
+
+        if( preset != CTUNE_UIPRESET_CUSTOM ) {
+            cfg->theme.preset_pallet = ctune_ColourTheme.init( preset );
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
 /**
@@ -124,7 +144,11 @@ static bool ctune_UIConfig_BrowseTab_largeRowSize( ctune_UIConfig_t * cfg, ctune
 const struct ctune_UIConfig_Namespace ctune_UIConfig = {
     .create         = &ctune_UIConfig_create,
     .copy           = &ctune_UIConfig_copy,
-    .getThemePallet = &ctune_UIConfig_getThemePallet,
+
+    .theming = {
+        .getCurrentThemePallet = &ctune_UIConfig_theming_getCurrentThemePallet,
+        .setPreset             = &ctune_UIConfig_theming_setPreset,
+    },
 
     .fav_tab = {
         .theming      = &ctune_UIConfig_FavTab_theming,

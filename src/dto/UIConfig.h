@@ -44,12 +44,22 @@ extern const struct ctune_UIConfig_Namespace {
      */
     bool (* copy)( const ctune_UIConfig_t * from, ctune_UIConfig_t * to );
 
-    /**
-     * Gets currently active theme pallet
-     * @param cfg Pointer to ctune_UIConfig_t object
-     * @return Pointer to active theme pallet or NULL if the pointer to the config is NULL
-     */
-    struct ctune_ColourTheme * (* getThemePallet)( ctune_UIConfig_t * cfg );
+    struct {
+        /**
+         * Gets currently active theme pallet
+         * @param cfg Pointer to ctune_UIConfig_t object
+         * @return Pointer to active theme pallet or NULL if the pointer to the config is NULL
+         */
+        struct ctune_ColourTheme * (* getCurrentThemePallet)( ctune_UIConfig_t * cfg );
+
+        /**
+         * Sets the current active theme pallet
+         * @param cfg Pointer to ctune_UIConfig_t object
+         * @param preset ctune_UIPreset_e preset
+         * @return Success
+         */
+        bool (* setPreset)( ctune_UIConfig_t * cfg, ctune_UIPreset_e preset );
+    } theming;
 
     struct {
         /**
