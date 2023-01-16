@@ -697,11 +697,14 @@ static bool ctune_UI_Dialog_OptionsMenu_show( ctune_UI_OptionsMenu_t * om ) {
         return false; //EARLY RETURN
     }
 
+    ctune_UI_SlideMenu.setFocus( &om->menu, true );
+
     bool success = ctune_UI_BorderWin.show( &om->border_win )
                 && ctune_UI_SlideMenu.show( &om->menu );
 
-    if( success )
+    if( success ) {
         ctune_UI_Resizer.push( ctune_UI_OptionsMenu.resize, om );
+    }
 
     return success;
 }
@@ -784,7 +787,7 @@ static void ctune_UI_Dialog_OptionsMenu_captureInput( ctune_UI_OptionsMenu_t * o
     doupdate();
 
     ctune_UI_Resizer.pop();
-    CTUNE_LOG( CTUNE_LOG_TRACE, "Exiting OptionsMenu %p", om );
+
     keypad( om->menu.canvas_win, FALSE );
 }
 
