@@ -5,6 +5,7 @@
 
 #include "ColourTheme.h"
 #include "../enum/Flag.h"
+#include "../enum/StationSrc.h"
 
 typedef struct {
     struct {
@@ -47,6 +48,12 @@ extern const struct ctune_UIConfig_Namespace {
 
     struct {
         /**
+         * Gets the current preset
+         * @return Theme preset
+         */
+        ctune_UIPreset_e (* currentPreset)( ctune_UIConfig_t * cfg );
+
+        /**
          * Gets currently active theme pallet
          * @param cfg Pointer to ctune_UIConfig_t object
          * @return Pointer to active theme pallet or NULL if the pointer to the config is NULL
@@ -78,6 +85,22 @@ extern const struct ctune_UIConfig_Namespace {
          * @return Property value after operation
          */
         bool (* customTheming)( ctune_UIConfig_t * cfg, ctune_Flag_e flag );
+
+        /**
+         * Get the custom colouring used for a station source
+         * @param cfg         Pointer to ctune_UIConfig_t object
+         * @param station_src ctune_StationSrc_e enum value
+         * @return Colour value
+         */
+        short (* getCustomThemingColour)( ctune_UIConfig_t * cfg, ctune_StationSrc_e station_src );
+
+        /**
+         * Set the custom colouring used for a station source
+         * @param cfg         Pointer to ctune_UIConfig_t object
+         * @param station_src ctune_StationSrc_e enum value
+         * @param colour      Colour code
+         */
+        void (* setCustomThemingColour)( ctune_UIConfig_t * cfg, ctune_StationSrc_e station_src, short colour_code );
 
         /**
          * Get/Set "Favourites" tab's large row property

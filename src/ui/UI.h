@@ -36,7 +36,7 @@ struct ctune_UI_Instance {
      * Move a particular pane to the top
      * @param panel Panel index
      */
-    void (* show)( enum ctune_UI_PanelID panel );
+    void (* show)( ctune_UI_PanelID_e panel );
 
     /**
      * Signals a radio station as 'current' (i.e. as queued or playing)

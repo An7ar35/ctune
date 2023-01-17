@@ -314,12 +314,12 @@ static bool ctune_UI_Dialog_OptionsMenu_populateConfigMenu( ctune_UI_OptionsMenu
         }
     }
 
-    if( om->cb.favouriteTabTheming != NULL ) { //"Toggle theming" entry
-        const bool         curr_state = om->cb.favouriteTabTheming( om->cache.curr_panel_id, FLAG_GET_VALUE );
+    if( om->cb.favTabTheming != NULL ) { //"Toggle theming" entry
+        const bool         curr_state = om->cb.favTabTheming( om->cache.curr_panel_id, FLAG_GET_VALUE );
         const ctune_Flag_e action     = ( curr_state ? FLAG_SET_OFF : FLAG_SET_ON );
         const char *       text       = om->cb.getDisplayText( ( curr_state ? CTUNE_UI_TEXT_FAV_THEMING_OFF : CTUNE_UI_TEXT_FAV_THEMING_ON ) );
 
-        CbPayload_t               * payload   = createCbPayload( om, &om->cache.payloads, om->cb.favouriteTabTheming, action );
+        CbPayload_t               * payload   = createCbPayload( om, &om->cache.payloads, om->cb.favTabTheming, action );
         ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, text, payload, ctrlMenuFunctionCb );
 
         if( payload && menu_item ) {
@@ -331,6 +331,32 @@ static bool ctune_UI_Dialog_OptionsMenu_populateConfigMenu( ctune_UI_OptionsMenu
                        om, root, text
             );
             error_state = true;
+        }
+    }
+
+    if( om->cb.favTabTheming != NULL && om->cb.favTabCustomTheming != NULL ) { //"Toggle custom theme colouring" entry
+        const int  fav_theming_state     = om->cb.favTabTheming( om->cache.curr_panel_id, FLAG_GET_VALUE );
+        const int  custom_theming_states = om->cb.favTabCustomTheming( om->cache.curr_panel_id, FLAG_GET_VALUE );
+        const bool ui_custom_preset      = custom_theming_states & 0b10; //i.e.: is the UI using the 'custom' preset?
+        const bool fav_custom_theme      = custom_theming_states & 0b01; //i.e.: is the fav tab using the 'custom' UI theme preset for the station source colouring
+
+        if( fav_theming_state && !ui_custom_preset ) {
+            const ctune_Flag_e action = ( fav_custom_theme ? FLAG_SET_OFF : FLAG_SET_ON );
+            const char *       text   = om->cb.getDisplayText( ( fav_custom_theme ? CTUNE_UI_TEXT_FAV_USE_PRESET_COLOURS : CTUNE_UI_TEXT_FAV_USE_CUSTOM_COLOURS ) );
+
+            CbPayload_t               * payload   = createCbPayload( om, &om->cache.payloads, om->cb.favTabCustomTheming, action );
+            ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, text, payload, ctrlMenuFunctionCb );
+
+            if( payload && menu_item ) {
+                max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+            } else {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[ctune_UI_Dialog_OptionsMenu_populateConfigMenu( %p, %p )] Failed creation of menu item '%s'.",
+                           om, root, text
+                );
+                error_state = true;
+            }
         }
     }
 
@@ -570,7 +596,7 @@ static int ctune_UI_Dialog_OptionsMenu_populateRootMenu( ctune_UI_OptionsMenu_t 
         }
     }
 
-    if( om->cb.favouriteTabTheming != NULL || om->cb.listRowSizeLarge != NULL ) { //Configuration menu
+    if( om->cb.favTabTheming != NULL || om->cb.listRowSizeLarge != NULL ) { //Configuration menu
         const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_CONFIGURATION );
         ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( &om->menu.root, CTUNE_UI_SLIDEMENU_MENU, text, NULL, NULL );
 
@@ -628,8 +654,11 @@ static ctune_UI_OptionsMenu_t ctune_UI_Dialog_OptionsMenu_create( const WindowPr
             .editStation         = NULL,
             .toggleFavourite     = NULL,
             .syncUpstream        = NULL,
-            .favouriteTabTheming = NULL,
-            .listRowSizeLarge = NULL,
+            .favTabTheming       = NULL,
+            .favTabCustomTheming = NULL,
+            .listRowSizeLarge    = NULL,
+            .getUIPresets        = NULL,
+            .setUIPreset         = NULL,
         }
     };
 }
@@ -874,9 +903,20 @@ static void ctune_UI_Dialog_OptionsMenu_cb_setSyncCurrSelectedStation( ctune_UI_
  * @param om       Pointer to ctune_UI_OptionsMenu_t object
  * @param callback Callback function
  */
-static void ctune_UI_Dialog_OptionsMenu_cb_favTheming( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback ) {
+static void ctune_UI_Dialog_OptionsMenu_cb_setFavThemingCallback( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback ) {
     if( om != NULL ) {
-        om->cb.favouriteTabTheming = callback;
+        om->cb.favTabTheming = callback;
+    }
+}
+
+/**
+ * Sets the callback method to set/get the state of custom colour theming on the favourite's tab
+ * @param om       Pointer to ctune_UI_OptionsMenu_t object
+ * @param callback Callback function
+ */
+static void ctune_UI_Dialog_OptionsMenu_cb_setFavTabCustomThemingCallback( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback ) {
+    if( om != NULL ) {
+        om->cb.favTabCustomTheming = callback;
     }
 }
 
@@ -931,7 +971,8 @@ const struct ctune_UI_Dialog_OptionsMenu_Namespace ctune_UI_OptionsMenu = {
         .setEditStationCallback             = &ctune_UI_Dialog_OptionsMenu_cb_setEditStation,
         .setToggleFavouriteCallback         = &ctune_UI_Dialog_OptionsMenu_cb_setToggleFavourite,
         .setSyncCurrSelectedStationCallback = &ctune_UI_Dialog_OptionsMenu_cb_setSyncCurrSelectedStation,
-        .setFavouriteTabThemingCallback     = &ctune_UI_Dialog_OptionsMenu_cb_favTheming,
+        .setFavouriteTabThemingCallback     = &ctune_UI_Dialog_OptionsMenu_cb_setFavThemingCallback,
+        .setFavTabCustomThemingCallback     = &ctune_UI_Dialog_OptionsMenu_cb_setFavTabCustomThemingCallback,
         .setListRowSizeLargeCallback        = &ctune_UI_Dialog_OptionsMenu_cb_setSetListRowSizeLarge,
         .setGetUIPresetCallback             = &ctune_UI_Dialog_OptionsMenu_cb_setGetUIPresetCallback,
         .setSetUIPresetCallback             = &ctune_UI_Dialog_OptionsMenu_cb_setSetUIPresetCallback,
