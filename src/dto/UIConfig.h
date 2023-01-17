@@ -9,6 +9,7 @@
 typedef struct {
     struct {
         bool theme_favourites;
+        bool custom_theming;
         bool large_rows;
     } fav_tab;
 
@@ -69,6 +70,14 @@ extern const struct ctune_UIConfig_Namespace {
          * @return Property value after operation
          */
         bool (* theming)( ctune_UIConfig_t * cfg, ctune_Flag_e flag );
+
+        /**
+         * Get/Set "Favourites" tab custom theming for the station sources
+         * @param cfg Pointer to ctune_UIConfig_t object
+         * @param flag Flag action
+         * @return Property value after operation
+         */
+        bool (* customTheming)( ctune_UIConfig_t * cfg, ctune_Flag_e flag );
 
         /**
          * Get/Set "Favourites" tab's large row property

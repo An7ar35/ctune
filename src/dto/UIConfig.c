@@ -11,6 +11,7 @@ static ctune_UIConfig_t ctune_UIConfig_create( void ) {
         .fav_tab = {
             .large_rows       = true,
             .theme_favourites = true,
+            .custom_theming   = false,
         },
         .browse_tab = {
             .large_rows       = true,
@@ -74,6 +75,11 @@ bool ctune_UIConfig_theming_setPreset( ctune_UIConfig_t * cfg, ctune_UIPreset_e 
 
         if( preset != CTUNE_UIPRESET_CUSTOM ) {
             cfg->theme.preset_pallet = ctune_ColourTheme.init( preset );
+
+            if( cfg->fav_tab.custom_theming ) {
+                cfg->theme.preset_pallet.rows.favourite_local_fg  = cfg->theme.custom_pallet.rows.favourite_local_fg;
+                cfg->theme.preset_pallet.rows.favourite_remote_fg = cfg->theme.custom_pallet.rows.favourite_remote_fg;
+            }
         }
 
         return true;
@@ -93,6 +99,20 @@ static bool ctune_UIConfig_FavTab_theming( ctune_UIConfig_t * cfg, ctune_Flag_e 
         case FLAG_SET_OFF: return ( cfg->fav_tab.theme_favourites = false );
         case FLAG_SET_ON : return ( cfg->fav_tab.theme_favourites = true );
         default          : return cfg->fav_tab.theme_favourites;
+    }
+}
+
+/**
+ * Get/Set "Favourites" tab custom theming for the station sources
+ * @param cfg Pointer to ctune_UIConfig_t object
+ * @param flag Flag action
+ * @return Property value after operation
+ */
+static bool ctune_UIConfig_FavTab_customTheming( ctune_UIConfig_t * cfg, ctune_Flag_e flag ) {
+    switch( flag ) {
+        case FLAG_SET_OFF: return ( cfg->fav_tab.custom_theming = false );
+        case FLAG_SET_ON : return ( cfg->fav_tab.custom_theming = true );
+        default          : return cfg->fav_tab.custom_theming;
     }
 }
 
@@ -151,8 +171,9 @@ const struct ctune_UIConfig_Namespace ctune_UIConfig = {
     },
 
     .fav_tab = {
-        .theming      = &ctune_UIConfig_FavTab_theming,
-        .largeRowSize = &ctune_UIConfig_FavTab_largeRowSize,
+        .theming       = &ctune_UIConfig_FavTab_theming,
+        .customTheming = &ctune_UIConfig_FavTab_customTheming,
+        .largeRowSize  = &ctune_UIConfig_FavTab_largeRowSize,
     },
 
     .search_tab = {
