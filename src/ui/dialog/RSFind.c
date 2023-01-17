@@ -947,24 +947,23 @@ static ctune_FormExit_e ctune_UI_RSFind_captureInput( ctune_UI_RSFind_t * rsfind
             } break;
 
             case CTUNE_UI_ACTION_FIELD_BEGIN: {
-                set_current_field( rsfind->form, rsfind->cache.fields[LABEL_COUNT] );
-                ctune_UI_RSFind_highlightCurrField( rsfind, current_field( rsfind->form ) );
+                form_driver( rsfind->form, REQ_BEG_FIELD );
             } break;
 
             case CTUNE_UI_ACTION_FIELD_END: {
-                set_current_field( rsfind->form, rsfind->cache.fields[ ( FIELD_LAST - 1 ) ] );
-                ctune_UI_RSFind_highlightCurrField( rsfind, current_field( rsfind->form ) );
-                ctune_UI_RSFind_autoScroll( rsfind, current_field( rsfind->form ) );
+                form_driver( rsfind->form, REQ_END_FIELD );
             } break;
 
             case CTUNE_UI_ACTION_FIELD_FIRST: {
                 form_driver( rsfind->form, REQ_FIRST_FIELD );
                 ctune_UI_RSFind_highlightCurrField( rsfind, current_field( rsfind->form ) );
+                ctune_UI_RSFind_autoScroll( rsfind, current_field( rsfind->form ) );
             } break;
 
             case CTUNE_UI_ACTION_FIELD_LAST: {
                 form_driver( rsfind->form, REQ_LAST_FIELD );
                 ctune_UI_RSFind_highlightCurrField( rsfind, current_field( rsfind->form ) );
+                ctune_UI_RSFind_autoScroll( rsfind, current_field( rsfind->form ) );
             } break;
 
             case CTUNE_UI_ACTION_FIELD_PREV: {
