@@ -169,26 +169,27 @@ struct ctune_ColourTheme ctune_ColourTheme_init( ctune_UIPreset_e theme ) {
 
 /**
  * Gets the string representation of a colour code
- * @param colour Colour code (0-8)
+ * @param colour    Colour code (0-8)
+ * @param uppercase Uppercase flag
  * @return String or NULL if colour code is not valid
  */
-const char * ctune_ColourTheme_str( short colour ) {
-    static const char * str_map[8] = {
-        [0b000] = "BLACK",
-        [0b001] = "RED",
-        [0b010] = "GREEN",
-        [0b011] = "YELLOW",
-        [0b100] = "BLUE",
-        [0b101] = "MAGENTA",
-        [0b110] = "CYAN",
-        [0b111] = "WHITE",
+const char * ctune_ColourTheme_str( short colour, bool uppercase ) {
+    static const char * str_map[8][2] = {
+        [0b000][0] = "Black",   [0b000][1] = "BLACK",
+        [0b001][0] = "Red",     [0b001][1] = "RED",
+        [0b010][0] = "Green",   [0b010][1] = "GREEN",
+        [0b011][0] = "Yellow",  [0b011][1] = "YELLOW",
+        [0b100][0] = "Blue",    [0b100][1] = "BLUE",
+        [0b101][0] = "Magenta", [0b101][1] = "MAGENTA",
+        [0b110][0] = "Cyan",    [0b110][1] = "CYAN",
+        [0b111][0] = "White",   [0b111][1] = "WHITE",
     };
 
     if( colour < 0 || colour >= 8 ) {
         return NULL;
     }
 
-    return str_map[ colour ];
+    return str_map[ colour ][ ( uppercase == 0 ? 0 : 1 ) ];
 }
 
 /**

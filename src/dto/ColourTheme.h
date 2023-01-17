@@ -67,10 +67,11 @@ extern const struct ctune_ColourTheme_Namespace {
 
     /**
      * Gets the string representation of a colour code
-     * @param colour Colour code (0-8)
-     * @return String
+     * @param colour    Colour code (0-8)
+     * @param uppercase Uppercase flag
+     * @return String or NULL if colour code is not valid
      */
-    const char * (* str)( short colour );
+    const char * (* str)( short colour, bool uppercase );
 
 } ctune_ColourTheme;
 
