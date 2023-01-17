@@ -1138,7 +1138,6 @@ static ctune_FormExit_e ctune_UI_RSEdit_captureInput( ctune_UI_RSEdit_t * rsedit
             case CTUNE_UI_ACTION_ERR   : //fallthrough
             case CTUNE_UI_ACTION_RESIZE: break;
 
-            //FIXME left/right key on sequential input fields on the same line will jump to the prev/next field: look into that and block that behaviour!
             case CTUNE_UI_ACTION_HELP: { //Contextual help
                 ctune_UI_ContextHelp.show( CTUNE_UI_CTX_RSEDIT );
                 ctune_UI_ContextHelp.captureInput();
@@ -1244,7 +1243,7 @@ static ctune_FormExit_e ctune_UI_RSEdit_captureInput( ctune_UI_RSEdit_t * rsedit
                 form_driver( rsedit->form, REQ_DEL_PREV );
             } break;
 
-            case CTUNE_UI_ACTION_DEL_NEXT: { //FIXME not working (look into key-bindings)
+            case CTUNE_UI_ACTION_DEL_NEXT: {
                 form_driver( rsedit->form, REQ_DEL_CHAR );
             } break;
 
