@@ -933,7 +933,7 @@ static bool ctune_UI_RSEdit_init( ctune_UI_RSEdit_t * rsedit ) {
         error_state = true;
     }
 
-    ctune_UI_Dialog.setAutoScrollOffset( &rsedit->dialog, 2, 0 );
+    ctune_UI_Dialog.setAutoScrollOffset( &rsedit->dialog, 2, 22 );
 
     //pattern from https://gist.github.com/gruber/249502
     int ret = regcomp( &rsedit->cache.url_regex,
@@ -1150,27 +1150,25 @@ static ctune_FormExit_e ctune_UI_RSEdit_captureInput( ctune_UI_RSEdit_t * rsedit
             } break;
 
             case CTUNE_UI_ACTION_FIELD_BEGIN: {
+                form_driver( rsedit->form, REQ_BEG_FIELD );
+            } break;
+
+            case CTUNE_UI_ACTION_FIELD_END: {
+                form_driver( rsedit->form, REQ_END_FIELD );
+            } break;
+
+            case CTUNE_UI_ACTION_FIELD_FIRST: {
                 set_current_field( rsedit->form, rsedit->cache.fields[ LABEL_COUNT ] );
                 ctune_UI_RSEdit_highlightCurrField( rsedit, current_field( rsedit->form ) );
                 ctune_UI_Dialog.scrollTop( &rsedit->dialog );
                 ctune_UI_RSEdit_autoScroll( rsedit, current_field( rsedit->form ) );
             } break;
 
-            case CTUNE_UI_ACTION_FIELD_END: {
+            case CTUNE_UI_ACTION_FIELD_LAST: {
                 set_current_field( rsedit->form, rsedit->cache.fields[ ( FIELD_LAST - 1 ) ] );
                 ctune_UI_RSEdit_highlightCurrField( rsedit, current_field( rsedit->form ) );
                 ctune_UI_Dialog.scrollBottom( &rsedit->dialog );
                 ctune_UI_RSEdit_autoScroll( rsedit, current_field( rsedit->form ) );
-            } break;
-
-            case CTUNE_UI_ACTION_FIELD_FIRST: {
-                form_driver( rsedit->form, REQ_FIRST_FIELD );
-                ctune_UI_RSEdit_highlightCurrField( rsedit, current_field( rsedit->form ) );
-            } break;
-
-            case CTUNE_UI_ACTION_FIELD_LAST: {
-                form_driver( rsedit->form, REQ_LAST_FIELD );
-                ctune_UI_RSEdit_highlightCurrField( rsedit, current_field( rsedit->form ) );
             } break;
 
             case CTUNE_UI_ACTION_FIELD_PREV: {
@@ -1185,6 +1183,14 @@ static ctune_FormExit_e ctune_UI_RSEdit_captureInput( ctune_UI_RSEdit_t * rsedit
                 ctune_UI_RSEdit_highlightCurrField( rsedit, current_field( rsedit->form ) );
                 form_driver( rsedit->form, REQ_END_LINE );
                 ctune_UI_RSEdit_autoScroll( rsedit, current_field( rsedit->form ) );
+            } break;
+
+            case CTUNE_UI_ACTION_GO_LEFT: {
+                form_driver( rsedit->form, REQ_LEFT_CHAR );
+            } break;
+
+            case CTUNE_UI_ACTION_GO_RIGHT: {
+                form_driver( rsedit->form, REQ_RIGHT_CHAR );
             } break;
 
             case CTUNE_UI_ACTION_TRIGGER: {
