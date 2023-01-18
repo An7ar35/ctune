@@ -539,27 +539,28 @@ static int ctune_UI_favouriteTabCustomTheming( ctune_UI_PanelID_e tab, int actio
 }
 
 /**
- * [PRIVATE] Get all available colour pallet presets
+ * [PRIVATE] Get all available colour pallet presets except the currently used
  * @param list Pointer to Vector_t where append presets to (expected to be already initialised)
  */
 static void ctune_UI_getUIThemes( Vector_t * list ) {
     ctune_UIPreset_e curr = ctune_Controller.cfg.getUIConfig()->theme.preset;
 
     for( int i = CTUNE_UIPRESET_DEFAULT; i < CTUNE_UIPRESET_COUNT; ++i ) {
-        ctune_UIPreset_t * preset = Vector.emplace_back( list );
+        if( i != curr ) {
+            ctune_UIPreset_t *preset = Vector.emplace_back( list );
 
-        if( preset ) {
-            ( *preset ) = ( ctune_UIPreset_t ) {
-                .id     = i,
-                .name   = ctune_UIPreset.str( i ),
-                .in_use = ( i == curr ),
-            };
+            if( preset ) {
+                ( *preset ) = ( ctune_UIPreset_t ) {
+                    .id     = i,
+                    .name   = ctune_UIPreset.str( i ),
+                };
 
-        } else {
-            CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[ctune_UI_getUIThemes( %p )] Failed to add new preset to list ('%s').",
-                       list, ctune_UIPreset.str( i )
-            );
+            } else {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[ctune_UI_getUIThemes( %p )] Failed to add new preset to list ('%s').",
+                           list, ctune_UIPreset.str( i )
+                );
+            }
         }
     }
 }

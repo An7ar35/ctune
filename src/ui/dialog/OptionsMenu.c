@@ -203,22 +203,19 @@ static bool ctune_UI_Dialog_OptionsMenu_populateUIThemeMenu( ctune_UI_OptionsMen
         }
 
         for( size_t i = 0; i < Vector.size( &presets ); ++i ) {
-            ctune_UIPreset_t * preset = Vector.at( &presets, i );
+            ctune_UIPreset_t          * preset    = Vector.at( &presets, i );
+            CbPayload_t               * payload   = createCbPayload( om, &om->cache.payloads, om->cb.setUIPreset, preset->id );
+            ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, preset->name, payload, ctrlMenuFunctionCb );
 
-            if( !preset->in_use ) {
-                CbPayload_t               * payload   = createCbPayload( om, &om->cache.payloads, om->cb.setUIPreset, preset->id );
-                ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, preset->name, payload, ctrlMenuFunctionCb );
+            if( payload && menu_item ) {
+                max_text_width = ctune_max_ul( max_text_width, strlen( preset->name ) );
 
-                if( payload && menu_item ) {
-                    max_text_width = ctune_max_ul( max_text_width, strlen( preset->name ) );
-
-                } else {
-                    CTUNE_LOG( CTUNE_LOG_ERROR,
-                               "[ctune_UI_Dialog_OptionsMenu_populateRootMenu( %p )] Failed creation of menu item '%s'.",
-                               om, preset->name
-                    );
-                    error_state = true;
-                }
+            } else {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[ctune_UI_Dialog_OptionsMenu_populateUIThemeMenu( %p )] Failed creation of menu item '%s'.",
+                           om, preset->name
+                );
+                error_state = true;
             }
         }
 
