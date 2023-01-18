@@ -56,6 +56,7 @@ extern const struct ctune_ColourTheme_Namespace {
         const short MAGENTA;
         const short CYAN;
         const short WHITE;
+        const int   count;
     } colour;
 
     /**
@@ -72,6 +73,12 @@ extern const struct ctune_ColourTheme_Namespace {
      * @return String or NULL if colour code is not valid
      */
     const char * (* str)( short colour, bool uppercase );
+
+    /**
+     * Get a pointer to a list of available colours
+     * @return Pointer to list of colours
+     */
+    const short * (* colourList)( void );
 
 } ctune_ColourTheme;
 

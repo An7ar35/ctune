@@ -4,6 +4,16 @@
 
 #include "../logger/Logger.h"
 
+#define NUMBER_OF_COLOURS   8
+#define COLOUR_CODE_BLACK   0b0000
+#define COLOUR_CODE_RED     0b0001
+#define COLOUR_CODE_GREEN   0b0010
+#define COLOUR_CODE_YELLOW  0b0011
+#define COLOUR_CODE_BLUE    0b0100
+#define COLOUR_CODE_MAGENTA 0b0101
+#define COLOUR_CODE_CYAN    0b0110
+#define COLOUR_CODE_WHITE   0b0111
+
 /**
  * Initiate a colour theme object with default values
  * @param theme Theme preset enum
@@ -175,14 +185,14 @@ struct ctune_ColourTheme ctune_ColourTheme_init( ctune_UIPreset_e theme ) {
  */
 const char * ctune_ColourTheme_str( short colour, bool uppercase ) {
     static const char * str_map[8][2] = {
-        [0b000][0] = "Black",   [0b000][1] = "BLACK",
-        [0b001][0] = "Red",     [0b001][1] = "RED",
-        [0b010][0] = "Green",   [0b010][1] = "GREEN",
-        [0b011][0] = "Yellow",  [0b011][1] = "YELLOW",
-        [0b100][0] = "Blue",    [0b100][1] = "BLUE",
-        [0b101][0] = "Magenta", [0b101][1] = "MAGENTA",
-        [0b110][0] = "Cyan",    [0b110][1] = "CYAN",
-        [0b111][0] = "White",   [0b111][1] = "WHITE",
+        [COLOUR_CODE_BLACK  ][0] = "Black",   [COLOUR_CODE_BLACK  ][1] = "BLACK",
+        [COLOUR_CODE_RED    ][0] = "Red",     [COLOUR_CODE_RED    ][1] = "RED",
+        [COLOUR_CODE_GREEN  ][0] = "Green",   [COLOUR_CODE_GREEN  ][1] = "GREEN",
+        [COLOUR_CODE_YELLOW ][0] = "Yellow",  [COLOUR_CODE_YELLOW ][1] = "YELLOW",
+        [COLOUR_CODE_BLUE   ][0] = "Blue",    [COLOUR_CODE_BLUE   ][1] = "BLUE",
+        [COLOUR_CODE_MAGENTA][0] = "Magenta", [COLOUR_CODE_MAGENTA][1] = "MAGENTA",
+        [COLOUR_CODE_CYAN   ][0] = "Cyan",    [COLOUR_CODE_CYAN   ][1] = "CYAN",
+        [COLOUR_CODE_WHITE  ][0] = "White",   [COLOUR_CODE_WHITE  ][1] = "WHITE",
     };
 
     if( colour < 0 || colour >= 8 ) {
@@ -193,20 +203,41 @@ const char * ctune_ColourTheme_str( short colour, bool uppercase ) {
 }
 
 /**
+ * Get a pointer to a list of available colours
+ * @return Pointer to list of colours
+ */
+const short * ctune_ColourTheme_colourList( void ) {
+    static const short list[NUMBER_OF_COLOURS] = {
+        COLOUR_CODE_BLACK,
+        COLOUR_CODE_RED,
+        COLOUR_CODE_GREEN,
+        COLOUR_CODE_YELLOW,
+        COLOUR_CODE_BLUE,
+        COLOUR_CODE_MAGENTA,
+        COLOUR_CODE_CYAN,
+        COLOUR_CODE_WHITE,
+    };
+
+    return &list[0];
+}
+
+/**
  * Namespace constructor
  */
 const struct ctune_ColourTheme_Namespace ctune_ColourTheme = {
     .colour = {
-        .BLACK   = 0b000,
-        .RED     = 0b001,
-        .GREEN   = 0b010,
-        .YELLOW  = 0b011,
-        .BLUE    = 0b100,
-        .MAGENTA = 0b101,
-        .CYAN    = 0b110,
-        .WHITE   = 0b111,
+        .BLACK   = COLOUR_CODE_BLACK,
+        .RED     = COLOUR_CODE_RED,
+        .GREEN   = COLOUR_CODE_GREEN,
+        .YELLOW  = COLOUR_CODE_YELLOW,
+        .BLUE    = COLOUR_CODE_BLUE,
+        .MAGENTA = COLOUR_CODE_MAGENTA,
+        .CYAN    = COLOUR_CODE_CYAN,
+        .WHITE   = COLOUR_CODE_WHITE,
+        .count   = NUMBER_OF_COLOURS,
     },
 
-    .init = &ctune_ColourTheme_init,
-    .str  = &ctune_ColourTheme_str,
+    .init       = &ctune_ColourTheme_init,
+    .str        = &ctune_ColourTheme_str,
+    .colourList = &ctune_ColourTheme_colourList,
 };
