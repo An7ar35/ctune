@@ -45,6 +45,21 @@ struct ctune_ColourTheme {
  */
 extern const struct ctune_ColourTheme_Namespace {
     /**
+     * Colour codes (same as NCurses color codes)
+     */
+    struct {
+        const short BLACK;
+        const short RED;
+        const short GREEN;
+        const short YELLOW;
+        const short BLUE;
+        const short MAGENTA;
+        const short CYAN;
+        const short WHITE;
+        const int   count;
+    } colour;
+
+    /**
      * Initiate a colour theme object with default values
      * @param theme Theme preset enum
      * @return Initiated ColourTheme
@@ -53,10 +68,17 @@ extern const struct ctune_ColourTheme_Namespace {
 
     /**
      * Gets the string representation of a colour code
-     * @param colour Colour code (0-8)
-     * @return String
+     * @param colour    Colour code (0-8)
+     * @param uppercase Uppercase flag
+     * @return String or NULL if colour code is not valid
      */
-    const char * (* str)( short colour );
+    const char * (* str)( short colour, bool uppercase );
+
+    /**
+     * Get a pointer to a list of available colours
+     * @return Pointer to list of colours
+     */
+    const short * (* colourList)( void );
 
 } ctune_ColourTheme;
 

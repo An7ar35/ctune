@@ -6,6 +6,7 @@
 #include "../logger/Logger.h"
 #include "../datastructure/StrList.h"
 #include "../utils/utilities.h"
+#include "../dto/ColourTheme.h"
 
 /**
  * Parses a key-value pair string into separate String_t objects with any surrounding space trimmed out
@@ -200,21 +201,21 @@ static bool ctune_Parser_KVPairs_validateColour( const String_t * src, short * t
     bool error_state = false;
 
     if( strcmp( copy, "BLACK" ) == 0 ) {
-        (*target) = 0b000;
+        (*target) = ctune_ColourTheme.colour.BLACK;
     } else if( strcmp( copy, "RED" ) == 0 ) {
-        (*target) = 0b001;
+        (*target) = ctune_ColourTheme.colour.RED;
     } else if( strcmp( copy, "GREEN" ) == 0 ) {
-        (*target) = 0b010;
+        (*target) = ctune_ColourTheme.colour.GREEN;
     } else if( strcmp( copy, "YELLOW" ) == 0 ) {
-        (*target) = 0b011;
+        (*target) = ctune_ColourTheme.colour.YELLOW;
     } else if( strcmp( copy, "BLUE" ) == 0 ) {
-        (*target) = 0b100;
+        (*target) = ctune_ColourTheme.colour.BLUE;
     } else if( strcmp( copy, "MAGENTA" ) == 0 ) {
-        (*target) = 0b101;
+        (*target) = ctune_ColourTheme.colour.MAGENTA;
     } else if( strcmp( copy, "CYAN" ) == 0 ) {
-        (*target) = 0b110;
+        (*target) = ctune_ColourTheme.colour.CYAN;
     } else if( strcmp( copy, "WHITE" ) == 0 ) {
-        (*target) = 0b111;
+        (*target) = ctune_ColourTheme.colour.WHITE;
     } else {
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_Parser_KVPairs_validateColour( %p, %p )] Colour '%s' not recognised.",

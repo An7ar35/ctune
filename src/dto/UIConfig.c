@@ -11,6 +11,7 @@ static ctune_UIConfig_t ctune_UIConfig_create( void ) {
         .fav_tab = {
             .large_rows       = true,
             .theme_favourites = true,
+            .custom_theming   = false,
         },
         .browse_tab = {
             .large_rows       = true,
@@ -48,15 +49,34 @@ static bool ctune_UIConfig_copy( const ctune_UIConfig_t * from, ctune_UIConfig_t
 }
 
 /**
+ * Gets the current preset
+ * @return Theme preset
+ */
+ctune_UIPreset_e ctune_UIConfig_theming_currentPreset( ctune_UIConfig_t * cfg ) {
+    if( cfg ) {
+        return cfg->theme.preset;
+    }
+
+    return CTUNE_UIPRESET_UNKNOWN;
+}
+
+/**
  * Gets currently active theme pallet
  * @param cfg Pointer to ctune_UIConfig_t object
  * @return Pointer to active theme pallet or NULL if the pointer to the config is NULL
  */
 struct ctune_ColourTheme * ctune_UIConfig_theming_getCurrentThemePallet( ctune_UIConfig_t * cfg ) {
     if( cfg ) {
-        return cfg->theme.preset == CTUNE_UIPRESET_CUSTOM
-             ? &cfg->theme.custom_pallet
-             : &cfg->theme.preset_pallet;
+        if( cfg->theme.preset == CTUNE_UIPRESET_CUSTOM ) {
+            return &cfg->theme.custom_pallet; //EARLY RETURN
+        }
+
+        if( cfg->fav_tab.custom_theming ) {
+            cfg->theme.preset_pallet.rows.favourite_local_fg  = cfg->theme.custom_pallet.rows.favourite_local_fg;
+            cfg->theme.preset_pallet.rows.favourite_remote_fg = cfg->theme.custom_pallet.rows.favourite_remote_fg;
+        }
+
+        return &cfg->theme.preset_pallet;
     }
 
     return NULL;
@@ -74,6 +94,11 @@ bool ctune_UIConfig_theming_setPreset( ctune_UIConfig_t * cfg, ctune_UIPreset_e 
 
         if( preset != CTUNE_UIPRESET_CUSTOM ) {
             cfg->theme.preset_pallet = ctune_ColourTheme.init( preset );
+
+            if( cfg->fav_tab.custom_theming ) {
+                cfg->theme.preset_pallet.rows.favourite_local_fg  = cfg->theme.custom_pallet.rows.favourite_local_fg;
+                cfg->theme.preset_pallet.rows.favourite_remote_fg = cfg->theme.custom_pallet.rows.favourite_remote_fg;
+            }
         }
 
         return true;
@@ -93,6 +118,48 @@ static bool ctune_UIConfig_FavTab_theming( ctune_UIConfig_t * cfg, ctune_Flag_e 
         case FLAG_SET_OFF: return ( cfg->fav_tab.theme_favourites = false );
         case FLAG_SET_ON : return ( cfg->fav_tab.theme_favourites = true );
         default          : return cfg->fav_tab.theme_favourites;
+    }
+}
+
+/**
+ * Get/Set "Favourites" tab custom theming for the station sources
+ * @param cfg Pointer to ctune_UIConfig_t object
+ * @param flag Flag action
+ * @return Property value after operation
+ */
+static bool ctune_UIConfig_FavTab_customTheming( ctune_UIConfig_t * cfg, ctune_Flag_e flag ) {
+    switch( flag ) {
+        case FLAG_SET_OFF: return ( cfg->fav_tab.custom_theming = false );
+        case FLAG_SET_ON : return ( cfg->fav_tab.custom_theming = true );
+        default          : return cfg->fav_tab.custom_theming;
+    }
+}
+
+/**
+ * Get the custom colouring used for a station source in the "Favourites" tab
+ * @param cfg         Pointer to ctune_UIConfig_t object
+ * @param station_src ctune_StationSrc_e enum value
+ * @return Colour value
+ */
+static short ctune_UIConfig_FavTab_getCustomThemingColour( ctune_UIConfig_t * cfg, ctune_StationSrc_e station_src ) {
+    switch( station_src ) {
+        case CTUNE_STATIONSRC_LOCAL       : { return cfg->theme.custom_pallet.rows.favourite_local_fg;  } break;
+        case CTUNE_STATIONSRC_RADIOBROWSER: //fallthrough
+        default                           : { return cfg->theme.custom_pallet.rows.favourite_remote_fg; } break;
+    }
+}
+
+/**
+ * Set the custom colouring used for a station source in the "Favourites" tab
+ * @param cfg         Pointer to ctune_UIConfig_t object
+ * @param station_src ctune_StationSrc_e enum value
+ * @param colour      Colour code
+ */
+void ctune_UIConfig_FavTab_setCustomThemingColour( ctune_UIConfig_t * cfg, ctune_StationSrc_e station_src, short colour_code ) {
+    switch( station_src ) {
+        case CTUNE_STATIONSRC_LOCAL       : { cfg->theme.custom_pallet.rows.favourite_local_fg = colour_code;  } break;
+        case CTUNE_STATIONSRC_RADIOBROWSER: //fallthrough
+        default                           : { cfg->theme.custom_pallet.rows.favourite_remote_fg = colour_code; } break;
     }
 }
 
@@ -142,17 +209,21 @@ static bool ctune_UIConfig_BrowseTab_largeRowSize( ctune_UIConfig_t * cfg, ctune
  * Namespace constructor
  */
 const struct ctune_UIConfig_Namespace ctune_UIConfig = {
-    .create         = &ctune_UIConfig_create,
-    .copy           = &ctune_UIConfig_copy,
+    .create = &ctune_UIConfig_create,
+    .copy   = &ctune_UIConfig_copy,
 
     .theming = {
+        .currentPreset         = &ctune_UIConfig_theming_currentPreset,
         .getCurrentThemePallet = &ctune_UIConfig_theming_getCurrentThemePallet,
         .setPreset             = &ctune_UIConfig_theming_setPreset,
     },
 
     .fav_tab = {
-        .theming      = &ctune_UIConfig_FavTab_theming,
-        .largeRowSize = &ctune_UIConfig_FavTab_largeRowSize,
+        .theming                = &ctune_UIConfig_FavTab_theming,
+        .customTheming          = &ctune_UIConfig_FavTab_customTheming,
+        .getCustomThemingColour = &ctune_UIConfig_FavTab_getCustomThemingColour,
+        .setCustomThemingColour = &ctune_UIConfig_FavTab_setCustomThemingColour,
+        .largeRowSize           = &ctune_UIConfig_FavTab_largeRowSize,
     },
 
     .search_tab = {

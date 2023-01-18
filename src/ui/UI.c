@@ -212,7 +212,7 @@ static void ctune_UI_calculateWinSizes( struct ctune_UI_WinSizes * sizes ) {
  * [PRIVATE] Clears all content from a panel and refresh to screen
  * @param panel Panel ID
  */
-static void ctune_UI_clearPanel( enum ctune_UI_PanelID panel ) {
+static void ctune_UI_clearPanel( ctune_UI_PanelID_e panel ) {
     werase( ui.panel_windows[panel] );
     update_panels();
     doupdate();
@@ -470,8 +470,8 @@ static int ctune_UI_setCurrListRowSize( ctune_UI_PanelID_e tab, int action_flag_
 
         default: {
             CTUNE_LOG( CTUNE_LOG_FATAL,
-                       "[ctune_UI_setCurrListRowSize( %d, %d )] Invalid PanelID passed.",
-                       tab, action_flag_e );
+                       "[ctune_UI_setCurrListRowSize( '%s', '%s' )] Invalid PanelID passed.",
+                       ctune_UI_PanelID.str( tab ), ctune_Flag.str( action_flag_e ) );
         } break;
     }
 
@@ -490,7 +490,7 @@ static int ctune_UI_setFavouriteTabTheming( ctune_UI_PanelID_e tab, int action_f
     ctune_UIConfig_t * ui_config = ctune_Controller.cfg.getUIConfig();
 
     if( tab == CTUNE_UI_PANEL_FAVOURITES ) {
-        bool state = ctune_UIConfig.fav_tab.theming( ui_config, action_flag_e );
+        const bool state = ctune_UIConfig.fav_tab.theming( ui_config, action_flag_e );
 
         if( action_flag_e != FLAG_GET_VALUE ) {
             ctune_UI_RSListWin.themeFavourites( &ui.tabs.favourites, (bool) action_flag_e );
@@ -504,27 +504,63 @@ static int ctune_UI_setFavouriteTabTheming( ctune_UI_PanelID_e tab, int action_f
 }
 
 /**
- * [PRIVATE] Get all available colour pallet presets
+ * [PRIVATE] Sets the 'favourite' tab's custom theming based on station location
+ * @param tab           PanelID of the current tab
+ * @param action_flag_e Action to take (get/set)
+ * @return Active state (bit 1: Custom fav theming, bit 2: UI 'custom' preset)
+ */
+static int ctune_UI_favouriteTabCustomTheming( ctune_UI_PanelID_e tab, int action_flag_e ) {
+    ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
+
+    if( tab == CTUNE_UI_PANEL_FAVOURITES ) {
+        ctune_UIConfig_t * ui_config                = ctune_Controller.cfg.getUIConfig();
+        const bool         using_fav_custom_theming = ctune_UIConfig.fav_tab.customTheming( ui_config, action_flag_e );
+        const bool         using_ui_custom_preset   = ( ctune_UIConfig.theming.currentPreset( ui_config ) == CTUNE_UIPRESET_CUSTOM );
+        const int          active_states            = ( using_ui_custom_preset << 1 ) | using_fav_custom_theming;
+
+        if( action_flag_e != FLAG_GET_VALUE ) {
+            const ctune_UIPreset_e curr_ui_preset = ctune_UIConfig.theming.currentPreset( ui_config );
+
+            if( !ctune_UIConfig.theming.setPreset( ui_config, curr_ui_preset ) ) {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[ctune_UI_favouriteTabCustomTheming( '%s', '%s' )] Failed to re-set UI colour pallet preset '%s'.",
+                           ctune_UI_PanelID.str( tab ), ctune_Flag.str( action_flag_e ), ctune_UIPreset.str( curr_ui_preset )
+                );
+            }
+
+            ctune_UI_Theme.init( ctune_UIConfig.theming.getCurrentThemePallet( ui_config ) );
+            ctune_UI.show( CTUNE_UI_PANEL_FAVOURITES ); //force hard redraw
+        }
+
+        return active_states;
+    }
+
+    return action_flag_e;
+}
+
+/**
+ * [PRIVATE] Get all available colour pallet presets except the currently used
  * @param list Pointer to Vector_t where append presets to (expected to be already initialised)
  */
 static void ctune_UI_getUIThemes( Vector_t * list ) {
     ctune_UIPreset_e curr = ctune_Controller.cfg.getUIConfig()->theme.preset;
 
     for( int i = CTUNE_UIPRESET_DEFAULT; i < CTUNE_UIPRESET_COUNT; ++i ) {
-        ctune_UIPreset_t * preset = Vector.emplace_back( list );
+        if( i != curr ) {
+            ctune_UIPreset_t *preset = Vector.emplace_back( list );
 
-        if( preset ) {
-            ( *preset ) = ( ctune_UIPreset_t ) {
-                .id     = i,
-                .name   = ctune_UIPreset.str( i ),
-                .in_use = ( i == curr ),
-            };
+            if( preset ) {
+                ( *preset ) = ( ctune_UIPreset_t ) {
+                    .id     = i,
+                    .name   = ctune_UIPreset.str( i ),
+                };
 
-        } else {
-            CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[ctune_UI_getUIThemes( %p )] Failed to add new preset to list ('%s').",
-                       list, ctune_UIPreset.str( i )
-            );
+            } else {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[ctune_UI_getUIThemes( %p )] Failed to add new preset to list ('%s').",
+                           list, ctune_UIPreset.str( i )
+                );
+            }
         }
     }
 }
@@ -542,16 +578,16 @@ static int ctune_UI_setUITheme( ctune_UI_PanelID_e tab, int ui_preset_enum ) {
 
     if( !ctune_UIConfig.theming.setPreset( ui_config, ui_preset_enum ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_UI_setUITheme( %d, %d )] Failed to set UI colour pallet preset '%s'.",
-                   tab, ui_preset_enum, ctune_UIPreset.str( ui_preset_enum )
+                   "[ctune_UI_setUITheme( '%d', %d )] Failed to set UI colour pallet preset '%s'.",
+                   ctune_UI_PanelID.str( tab ), ui_preset_enum, ctune_UIPreset.str( ui_preset_enum )
         );
 
         return 0; //EARLY RETURN
     }
 
     CTUNE_LOG( CTUNE_LOG_MSG,
-               "[ctune_UI_setUITheme( %d, %d )] UI colour pallet preset '%s' set.",
-               tab, ui_preset_enum, ctune_UIPreset.str( ui_preset_enum )
+               "[ctune_UI_setUITheme( '%d', %d )] UI colour pallet preset '%s' set.",
+               ctune_UI_PanelID.str( tab ), ui_preset_enum, ctune_UIPreset.str( ui_preset_enum )
     );
 
     ctune_UI_Theme.init( ctune_UIConfig.theming.getCurrentThemePallet( ui_config ) );
@@ -697,12 +733,20 @@ static int ctune_UI_openNewStationDialog( ctune_UI_PanelID_e tab, int arg /*unus
 
     if( tab == CTUNE_UI_PANEL_FAVOURITES ) {
         if( !ctune_UI_RSEdit.newStation( &ui.dialogs.rsedit ) ) {
-            CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_openNewStationDialog()] Failed to set new station init state." );
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_openNewStationDialog( '%s', %d )] Failed to set new station init state.",
+                       ctune_UI_PanelID.str( tab ), arg
+            );
+
             return 0; //EARLY RETURN
         }
 
         if( !ctune_UI_RSEdit.show( &ui.dialogs.rsedit ) ) {
-            CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_openNewStationDialog()] Failed to show RSFind window." );
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_openNewStationDialog( '%s', %d )] Failed to show RSFind window.",
+                       ctune_UI_PanelID.str( tab ), arg
+            );
+
             ctune_err.set( CTUNE_ERR_UI );
             return 0; //EARLY RETURN
         }
@@ -741,7 +785,11 @@ static int ctune_UI_openEditSelectedStationDialog( ctune_UI_PanelID_e tab, int a
             ctune_UI_RSEdit.loadStation( &ui.dialogs.rsedit, rsi );
 
             if( !ctune_UI_RSEdit.show( &ui.dialogs.rsedit ) ) {
-                CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_openEditSelectedStationDialog()] Failed to show RSFind window." );
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[ctune_UI_openEditSelectedStationDialog( '%s', %d )] Failed to show RSFind window.",
+                           ctune_UI_PanelID.str( tab ), arg
+                );
+
                 ctune_err.set( CTUNE_ERR_UI );
                 return 0; //EARLY RETURN
             }
@@ -755,7 +803,11 @@ static int ctune_UI_openEditSelectedStationDialog( ctune_UI_PanelID_e tab, int a
             ctune_UI_RSEdit.copyStation( &ui.dialogs.rsedit, rsi );
 
             if( !ctune_UI_RSEdit.show( &ui.dialogs.rsedit ) ) {
-                CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_openEditSelectedStationDialog()] Failed to show RSFind window." );
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[ctune_UI_openEditSelectedStationDialog( '%s', %d )] Failed to show RSFind window.",
+                           ctune_UI_PanelID.str( tab ), arg
+                );
+
                 ctune_err.set( CTUNE_ERR_UI );
                 return 0; //EARLY RETURN
             }
@@ -799,13 +851,18 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_OptionsMenu.cb.setListRowSizeLargeCallback( &ui.dialogs.optmenu, ctune_UI_setCurrListRowSize );
             ctune_UI_OptionsMenu.cb.setGetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_getUIThemes );
             ctune_UI_OptionsMenu.cb.setSetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_setUITheme );
+            ctune_UI_OptionsMenu.cb.setFavTabCustomThemingCallback( &ui.dialogs.optmenu, ctune_UI_favouriteTabCustomTheming );
 
             if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu ) ) {
                 ctune_UI_OptionsMenu.show( &ui.dialogs.optmenu );
                 ctune_UI_OptionsMenu.captureInput( &ui.dialogs.optmenu );
 
             } else {
-                CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_openOptionsMenuDialog( %i )] Could not init OptionsMenu_t dialog.", tab );
+                CTUNE_LOG( CTUNE_LOG_FATAL,
+                           "[ctune_UI_openOptionsMenuDialog( '%s' )] Could not init OptionsMenu_t dialog.",
+                           ctune_UI_PanelID.str( tab )
+                );
+
                 ctune_err.set( CTUNE_ERR_UI );
             }
         } break;
@@ -824,7 +881,11 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
                 ctune_UI_OptionsMenu.captureInput( &ui.dialogs.optmenu );
 
             } else {
-                CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_openOptionsMenuDialog( %i )] Could not init OptionsMenu_t dialog.", tab );
+                CTUNE_LOG( CTUNE_LOG_FATAL,
+                           "[ctune_UI_openOptionsMenuDialog( '%s' )] Could not init OptionsMenu_t dialog.",
+                           ctune_UI_PanelID.str( tab )
+                );
+
                 ctune_err.set( CTUNE_ERR_UI );
             }
         } break;
@@ -1030,7 +1091,7 @@ static void ctune_UI_navSwitchFocus( ctune_UI_PanelID_e tab ) {
  * @param curr_panel Panel to print the tab menu for and highlight within
  * @param end_col    Var pointer for storing col width of the tab menu (optional)
  */
-static void ctune_UI_printTabMenu( enum ctune_UI_PanelID curr_panel, int * end_col ) {
+static void ctune_UI_printTabMenu( ctune_UI_PanelID_e curr_panel, int * end_col ) {
     const int    tabs[3]   = {
         [0] = CTUNE_UI_PANEL_FAVOURITES,
         [1] = CTUNE_UI_PANEL_SEARCH,
@@ -1406,13 +1467,6 @@ static bool ctune_UI_setup( bool show_cursor ) {
 
     // OPTIONS MENU DIALOG (test build)
     ui.dialogs.optmenu = ctune_UI_OptionsMenu.create( &ui.size.screen, ui.cache.curr_panel, ctune_UI_Language.text );
-    ctune_UI_OptionsMenu.cb.setSortStationListCallback( &ui.dialogs.optmenu, ctune_UI_sortStationList );
-    ctune_UI_OptionsMenu.cb.setAddNewStationCallback( &ui.dialogs.optmenu, ctune_UI_openNewStationDialog );
-    ctune_UI_OptionsMenu.cb.setEditStationCallback( &ui.dialogs.optmenu, ctune_UI_openEditSelectedStationDialog );
-    ctune_UI_OptionsMenu.cb.setToggleFavouriteCallback( &ui.dialogs.optmenu, ctune_UI_toggleFavourite );
-    ctune_UI_OptionsMenu.cb.setSyncCurrSelectedStationCallback( &ui.dialogs.optmenu, ctune_UI_syncRemoteStation );
-    ctune_UI_OptionsMenu.cb.setFavouriteTabThemingCallback( &ui.dialogs.optmenu, ctune_UI_setFavouriteTabTheming );
-    ctune_UI_OptionsMenu.cb.setListRowSizeLargeCallback( &ui.dialogs.optmenu, ctune_UI_setCurrListRowSize );
 
     if( !ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu ) ) {
         CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_init( %i )] Could not init OptionsMenu_t dialog.", show_cursor );
@@ -1653,7 +1707,7 @@ static void ctune_UI_resize() {
  * Move a particular pane to the top
  * @param pane Pane index
  */
-static void ctune_UI_show( enum ctune_UI_PanelID panel_index ) {
+static void ctune_UI_show( ctune_UI_PanelID_e panel_index ) {
     if( panel_index == CTUNE_UI_PANEL_COUNT )
         return;
 

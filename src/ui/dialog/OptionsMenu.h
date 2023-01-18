@@ -42,16 +42,17 @@ typedef struct ctune_UI_Dialog_OptionsMenu {
     } cache;
 
     struct Callbacks {
-        const char *    (* getDisplayText)( ctune_UI_TextID_e );
-        int             (* sortStationList)( ctune_UI_PanelID_e tab, int sort_by_e );
-        int             (* addNewStation)( ctune_UI_PanelID_e tab, int /* unused */ );
-        int             (* editStation)( ctune_UI_PanelID_e tab, int /* unused */ );
-        int             (* toggleFavourite)( ctune_UI_PanelID_e tab, int /* unused */ );
-        int             (* syncUpstream)( ctune_UI_PanelID_e tab, int /* unused */ );
-        int             (* favouriteTabTheming)( ctune_UI_PanelID_e tab, int action_flag_e );
-        int             (* listRowSizeLarge)( ctune_UI_PanelID_e tab, int action_flag_e );
-        void            (* getUIPresets)( Vector_t * presets );
-        int             (* setUIPreset)( ctune_UI_PanelID_e tab, int preset_e );
+        const char * (* getDisplayText)( ctune_UI_TextID_e );
+        int          (* sortStationList)( ctune_UI_PanelID_e tab, int sort_by_e );
+        int          (* addNewStation)( ctune_UI_PanelID_e tab, int /* unused */ );
+        int          (* editStation)( ctune_UI_PanelID_e tab, int /* unused */ );
+        int          (* toggleFavourite)( ctune_UI_PanelID_e tab, int /* unused */ );
+        int          (* syncUpstream)( ctune_UI_PanelID_e tab, int /* unused */ );
+        int          (* favTabTheming)( ctune_UI_PanelID_e tab, int action_flag_e );
+        int          (* favTabCustomTheming)( ctune_UI_PanelID_e tab, int action_flag_e );
+        int          (* listRowSizeLarge)( ctune_UI_PanelID_e tab, int action_flag_e );
+        void         (* getUIPresets)( Vector_t * presets );
+        int          (* setUIPreset)( ctune_UI_PanelID_e tab, int preset_e );
     } cb;
 
 } ctune_UI_OptionsMenu_t;
@@ -155,6 +156,13 @@ extern const struct ctune_UI_Dialog_OptionsMenu_Namespace {
          * @param callback Callback function
          */
         void (* setFavouriteTabThemingCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
+
+        /**
+         * Sets the callback method to set/get the state of custom colour theming on the favourite's tab
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
+         */
+        void (* setFavTabCustomThemingCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
 
         /**
          * Sets the callback method to set/get the current tab station list's row 'large' property

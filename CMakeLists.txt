@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 project(ctune
         LANGUAGES    C
-        VERSION      1.1.4
+        VERSION      1.1.5
         DESCRIPTION  "Curses based Internet radio tuner"
         HOMEPAGE_URL "eadavison.com")
 
@@ -159,6 +159,7 @@ set(SOURCE_FILES
         src/enum/ByCategory.c
         src/enum/FileState.h
         src/enum/Flag.h
+        src/enum/Flag.c
         src/enum/ListCategory.c
         src/enum/ListCategory.h
         src/enum/PlaybackCtrl.h
@@ -209,6 +210,7 @@ set(SOURCE_FILES
         src/ui/enum/ContextID.h
         src/ui/enum/FormExit.h
         src/ui/enum/PanelID.h
+        src/ui/enum/PanelID.c
         src/ui/enum/TextID.h
         src/ui/enum/KeyboardKeyID.h
         src/ui/dialog/ContextHelp.c

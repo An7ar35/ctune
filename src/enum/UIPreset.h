@@ -17,7 +17,6 @@ typedef enum {
 typedef struct {
     ctune_UIPreset_e id;
     const char *     name;
-    bool             in_use;
 } ctune_UIPreset_t;
 
 extern const struct ctune_UIPreset_Namespace {
