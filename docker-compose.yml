@@ -15,14 +15,15 @@ services:
       - XDG_CONFIG_HOME=/output
     volumes:
       - type: bind
-        source: .
+        source: .\
         target: /ctune
       - type: bind
         source: $XDG_RUNTIME_DIR/pulse
         target: $XDG_RUNTIME_DIR/pulse
       - type: bind
         source: ~/.config/pulse/cookie
-        target: /output/pulse/cookie:ro
+        target: /output/pulse/cookie
+        read_only: true
       - type: bind
         source: /tmp/.X11-unix
         target: /tmp/.X11-unix
@@ -31,10 +32,12 @@ services:
         target: /dev/shm
       - type: bind
         source: /etc/passwd
-        target: /etc/passwd:ro
+        target: /etc/passwd
+        read_only: true
       - type: bind
         source: /etc/group
-        target: /etc/group:ro
+        target: /etc/group
+        read_only: true
       - type: bind
         source: ./docker/out
         target: /output
@@ -61,7 +64,8 @@ services:
         target: $XDG_RUNTIME_DIR/pulse
       - type: bind
         source: ~/.config/pulse/cookie
-        target: /output/pulse/cookie:ro
+        target: /output/pulse/cookie
+        read_only: true
       - type: bind
         source: /tmp/.X11-unix
         target: /tmp/.X11-unix
@@ -70,10 +74,12 @@ services:
         target: /dev/shm
       - type: bind
         source: /etc/passwd
-        target: /etc/passwd:ro
+        target: /etc/passwd
+        read_only: true
       - type: bind
         source: /etc/group
-        target: /etc/group:ro
+        target: /etc/group
+        read_only: true
       - type: bind
         source: ./docker/out
         target: /output
