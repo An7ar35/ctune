@@ -1,13 +1,13 @@
 version: "3.9"
 services:
-  build:
+  build-arch:
     platform: amd64
     network_mode: host
     tty: true
     stdin_open: true
     build:
       context: .
-      dockerfile: ./docker/run/Dockerfile
+      dockerfile: ./docker/build/Dockerfile.arch
     volumes:
       - type: bind
         source: .
@@ -30,8 +30,6 @@ services:
       - type: bind
         source: ./docker/out
         target: /output
-    devices:
-      - /dev/snd:/dev/snd
     user: ${HOST_UID}:${HOST_GID}
     environment:
       - DISPLAY=unix$DISPLAY
