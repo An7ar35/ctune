@@ -8,6 +8,11 @@ services:
     build:
       context: .
       dockerfile: ./docker/build/Dockerfile.arch
+    environment:
+      - DISPLAY=unix$DISPLAY
+      - PULSE_SERVER=unix:$XDG_RUNTIME_DIR/pulse/native
+      - XDG_DATA_HOME=/output
+      - XDG_CONFIG_HOME=/output
     volumes:
       - type: bind
         source: .
@@ -15,6 +20,9 @@ services:
       - type: bind
         source: $XDG_RUNTIME_DIR/pulse
         target: $XDG_RUNTIME_DIR/pulse
+      - type: bind
+        source: ~/.config/pulse/cookie
+        target: /output/pulse/cookie:ro
       - type: bind
         source: /tmp/.X11-unix
         target: /tmp/.X11-unix
@@ -30,9 +38,43 @@ services:
       - type: bind
         source: ./docker/out
         target: /output
-    user: ${HOST_UID}:${HOST_GID}
+    user: ${HOST_UID}:${AUDIO_GID}
+  build-ubuntu:
+    platform: amd64
+    network_mode: host
+    tty: true
+    stdin_open: true
+    build:
+      context: .
+      dockerfile: ./docker/build/Dockerfile.ubuntu
     environment:
       - DISPLAY=unix$DISPLAY
       - PULSE_SERVER=unix:$XDG_RUNTIME_DIR/pulse/native
       - XDG_DATA_HOME=/output
       - XDG_CONFIG_HOME=/output
+    volumes:
+      - type: bind
+        source: .
+        target: /ctune
+      - type: bind
+        source: $XDG_RUNTIME_DIR/pulse
+        target: $XDG_RUNTIME_DIR/pulse
+      - type: bind
+        source: ~/.config/pulse/cookie
+        target: /output/pulse/cookie:ro
+      - type: bind
+        source: /tmp/.X11-unix
+        target: /tmp/.X11-unix
+      - type: bind
+        source: /dev/shm
+        target: /dev/shm
+      - type: bind
+        source: /etc/passwd
+        target: /etc/passwd:ro
+      - type: bind
+        source: /etc/group
+        target: /etc/group:ro
+      - type: bind
+        source: ./docker/out
+        target: /output
+    user: ${HOST_UID}:${AUDIO_GID}

@@ -1,0 +1,47 @@
+# syntax=docker/dockerfile:1
+FROM ubuntu:rolling
+LABEL maintainers="E.A.Davison <eadavison at protonmail dot com>"
+
+# Base install
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    locales \
+    git \
+    gcc \
+    libncurses5 \
+    cmake \
+    cmake-extras \
+    make \
+    man \
+    pandoc \
+    gzip \
+    libavcodec-dev \
+    libavformat-dev \
+    libavutil-dev \
+    libswscale-dev \
+    libswresample-dev \
+    libavdevice-dev \
+    libavfilter-dev \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    libncurses5-dev \
+    libbsd-dev \
+    libpulse-dev
+
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
+
+# Build & install ctune
+WORKDIR /ctune
+COPY . .
+RUN mkdir cmake-build-docker \
+ && cd cmake-build-docker \
+ && cmake ../ \
+ && cd .. \
+ && cmake . -DCMAKE_BUILD_TYPE=Release \
+ && cmake --build . \
+ && cmake --install .
+
+# Execute
+ENTRYPOINT [ "ctune" ]
+CMD [ "--debug" ]
