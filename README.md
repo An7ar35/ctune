@@ -63,6 +63,7 @@ The configuration is generated at first launch in `~/.config/ctune/ctune.cfg`. T
 | `IO::StreamTimeout`                   | unsigned int | `5`             | Timeout value for streaming in seconds*                                                                   |
 | `IO::NetworkTimeout`                  | unsigned int | `8`             | Timeout value for the network calls in seconds                                                            |
 | `UI::Favourites::ShowTheme`           | bool         | `true`          | Flag to show source theming on the Favourites tab                                                         |
+| `UI::Favourites::UseCustomTheme`      | bool         | `true`          | Flag to use the 'custom' preset's station source colouring instead of the currently selected preset's     |                                               |
 | `UI::Favourites::UseLargeRows`        | bool         | `true`          | Flag to use large format row entries in the Favourites tab                                                |
 | `UI::Search::UseLargeRows`            | bool         | `true`          | Flag to use large format row entries in the Search tab                                                    |
 | `UI::Browser::UseLargeRows`           | bool         | `false`         | Flag to use large format row entries in the Browser tab                                                   |
@@ -151,12 +152,14 @@ The package is available in the AUR repository under `ctune-git`. Install using 
 >  Alternatively just download the `PKGBUILD` file into an empty staging folder and run `makepkg -si` from inside. 
    The rest should take care of itself.
 
-#### Ubuntu 22.04.1 LTS (tested with _pulseaudio_ as the default server)
+#### Ubuntu 22.10 'Kinetic' (tested with _pulseaudio_ as the default server)
+
+<span style="color: orange;">The version of ffmpeg libs packaged with ubuntu 22.04.1 LTS are too old. Since the API changed I've updated the calls in ctune which breaks compilation for older ffmpeg libs.</span>
 
 No PPA but here are copy/paste commands to install all the required programs and development libraries you would need before compiling `ctune`:
 
 ```shell
-sudo apt-get install git cmake cmake-extras make man pandoc gzip
+sudo apt-get install gcc libncurses5 git cmake cmake-extras make man pandoc gzip
 ```
 
 ```shell
@@ -174,9 +177,9 @@ It uses the Arch docker image as base. The `docker-compose.sh` script creates th
 
 Linux x64 with a UTF-8 locale.
 
-As a baseline v1.0.0 works on ArchLinux with:
+As a baseline v1.1.5 works on ArchLinux with:
 
-- FFMpeg (libavformat 58.76.100, libavcodec 58.134.100, libswresample 3.9.100)
+- FFMpeg (libavformat 59.27.100, libavcodec 59.37.100, libswresample 4.7.100)
 - VLC (3.0.15)
 - PulseAudio (14.2.0)
 - SDL (2.0.14)
@@ -184,7 +187,7 @@ As a baseline v1.0.0 works on ArchLinux with:
 - sndio (1.7.0)
 - OpenSSL (1.1.1k)
 - Curl (7.77.0)
-- nCurses (6.2.20200212)
+- nCurses (6.4.20221231)
 - libbsd
 
 ## F.A.Q.
