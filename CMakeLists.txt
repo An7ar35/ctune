@@ -212,7 +212,7 @@ set(SOURCE_FILES
         src/ui/enum/PanelID.h
         src/ui/enum/PanelID.c
         src/ui/enum/TextID.h
-        src/ui/enum/KeyboardKeyID.h
+        src/ui/enum/InputKeyID.h
         src/ui/dialog/ContextHelp.c
         src/ui/dialog/ContextHelp.h
         src/ui/dialog/RSInfo.c

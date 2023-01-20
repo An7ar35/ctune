@@ -1,7 +1,7 @@
 #ifndef CTUNE_UI_DEFINITIONS_KEYDESCRIPTION_H
 #define CTUNE_UI_DEFINITIONS_KEYDESCRIPTION_H
 
-#include "../enum/KeyboardKeyID.h"
+#include "../enum/InputKeyID.h"
 
 #define CTUNE_KEY_TAB             9
 #define CTUNE_KEY_RETURN         10
@@ -27,24 +27,24 @@ typedef struct ctune_UI_KeyDescription {
 extern const struct ctune_UI_KeyDescription_Namespace {
     /**
      * Get a key's display text
-     * @param keyID ctune_UI_KeyboardKey_e enum type
+     * @param keyID ctune_UI_InputKey_e enum type
      * @return Pointer to key's description string (NULL if error)
      */
-    const char * (* getKeyText)( ctune_UI_KeyboardKey_e keyID );
+    const char * (* getKeyText)( ctune_UI_InputKey_e keyID );
 
     /**
      * Gets the raw ncurses key associated with the KeyID
-     * @param keyID ctune_UI_KeyboardKey_e enum type
+     * @param keyID ctune_UI_InputKey_e enum type
      * @return NCurses key integer
      */
-    int (* getKeyRaw)( ctune_UI_KeyboardKey_e keyID );
+    int (* getKeyRaw)( ctune_UI_InputKey_e keyID );
 
     /**
      * Get the key ID from an ncurses key
      * @param ncurses_key NCurses key
-     * @return ctune_UI_KeyboardKey_e enum type
+     * @return ctune_UI_InputKey_e enum type
      */
-    ctune_UI_KeyboardKey_e (* getKeyID)( int ncurses_key );
+    ctune_UI_InputKey_e (* getKeyID)( int ncurses_key );
 
 } ctune_UI_KeyDescription;
 
