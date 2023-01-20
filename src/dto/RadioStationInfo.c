@@ -445,134 +445,83 @@ static void ctune_RadioStationInfo_freeContent( void * rsi ) {
 
     ctune_RadioStationInfo_t * station = (struct ctune_RadioStationInfo *) rsi;
 
-    if( station->change_uuid ) {
-        free( station->change_uuid );
-        station->change_uuid = NULL;
-    }
+    free( station->change_uuid );
+    station->change_uuid = NULL;
 
-    if( station->station_uuid ) {
-        free( station->station_uuid );
-        station->station_uuid = NULL;
-    }
+    free( station->station_uuid );
+    station->station_uuid = NULL;
 
-    if( station->server_uuid ) {
-        free( station->server_uuid );
-        station->server_uuid = NULL;
-    }
+    free( station->server_uuid );
+    station->server_uuid = NULL;
 
-    if( station->name ) {
-        free( station->name );
-        station->name = NULL;
-    }
+    free( station->name );
+    station->name = NULL;
 
-    if( station->url ) {
-        free( station->url );
-        station->url = NULL;
-    }
+    free( station->url );
+    station->url = NULL;
 
-    if( station->url_resolved ) {
-        free( station->url_resolved );
-        station->url_resolved = NULL;
-    }
+    free( station->url_resolved );
+    station->url_resolved = NULL;
 
-    if( station->homepage ) {
-        free( station->homepage );
-        station->homepage = NULL;
-    }
-    if( station->favicon_url ) {
-        free( station->favicon_url );
-        station->favicon_url = NULL;
-    }
+    free( station->homepage );
+    station->homepage = NULL;
 
-    if( station->tags ) {
-        free( station->tags );
-        station->tags = NULL;
-    }
+    free( station->favicon_url );
+    station->favicon_url = NULL;
 
-    if( station->country ) {
-        free( station->country );
-        station->country = NULL;
-    }
+    free( station->tags );
+    station->tags = NULL;
 
-    if( station->country_code.iso3166_1 ) {
-        free( station->country_code.iso3166_1 );
-        station->country_code.iso3166_1 = NULL;
-    }
+    free( station->country );
+    station->country = NULL;
 
-    if( station->country_code.iso3166_2 ) {
-        free( station->country_code.iso3166_2 );
-        station->country_code.iso3166_2 = NULL;
-    }
+    free( station->country_code.iso3166_1 );
+    station->country_code.iso3166_1 = NULL;
 
-    if( station->state ) {
-        free( station->state );
-        station->state = NULL;
-    }
+    free( station->country_code.iso3166_2 );
+    station->country_code.iso3166_2 = NULL;
 
-    if( station->language ) {
-        free( station->language );
-        station->language = NULL;
-    }
+    free( station->state );
+    station->state = NULL;
 
-    if( station->language_codes ) {
-        free( station->language_codes );
-        station->language_codes = NULL;
-    }
+    free( station->language );
+    station->language = NULL;
 
-    if( station->last_change_time ) {
-        free( station->last_change_time );
-        station->last_change_time = NULL;
-    }
+    free( station->language_codes );
+    station->language_codes = NULL;
 
-    if( station->iso8601.last_change_time ) {
-        free( station->iso8601.last_change_time );
-        station->iso8601.last_change_time = NULL;
-    }
+    free( station->last_change_time );
+    station->last_change_time = NULL;
 
-    if( station->codec ) {
-        free( station->codec );
-        station->codec = NULL;
-    }
+    free( station->iso8601.last_change_time );
+    station->iso8601.last_change_time = NULL;
 
-    if( station->last_check_time ) {
-        free( station->last_check_time );
-        station->last_check_time = NULL;
-    }
+    free( station->codec );
+    station->codec = NULL;
 
-    if( station->iso8601.last_check_time ) {
-        free( station->iso8601.last_check_time );
-        station->iso8601.last_check_time = NULL;
-    }
+    free( station->last_check_time );
+    station->last_check_time = NULL;
 
-    if( station->last_check_ok_time ) {
-        free( station->last_check_ok_time );
-        station->last_check_ok_time = NULL;
-    }
+    free( station->iso8601.last_check_time );
+    station->iso8601.last_check_time = NULL;
 
-    if( station->iso8601.last_check_ok_time ) {
-        free( station->iso8601.last_check_ok_time );
-        station->iso8601.last_check_ok_time = NULL;
-    }
+    free( station->last_check_ok_time );
+    station->last_check_ok_time = NULL;
 
-    if( station->last_local_check_time ) {
-        free( station->last_local_check_time );
-        station->last_local_check_time = NULL;
-    }
+    free( station->iso8601.last_check_ok_time );
+    station->iso8601.last_check_ok_time = NULL;
 
-    if( station->iso8601.last_local_check_time ) {
-        free( station->iso8601.last_local_check_time );
-        station->iso8601.last_local_check_time = NULL;
-    }
+    free( station->last_local_check_time );
+    station->last_local_check_time = NULL;
 
-    if( station->click_timestamp ) {
-        free( station->click_timestamp );
-        station->click_timestamp = NULL;
-    }
+    free( station->iso8601.last_local_check_time );
+    station->iso8601.last_local_check_time = NULL;
 
-    if( station->iso8601.click_timestamp ) {
-        free( station->iso8601.click_timestamp );
-        station->iso8601.click_timestamp = NULL;
-    }
+    free( station->click_timestamp );
+    station->click_timestamp = NULL;
+
+    free( station->iso8601.click_timestamp );
+    station->iso8601.click_timestamp = NULL;
 }
 
 /**

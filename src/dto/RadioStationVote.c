@@ -21,15 +21,11 @@ static void ctune_StationRadioStationVote_freeContent( void * rsv ) {
 
     ctune_RadioStationVote_t * o = (struct ctune_RadioStationVote *) rsv;
 
-    if( o->ok ) {
-        free( o->ok );
-        o->ok = NULL;
-    }
+    free( o->ok );
+    o->ok = NULL;
 
-    if( o->message ) {
-        free( o->message );
-        o->message = NULL;
-    }
+    free( o->message );
+    o->message = NULL;
 }
 
 /**

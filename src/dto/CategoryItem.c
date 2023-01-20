@@ -22,15 +22,11 @@ static void ctune_CategoryItem_freeContent( void * cat_item ) {
 
     ctune_CategoryItem_t * ci = (struct ctune_CategoryItem *) cat_item;
 
-    if( ci->name ) {
-        free( ci->name );
-        ci->name = NULL;
-    }
+    free( ci->name );
+    ci->name = NULL;
 
-    if( ci->data ) {
-        free( ci->data );
-        ci->data = NULL;
-    }
+    free( ci->data );
+    ci->data = NULL;
 }
 
 /**

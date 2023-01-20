@@ -286,38 +286,26 @@ static void ctune_RadioBrowserFilter_freeContent( ctune_RadioBrowserFilter_t * f
     if( filter == NULL )
         return; //EARLY RETURN
 
-    if( filter->name ) {
-        free( filter->name );
-        filter->name = NULL;
-    }
+    free( filter->name );
+    filter->name = NULL;
 
-    if( filter->country ) {
-        free( filter->country );
-        filter->country = NULL;
-    }
+    free( filter->country );
+    filter->country = NULL;
 
-    if( filter->state ) {
-        free( filter->state );
-        filter->state = NULL;
-    }
+    free( filter->state );
+    filter->state = NULL;
 
-    if( filter->language ) {
-        free( filter->language );
-        filter->language = NULL;
-    }
+    free( filter->language );
+    filter->language = NULL;
 
-    if( filter->tag ) {
-        free( filter->tag );
-        filter->tag = NULL;
-    }
+    free( filter->tag );
+    filter->tag = NULL;
 
     if( !StrList.empty( &filter->tagList ) )
         StrList.free_strlist( &filter->tagList );
 
-    if( filter->codec ) {
-        free( filter->codec );
-        filter->codec = NULL;
-    }
+    free( filter->codec );
+    filter->codec = NULL;
 }
 
 static void ctune_RadioBrowserFilter_set_name( ctune_RadioBrowserFilter_t * filter, char * str_ptr ) {

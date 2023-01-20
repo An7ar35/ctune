@@ -33,27 +33,19 @@ static void ctune_ServerConfig_freeContent( struct ctune_ServerConfig * cfg ) {
     if( cfg == NULL )
         return; //EARLY RETURN
 
-    if( cfg->check_enabled ) {
-        free( cfg->check_enabled );
-        cfg->check_enabled = NULL;
-    }
+    free( cfg->check_enabled );
+    cfg->check_enabled = NULL;
 
-    if( cfg->prometheus_exporter_enabled ) {
-        free( cfg->prometheus_exporter_enabled );
-        cfg->prometheus_exporter_enabled = NULL;
-    }
+    free( cfg->prometheus_exporter_enabled );
+    cfg->prometheus_exporter_enabled = NULL;
 
     StrList.free_strlist( &cfg->pull_servers );
 
-    if( cfg->server_name ) {
-        free( cfg->server_name );
-        cfg->server_name = NULL;
-    }
+    free( cfg->server_name );
+    cfg->server_name = NULL;
 
-    if( cfg->cache_type ) {
-        free( cfg->cache_type );
-        cfg->cache_type = NULL;
-    }
+    free( cfg->cache_type );
+    cfg->cache_type = NULL;
 }
 
 /**
