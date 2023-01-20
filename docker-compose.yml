@@ -15,7 +15,7 @@ services:
       - XDG_CONFIG_HOME=/output
     volumes:
       - type: bind
-        source: .\
+        source: .
         target: /ctune
       - type: bind
         source: $XDG_RUNTIME_DIR/pulse
