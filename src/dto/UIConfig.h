@@ -8,6 +8,8 @@
 #include "../enum/StationSrc.h"
 
 typedef struct {
+    bool mouse;
+
     struct {
         bool theme_favourites;
         bool custom_theming;
@@ -46,9 +48,18 @@ extern const struct ctune_UIConfig_Namespace {
      */
     bool (* copy)( const ctune_UIConfig_t * from, ctune_UIConfig_t * to );
 
+    /**
+     * Set/Gets the mouse flag
+     * @param cfg Pointer to ctune_UIConfig_t object
+     * @param flag Flag action
+     * @return Property value after operation
+     */
+    bool (* mouse)( ctune_UIConfig_t * cfg, ctune_Flag_e flag );
+
     struct {
         /**
          * Gets the current preset
+         * @param cfg Pointer to ctune_UIConfig_t object
          * @return Theme preset
          */
         ctune_UIPreset_e (* currentPreset)( ctune_UIConfig_t * cfg );

@@ -4,6 +4,8 @@
 typedef enum ctune_UI_InputKey {
     CTUNE_UI_INPUTKEY_ERR = 0,
     CTUNE_UI_INPUTKEY_NONE,
+
+    /* Keyboard input */
     CTUNE_UI_INPUTKEY_ESC,
     CTUNE_UI_INPUTKEY_F1,
     CTUNE_UI_INPUTKEY_F2,
@@ -83,6 +85,9 @@ typedef enum ctune_UI_InputKey {
     CTUNE_UI_INPUTKEY_CTRL_D,
     CTUNE_UI_INPUTKEY_CTRL_F,
     CTUNE_UI_INPUTKEY_CTRL_I,
+
+    /* Event input */
+    CTUNE_UI_INPUTKEY_MOUSE_EVENT,
     CTUNE_UI_INPUTKEY_RESIZE,
 
     CTUNE_UI_INPUTKEY_COUNT,

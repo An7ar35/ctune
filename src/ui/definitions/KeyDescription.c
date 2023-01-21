@@ -95,6 +95,7 @@ const ctune_UI_KeyDescription_t keys[CTUNE_UI_INPUTKEY_COUNT] = {
     [CTUNE_UI_INPUTKEY_CTRL_F        ] = { .ncurses_key = CTRL( 'f' ),             .text = "Ctrl + F" },
     [CTUNE_UI_INPUTKEY_CTRL_I        ] = { .ncurses_key = CTRL( 'i' ),             .text = "Ctrl + I" },
 
+    [CTUNE_UI_INPUTKEY_MOUSE_EVENT   ] = { .ncurses_key = KEY_MOUSE,               .text = "Mouse event" },
     [CTUNE_UI_INPUTKEY_RESIZE        ] = { .ncurses_key = KEY_RESIZE,              .text = "Resize" },
 };
 

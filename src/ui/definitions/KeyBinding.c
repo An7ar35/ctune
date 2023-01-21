@@ -19,6 +19,7 @@ const ctune_UI_KeyBinding_t bindings_main[] = {
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_GO_BACK, .description = CTUNE_UI_TEXT_HELP_ESC, .key = CTUNE_UI_INPUTKEY_ESC },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_HELP, .description = CTUNE_UI_TEXT_HELP_KEY, .key = CTUNE_UI_INPUTKEY_F1 },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_QUIT, .description = CTUNE_UI_TEXT_HELP_QUIT, .key = CTUNE_UI_INPUTKEY_Q },
+    { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_MOUSE_EVENT, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_INPUTKEY_MOUSE_EVENT },
 };
 
 /**
@@ -54,6 +55,7 @@ const ctune_UI_KeyBinding_t bindings_fav_tab[] = {
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_PAGE_DOWN, .description = CTUNE_UI_TEXT_HELP_NEXT_ENTRY_PAGE, .key = CTUNE_UI_INPUTKEY_PAGEDOWN },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_SELECT_FIRST, .description = CTUNE_UI_TEXT_HELP_FIRST_ENTRY, .key = CTUNE_UI_INPUTKEY_HOME },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_SELECT_LAST, .description = CTUNE_UI_TEXT_HELP_LAST_ENTRY, .key = CTUNE_UI_INPUTKEY_END },
+    { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_MOUSE_EVENT, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_INPUTKEY_MOUSE_EVENT },
 };
 
 /**
@@ -87,6 +89,7 @@ static const ctune_UI_KeyBinding_t bindings_search_tab[] = {
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_PAGE_DOWN, .description = CTUNE_UI_TEXT_HELP_NEXT_ENTRY_PAGE, .key = CTUNE_UI_INPUTKEY_PAGEDOWN },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_SELECT_FIRST, .description = CTUNE_UI_TEXT_HELP_FIRST_ENTRY, .key = CTUNE_UI_INPUTKEY_HOME },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_SELECT_LAST, .description = CTUNE_UI_TEXT_HELP_LAST_ENTRY, .key = CTUNE_UI_INPUTKEY_END },
+    { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_MOUSE_EVENT, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_INPUTKEY_MOUSE_EVENT },
 };
 
 /**
@@ -122,6 +125,7 @@ static const ctune_UI_KeyBinding_t bindings_browse_tab[] = {
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_SELECT_LAST, .description = CTUNE_UI_TEXT_HELP_LAST_ENTRY, .key = CTUNE_UI_INPUTKEY_END },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_FOCUS_RIGHT, .description = CTUNE_UI_TEXT_HELP_FOCUS_RIGHT, .key = CTUNE_UI_INPUTKEY_TAB },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_FOCUS_LEFT, .description = CTUNE_UI_TEXT_HELP_FOCUS_LEFT, .key = CTUNE_UI_INPUTKEY_STAB },
+    { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_MOUSE_EVENT, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_INPUTKEY_MOUSE_EVENT },
 };
 
 /**
@@ -136,6 +140,7 @@ static const ctune_UI_KeyBinding_t bindings_rsinfo[] = {
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_SCROLL_RIGHT, .description = CTUNE_UI_TEXT_HELP_SCROLL_RIGHT, .key = CTUNE_UI_INPUTKEY_RIGHT },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_SCROLL_UP, .description = CTUNE_UI_TEXT_HELP_SCROLL_UP, .key = CTUNE_UI_INPUTKEY_UP },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_SCROLL_DOWN, .description = CTUNE_UI_TEXT_HELP_SCROLL_DOWN, .key = CTUNE_UI_INPUTKEY_DOWN },
+    { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_MOUSE_EVENT, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_INPUTKEY_MOUSE_EVENT },
 };
 
 /**
@@ -163,6 +168,7 @@ static const ctune_UI_KeyBinding_t bindings_rsfind[] = {
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_TRIGGER, .description = CTUNE_UI_TEXT_HELP_FIELD_RETURN, .key = CTUNE_UI_INPUTKEY_RETURN },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_TOGGLE, .description = CTUNE_UI_TEXT_HELP_FIELD_TOGGLE, .key = CTUNE_UI_INPUTKEY_X },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_TOGGLE_ALT, .description = CTUNE_UI_TEXT_HELP_FIELD_TOGGLE_ALT, .key = CTUNE_UI_INPUTKEY_SPACE },
+    { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_MOUSE_EVENT, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_INPUTKEY_MOUSE_EVENT },
 };
 
 /**
@@ -189,6 +195,7 @@ static const ctune_UI_KeyBinding_t bindings_rsedit[] = {
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_FIELD_NEXT, .description = CTUNE_UI_TEXT_HELP_NEXT_FIELD, .key = CTUNE_UI_INPUTKEY_TAB },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_TRIGGER, .description = CTUNE_UI_TEXT_HELP_FIELD_RETURN, .key = CTUNE_UI_INPUTKEY_RETURN },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_TOGGLE_ALT, .description = CTUNE_UI_TEXT_HELP_FIELD_TOGGLE_ALT, .key = CTUNE_UI_INPUTKEY_SPACE },
+    { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_MOUSE_EVENT, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_INPUTKEY_MOUSE_EVENT },
 };
 
 static const ctune_UI_KeyBinding_t bindings_options_menu[] = {
@@ -203,6 +210,7 @@ static const ctune_UI_KeyBinding_t bindings_options_menu[] = {
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_GO_LEFT, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_INPUTKEY_LEFT },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_GO_RIGHT, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_INPUTKEY_RIGHT },
     { .entry_type = CTUNE_UI_KEYBINDING_TYPE_NORMAL, .action = CTUNE_UI_ACTION_TRIGGER, .description = CTUNE_UI_TEXT_HELP_FIELD_RETURN, .key = CTUNE_UI_INPUTKEY_RETURN },
+    { .entry_type = CTUNE_UI_KEYBINDING_TYPE_HIDDEN, .action = CTUNE_UI_ACTION_MOUSE_EVENT, .description = CTUNE_UI_TEXT_BLANK, .key = CTUNE_UI_INPUTKEY_MOUSE_EVENT },
 };
 
 /**

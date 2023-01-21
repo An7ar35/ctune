@@ -168,6 +168,12 @@ extern const struct ctune_Settings_Instance {
         int (* getNetworkTimeoutVal)( void );
 
         /**
+         * Gets the mouse support requirement
+         * @return "Enable mouse" state
+         */
+        bool (* enableMouse)( void );
+
+        /**
          * Gets the UI configuration
          * @return ctune_UIConfig object
          */

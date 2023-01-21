@@ -11,7 +11,7 @@ typedef enum ctune_UI_KeyBinding_KeyEntryType {
     CTUNE_UI_KEYBINDING_TYPE_NORMAL,  //standard key-binding entry
     CTUNE_UI_KEYBINDING_TYPE_HIDDEN,  //for display formatting: hidden entry
     CTUNE_UI_KEYBINDING_TYPE_HEADING, //for display formatting: heading entry
-    CTUNE_UI_KEYBINDING_TYPE_EMPTY    //for for display formatting: empty line
+    CTUNE_UI_KEYBINDING_TYPE_EMPTY    //for display formatting: empty line
 } ctune_UI_KeyEntryType_e;
 
 /**
