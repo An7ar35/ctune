@@ -9,6 +9,7 @@
 
 typedef struct {
     bool mouse;
+    bool unicode_icons;
 
     struct {
         bool theme_favourites;
@@ -55,6 +56,13 @@ extern const struct ctune_UIConfig_Namespace {
      * @return Property value after operation
      */
     bool (* mouse)( ctune_UIConfig_t * cfg, ctune_Flag_e flag );
+
+    /**
+     * Gets the unicode icon flag property
+     * @param cfg Pointer to ctune_UIConfig_t object
+     * @return Flag state
+     */
+    bool (* unicodeIcons)( ctune_UIConfig_t * cfg );
 
     struct {
         /**

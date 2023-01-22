@@ -198,6 +198,8 @@ set(SOURCE_FILES
         src/ui/datastructure/WindowMargin.h
         src/ui/datastructure/KeyBind.h
         src/ui/datastructure/KeyInfo.h
+        src/ui/definitions/Icons.c
+        src/ui/definitions/Icons.h
         src/ui/definitions/KeyBinding.c
         src/ui/definitions/KeyBinding.h
         src/ui/definitions/KeyDescription.c
@@ -209,6 +211,7 @@ set(SOURCE_FILES
         src/ui/enum/ActionID.h
         src/ui/enum/ContextID.h
         src/ui/enum/FormExit.h
+        src/ui/enum/IconID.h
         src/ui/enum/PanelID.h
         src/ui/enum/PanelID.c
         src/ui/enum/TextID.h

@@ -67,6 +67,7 @@ The configuration is generated at first launch in `~/.config/ctune/ctune.cfg`. T
 | `UI::Favourites::UseLargeRows`        | bool         | `true`          | Flag to use large format row entries in the Favourites tab                                                |
 | `UI::Search::UseLargeRows`            | bool         | `true`          | Flag to use large format row entries in the Search tab                                                    |
 | `UI::Browser::UseLargeRows`           | bool         | `false`         | Flag to use large format row entries in the Browser tab                                                   |
+| `UI::UnicodeIcons`                    | bool         | `false`         | Flag to enable unicode icons (terminal font should support that)                                          |
  | `UI::Theme::preset`                   | string       | `default`       | Theme preset name                                                                                         |
 | `UI::Theme`                           | colour pair  | `{WHITE,BLACK}` | Base theme colours (foreground, background)                                                               |
 | `UI::Theme::row`                      | colour pair  | `{WHITE,BLACK}` | Base theme colours for row entries (foreground, background)                                               |

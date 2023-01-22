@@ -8,7 +8,8 @@
  */
 static ctune_UIConfig_t ctune_UIConfig_create( void ) {
     return (ctune_UIConfig_t) {
-        .mouse   = false,
+        .mouse         = false,
+        .unicode_icons = false,
         .fav_tab = {
             .large_rows       = true,
             .theme_favourites = true,
@@ -64,6 +65,21 @@ bool ctune_UIConfig_mouse( ctune_UIConfig_t * cfg, ctune_Flag_e flag ) {
             default          : return cfg->mouse;
         }
     }
+
+    return false;
+}
+
+/**
+ * Gets the unicode icon flag property
+ * @param cfg Pointer to ctune_UIConfig_t object
+ * @return Flag state
+ */
+bool ctune_UIConfig_unicodeIcons( ctune_UIConfig_t * cfg ) {
+    if( cfg ) {
+        return cfg->unicode_icons;
+    }
+
+    return false;
 }
 
 /**
@@ -228,9 +244,10 @@ static bool ctune_UIConfig_BrowseTab_largeRowSize( ctune_UIConfig_t * cfg, ctune
  * Namespace constructor
  */
 const struct ctune_UIConfig_Namespace ctune_UIConfig = {
-    .create = &ctune_UIConfig_create,
-    .copy   = &ctune_UIConfig_copy,
-    .mouse  = &ctune_UIConfig_mouse,
+    .create       = &ctune_UIConfig_create,
+    .copy         = &ctune_UIConfig_copy,
+    .mouse        = &ctune_UIConfig_mouse,
+    .unicodeIcons = &ctune_UIConfig_unicodeIcons,
 
     .theming = {
         .currentPreset         = &ctune_UIConfig_theming_currentPreset,
