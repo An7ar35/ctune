@@ -3,6 +3,7 @@
 
 #include <panel.h>
 
+#include "../types/ScrollMask.h"
 #include "../widget/ScrollWin.h"
 #include "../widget/ScrollBar.h"
 #include "../widget/BorderWin.h"
@@ -29,16 +30,12 @@
          WindowProperty_t     x_property;
          ctune_UI_ScrollBar_t y;
          ctune_UI_ScrollBar_t x;
-         size_t               scroll_pos_x;
-         size_t               scroll_pos_y;
 
      } scrollbar;
 
      struct {
          int offset_y;
          int offset_x;
-//         int prev_pos_y;
-//         int prev_pos_x;
 
      } autoscroll;
 
@@ -62,12 +59,13 @@ extern const struct ctune_UI_Widget_Dialog_Namespace {
 
     /**
      * Create a border window (a scroll windows must have been created first!)
-     * @param dialog   UI_Dialog_t object
-     * @param parent   Parent window dimensions (to fit border into)
-     * @param title    Title to print on the window border
-     * @param margins  Window margin values
+     * @param dialog     UI_Dialog_t object
+     * @param parent     Parent window dimensions (to fit border into)
+     * @param title      Title to print on the window border
+     * @param margins    Window margin values
+     * @param mouse_ctrl Flag for mouse control on the scrollbars
      */
-    void (* createBorderWin)( ctune_UI_Dialog_t * dialog, const WindowProperty_t * parent, const char * title, const WindowMargin_t * margins );
+    void (* createBorderWin)( ctune_UI_Dialog_t * dialog, const WindowProperty_t * parent, const char * title, const WindowMargin_t * margins, bool mouse_ctrl );
 
     /**
      * Gets the scrollable state on the vertical axis
@@ -92,58 +90,18 @@ extern const struct ctune_UI_Widget_Dialog_Namespace {
     void (* setAutoScrollOffset)( ctune_UI_Dialog_t * dialog, int y, int x );
 
     /**
-     * Scroll content up
+     * Incrementally scroll the window
      * @param dialog UI_Dialog_t object
+     * @param mask   Scroll mask
      */
-    void (* scrollUp)( ctune_UI_Dialog_t * dialog );
+    void (* incrementalScroll)( ctune_UI_Dialog_t * dialog, ctune_UI_ScrollMask_m mask );
 
     /**
-     * Scroll content right
+     * Scroll to the edge
      * @param dialog UI_Dialog_t object
+     * @param mask   Scroll mask
      */
-    void (* scrollRight)( ctune_UI_Dialog_t * dialog );
-
-    /**
-     * Scroll content down
-     * @param dialog UI_Dialog_t object
-     */
-    void (* scrollDown)( ctune_UI_Dialog_t * dialog );
-
-    /**
-     * Scroll content left
-     * @param dialog UI_Dialog_t object
-     */
-    void (* scrollLeft)( ctune_UI_Dialog_t * dialog );
-
-    /**
-     * Scroll back to the left/top
-     * @param dialog UI_Dialog_t object
-     */
-    void (* scrollHome)( ctune_UI_Dialog_t * dialog );
-
-    /**
-     * Scroll back to the top (horizontal scroll untouched)
-     * @param dialog UI_Dialog_t object
-     */
-    void(* scrollTop)( ctune_UI_Dialog_t * dialog );
-
-    /**
-     * Scroll down to the bottom (horizontal scroll untouched)
-     * @param dialog UI_Dialog_t object
-     */
-    void(* scrollBottom)( ctune_UI_Dialog_t * dialog );
-
-    /**
-     * Scroll to the far left (vertical scroll untouched)
-     * @param dialog UI_Dialog_t object
-     */
-    void(* scrollLeftEdge)( ctune_UI_Dialog_t * dialog );
-
-    /**
-     * Scroll to the far right (vertical scroll untouched)
-     * @param dialog UI_Dialog_t object
-     */
-    void(* scrollRightEdge)( ctune_UI_Dialog_t * dialog );
+    void (* edgeScroll)( ctune_UI_Dialog_t * dialog, ctune_UI_ScrollMask_m mask );
 
     /**
      * Triggers autoscroll
@@ -152,6 +110,22 @@ extern const struct ctune_UI_Widget_Dialog_Namespace {
      * @param x      Current cursor column position on pad
      */
     void (* autoScroll)( ctune_UI_Dialog_t * dialog, int y, int x );
+
+    /**
+     * Checks if area at coordinate is a window control
+     * @param dialog UI_Dialog_t object
+     * @param y      Row location on screen
+     * @param x      Column location on screen
+     * @return Window control mask (includes scrolling)
+     */
+    ctune_UI_WinCtrlMask_m (* isWinControl)( ctune_UI_Dialog_t * dialog, int y, int x );
+
+    /**
+     * Gets the current properties of the displayed/viewable ScrollWin pad section
+     * @param dialog UI_Dialog_t object
+     * @return Properties (top-left corner pos on pad and view-box size)
+     */
+    WindowProperty_t (* getViewProperty)( ctune_UI_Dialog_t * dialog );
 
     /**
      * Moves the dialog panel to the top and un-hides it

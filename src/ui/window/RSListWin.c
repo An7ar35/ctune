@@ -2,6 +2,7 @@
 
 #include "../../logger/Logger.h"
 #include "../definitions/Theme.h"
+#include "../definitions/Icons.h"
 
 #define LARGE_ENTRY_ROW_HEIGHT  3
 #define SMALL_ENTRY_ROW_HEIGHT  1
@@ -464,20 +465,39 @@ static void ctune_UI_RSListWin_drawCanvas( ctune_UI_RSListWin_t * win, bool resi
     String_t entry_count = String.init();
     ctune_utos( Vector.size( &win->entries ), &entry_count );
 
-    const size_t entry_count_ln     = String.length( &entry_count ); // max of "n" length
-    const int    entry_indicator_ln = (int) ( entry_count_ln * 2 ) + 3; // "[n/n]"
-    const int    indicator_pos_y    = ( win->canvas_property->pos_y + win->canvas_property->rows );
-    const int    indicator_pos_x    = ( ( win->canvas_property->cols / 2 ) - ( entry_indicator_ln / 2 ) ) + win->canvas_property->pos_x;
+    const size_t entry_count_ln = String.length( &entry_count ); // max of "n" length
 
-    win->indicator_win   = newwin( 1, entry_indicator_ln, indicator_pos_y, indicator_pos_x );
+    win->indicator_width = (int) ( entry_count_ln * 2 ) + 3 + ( win->mouse_ctrl ? 6 : 0 );  // "[n/n]" or " ▲ [n/n] ▼ "
+
+    const int indicator_pos_y = ( win->canvas_property->pos_y + win->canvas_property->rows );
+    const int indicator_pos_x = ( ( win->canvas_property->cols / 2 ) - ( win->indicator_width / 2 ) ) + win->canvas_property->pos_x;
+
+    win->indicator_win   = newwin( 1, win->indicator_width, indicator_pos_y, indicator_pos_x );
     win->indicator_panel = new_panel( win->indicator_win );
 
     wattron( win->indicator_win, ctune_UI_Theme.color( CTUNE_UI_ITEM_TAB_BG ) );
 
-    if( win->row.selected >= Vector.size( &win->entries ) )
-        mvwprintw( win->indicator_win, 0, 0, "[%*c/%lu]", entry_count_ln, '-', Vector.size( &win->entries ) );
-    else
-        mvwprintw( win->indicator_win, 0, 0, "[%*i/%lu]", entry_count_ln, ( win->row.selected + 1 ), Vector.size( &win->entries ) );
+    if( win->mouse_ctrl ) {
+        const char * up   = ( win->row.selected == 0
+                              ? ctune_UI_Icons.icon( CTUNE_UI_ICON_VOID )
+                              : ctune_UI_Icons.icon( CTUNE_UI_ICON_UP_ARROW_B ) );
+        const char * down = ( ( win->row.selected >= Vector.size( &win->entries ) || win->row.selected == Vector.size( &win->entries ) - 1 )
+                              ? ctune_UI_Icons.icon( CTUNE_UI_ICON_VOID )
+                              : ctune_UI_Icons.icon( CTUNE_UI_ICON_DOWN_ARROW_B ) );
+
+        if( win->row.selected >= Vector.size( &win->entries ) ) {
+            mvwprintw( win->indicator_win, 0, 1, "%s [%*c/%lu] %s", up, entry_count_ln, '-', Vector.size( &win->entries ), down );
+        } else {
+            mvwprintw( win->indicator_win, 0, 1, "%s [%*i/%lu] %s", up, entry_count_ln, ( win->row.selected + 1 ), Vector.size( &win->entries ), down );
+        }
+
+    } else {
+        if( win->row.selected >= Vector.size( &win->entries ) ) {
+            mvwprintw( win->indicator_win, 0, 0, "[%*c/%lu]", entry_count_ln, '-', Vector.size( &win->entries ) );
+        } else {
+            mvwprintw( win->indicator_win, 0, 0, "[%*i/%lu]", entry_count_ln, ( win->row.selected + 1 ), Vector.size( &win->entries ) );
+        }
+    }
 
     wattroff( win->indicator_win, ctune_UI_Theme.color( CTUNE_UI_ITEM_TAB_BG ) );
 
@@ -506,6 +526,8 @@ static void ctune_UI_RSListWin_drawCanvas( ctune_UI_RSListWin_t * win, bool resi
             ctune_UI_RSListWin_printSmallCtrlRow( win, &row );
     }
 
+    curs_set( 0 );
+
     win->redraw = false;
 }
 
@@ -532,8 +554,10 @@ static ctune_UI_RSListWin_t ctune_UI_RSListWin_init(
         .canvas_win      = NULL,
         .indicator_panel = NULL,
         .indicator_win   = NULL,
+        .indicator_width = 0,
         .redraw          = true,
         .in_focus        = true,
+        .mouse_ctrl      = false,
         .row = {
             .large_row     = false,
             .theme_favs    = true,
@@ -560,6 +584,15 @@ static ctune_UI_RSListWin_t ctune_UI_RSListWin_init(
             .getStationState = getStationState,
         },
     };
+}
+
+/**
+ * Switch mouse control UI on/off
+ * @param win             RSListWin_t object
+ * @param mouse_ctrl_flag Flag to turn feature on/off
+ */
+static void ctune_UI_RSListWin_setMouseCtrl( ctune_UI_RSListWin_t * win, bool mouse_ctrl_flag ) {
+    win->mouse_ctrl = mouse_ctrl_flag;
 }
 
 /**
@@ -791,8 +824,8 @@ static void ctune_UI_RSListWin_selectDown( ctune_UI_RSListWin_t * win ) {
  * @param win RSListWin_t object
  */
 static void ctune_UI_RSListWin_selectPageUp( ctune_UI_RSListWin_t * win ) {
-    int xtra = ( ( win->canvas_property->rows % win->row.row_height ) > 0 ? 0 : 1 );
-    ctune_UI_RSListWin_selectRow( win, -( win->canvas_property->rows / win->row.row_height + xtra) );
+    const int extra = ( ( win->canvas_property->rows % win->row.row_height ) > 0 ? 0 : 1 );
+    ctune_UI_RSListWin_selectRow( win, -( win->canvas_property->rows / win->row.row_height + extra) );
 }
 
 /**
@@ -800,8 +833,8 @@ static void ctune_UI_RSListWin_selectPageUp( ctune_UI_RSListWin_t * win ) {
  * @param win RSListWin_t object
  */
 static void ctune_UI_RSListWin_selectPageDown( ctune_UI_RSListWin_t * win ) {
-    int xtra = ( ( win->canvas_property->rows % win->row.row_height ) > 0 ? 0 : 1 );
-    ctune_UI_RSListWin_selectRow( win, +( win->canvas_property->rows / win->row.row_height + xtra ) );
+    const int extra = ( ( win->canvas_property->rows % win->row.row_height ) > 0 ? 0 : 1 );
+    ctune_UI_RSListWin_selectRow( win, +( win->canvas_property->rows / win->row.row_height + extra ) );
 }
 
 /**
@@ -851,8 +884,46 @@ static void ctune_UI_RSListWin_toggleFav( ctune_UI_RSListWin_t * win ) {
 }
 
 /**
+ * Select at given coordinates
+ * @param win   RSListWin_t object
+ * @param y     Row location on screen
+ * @param x     Column location on screen
+ */
+static void ctune_UI_RSListWin_selectAt( ctune_UI_RSListWin_t * win, int y, int x ) {
+    if( win->mouse_ctrl ) {
+        if( wmouse_trafo( win->canvas_win, &y, &x, false ) ) {
+            const int target_row = ( y > 0 ? ( y / win->row.row_height ) : y );
+            ctune_UI_RSListWin_selectRow( win, (int) ( ( target_row + win->row.first_on_page ) - win->row.selected ) );
+        }
+    }
+}
+
+/**
+ * Checks if area at coordinate is a scroll button
+ * @param win RSListWin_t object
+ * @param y   Row location on screen
+ * @param x   Column location on screen
+ * @return Scroll mask
+ */
+static ctune_UI_ScrollMask_m ctune_UI_RSListWin_isScrollButton( ctune_UI_RSListWin_t * win, int y, int x ) {
+    if( win->mouse_ctrl ) {
+        if( wmouse_trafo( win->indicator_win, &y, &x, false ) ) {
+            if( x < 3 ) {
+                return CTUNE_UI_SCROLL_UP; //EARLY RETURN
+            }
+
+            if( x >= win->indicator_width - 3 ) {
+                return CTUNE_UI_SCROLL_DOWN; //EARLY RETURN
+            }
+        }
+    }
+
+    return 0;
+}
+
+/**
  * Gets a RSI pointer to the currently selected item in list or if ctrl row then trigger callback
- * @param RSListWin_t object
+ * @param win RSListWin_t object
  * @return RadioStationInfo_t object pointer or NULL if out of range of the collection/is ctrl row
  */
 static const ctune_RadioStationInfo_t * ctune_UI_RSListWin_getSelected( ctune_UI_RSListWin_t * win ) {
@@ -1066,6 +1137,7 @@ static void ctune_UI_RSListWin_free( ctune_UI_RSListWin_t * win ) {
  */
 struct ctune_UI_RSListWinClass ctune_UI_RSListWin = {
     .init              = &ctune_UI_RSListWin_init,
+    .setMouseCtrl      = &ctune_UI_RSListWin_setMouseCtrl,
     .setLargeRow       = &ctune_UI_RSListWin_setLargeRow,
     .themeFavourites   = &ctune_UI_RSListWin_setFavTheming,
     .showCtrlRow       = &ctune_UI_RSListWin_showCtrlRow,
@@ -1078,6 +1150,8 @@ struct ctune_UI_RSListWinClass ctune_UI_RSListWin = {
     .selectPageDown    = &ctune_UI_RSListWin_selectPageDown,
     .selectFirst       = &ctune_UI_RSListWin_selectFirst,
     .selectLast        = &ctune_UI_RSListWin_selectLast,
+    .selectAt          = &ctune_UI_RSListWin_selectAt,
+    .isScrollButton    = &ctune_UI_RSListWin_isScrollButton,
     .toggleFav         = &ctune_UI_RSListWin_toggleFav,
     .getSelected       = &ctune_UI_RSListWin_getSelected,
     .getPageState      = &ctune_UI_RSListWin_getSelectedIndex,

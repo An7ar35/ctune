@@ -2,10 +2,11 @@
 
 #include "../../logger/Logger.h"
 #include "../definitions/Theme.h"
+#include "../definitions/Icons.h"
 
 /**
  * [PRIVATE] Select a row in the menu
- * @param win    ctune_UI_SlideMenu_t object
+ * @param win    Pointer to a ctune_UI_SlideMenu_t object
  * @param offset_x Horizontal offset to move selection by
  * @param offset_y Vertical offset to move selection by
  */
@@ -71,7 +72,7 @@ static void ctune_UI_SlideMenu_freeSlideMenuItem( void * menu_item ) {
 
 /**
  * [PRIVATE] Checks if currently selected row has a control function with a 'live' trigger
- * @param menu ctune_UI_SlideMenu_t object
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
  * @return State
  */
 static bool ctune_UI_SlideMenu_hasCtrlFunction( ctune_UI_SlideMenu_t * menu ) {
@@ -87,7 +88,7 @@ static bool ctune_UI_SlideMenu_hasCtrlFunction( ctune_UI_SlideMenu_t * menu ) {
 
 /**
  * [PRIVATE] Triggers the control function of the selected menu item
- * @param menu ctune_UI_SlideMenu_t object
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
  * @return Success state of ctrl function
  */
 static bool ctune_UI_SlideMenu_triggerCtrlFunction( ctune_UI_SlideMenu_t * menu ) {
@@ -103,7 +104,7 @@ static bool ctune_UI_SlideMenu_triggerCtrlFunction( ctune_UI_SlideMenu_t * menu 
 
 /**
  * [PRIVATE] Draw entries to the canvas window
- * @param menu   ctune_UI_SlideMenu_t object
+ * @param menu   Pointer to a ctune_UI_SlideMenu_t object
  * @param resize Flag for resizing the canvas/panel
  */
 static void ctune_UI_SlideMenu_drawCanvas( ctune_UI_SlideMenu_t * menu, bool resize ) {
@@ -122,6 +123,7 @@ static void ctune_UI_SlideMenu_drawCanvas( ctune_UI_SlideMenu_t * menu, bool res
 
         ctune_UI_ScrollBar.free( &menu->scrollbar );
         menu->scrollbar = ctune_UI_ScrollBar.init( menu->canvas_property, RIGHT, false );
+        ctune_UI_ScrollBar.setShowControls( &menu->scrollbar, menu->mouse_ctrl );
 
         menu->update_scrollbar  = true;
         menu->row.first_on_page = 0;
@@ -176,12 +178,12 @@ static void ctune_UI_SlideMenu_drawCanvas( ctune_UI_SlideMenu_t * menu, bool res
 
             mvwhline( menu->canvas_win, row, 0, ' ', menu->canvas_property->cols );
             if( item->type == CTUNE_UI_SLIDEMENU_PARENT )
-                mvwprintw( menu->canvas_win, row, 0, "%c ", '<' );
+                mvwprintw( menu->canvas_win, row, 0, "%s ", ctune_UI_Icons.icon( CTUNE_UI_ICON_LEFT_ARROW_B ) );
 
             mvwprintw( menu->canvas_win, row, 2, "%s", item->text._raw );
 
             if( item->type == CTUNE_UI_SLIDEMENU_MENU )
-                mvwprintw( menu->canvas_win, row, ( menu->canvas_property->cols - 3 ), " %c", '>' );
+                mvwprintw( menu->canvas_win, row, ( menu->canvas_property->cols - 3 ), " %s", ctune_UI_Icons.icon( CTUNE_UI_ICON_RIGHT_ARROW_B ) );
 
             wattroff( menu->canvas_win, row_theme );
 
@@ -200,7 +202,7 @@ static void ctune_UI_SlideMenu_drawCanvas( ctune_UI_SlideMenu_t * menu, bool res
 
 /**
  * Creates a slide menu without a known canvas (use `setCanvasProperties(..)` to set one prior to usage)
- * @return ctune_UI_SlideMenu_t object
+ * @return Pointer to a ctune_UI_SlideMenu_t object
  */
 static ctune_UI_SlideMenu_t ctune_UI_SlideMenu_create( void ) {
     return (ctune_UI_SlideMenu_t) {
@@ -210,6 +212,7 @@ static ctune_UI_SlideMenu_t ctune_UI_SlideMenu_create( void ) {
         .update_scrollbar = true,
         .scrollbar        = {},
         .redraw           = true,
+        .mouse_ctrl       = false,
         .root = {
             .parent   = NULL,
             .parent_i = 0,
@@ -228,7 +231,7 @@ static ctune_UI_SlideMenu_t ctune_UI_SlideMenu_create( void ) {
 /**
  * Initialises a slide menu
  * @param canvas_property Pointer to canvas sizes to abide to
- * @return ctune_UI_SlideMenu_t object
+ * @return Pointer to a ctune_UI_SlideMenu_t object
  */
 static ctune_UI_SlideMenu_t ctune_UI_SlideMenu_init( const WindowProperty_t * canvas_property ) {
     return (ctune_UI_SlideMenu_t) {
@@ -238,6 +241,7 @@ static ctune_UI_SlideMenu_t ctune_UI_SlideMenu_init( const WindowProperty_t * ca
         .update_scrollbar = true,
         .scrollbar        = ctune_UI_ScrollBar.init( canvas_property, RIGHT, false ),
         .redraw           = true,
+        .mouse_ctrl       = false,
         .root = {
             .parent   = NULL,
             .parent_i = 0,
@@ -255,13 +259,16 @@ static ctune_UI_SlideMenu_t ctune_UI_SlideMenu_init( const WindowProperty_t * ca
 
 /**
  * Sets a canvas for the slide menu
- * @param menu ctune_UI_SlideMenu_t object
+ * @param menu            Pointer to a ctune_UI_SlideMenu_t object
  * @param canvas_property Pointer to canvas sizes to abide to
+ * @param mouse_ctrl      Flag for mouse control on the scrollbars
  */
-static void ctune_UI_SlideMenu_setCanvasProperties( ctune_UI_SlideMenu_t * menu, const WindowProperty_t * canvas_property ) {
+static void ctune_UI_SlideMenu_setCanvasProperties( ctune_UI_SlideMenu_t * menu, const WindowProperty_t * canvas_property, bool mouse_ctrl ) {
     if( menu ) {
         menu->canvas_property = canvas_property;
         menu->scrollbar       = ctune_UI_ScrollBar.init( canvas_property, RIGHT, false );
+        menu->mouse_ctrl      = mouse_ctrl;
+        ctune_UI_ScrollBar.setShowControls( &menu->scrollbar, mouse_ctrl );
     }
 }
 
@@ -360,10 +367,28 @@ static ctune_UI_SlideMenu_Item_t * ctune_UI_SlideMenu_createMenuItem(
     return item;
 }
 
+/**
+ * Switch mouse control UI on/off
+ * @param menu            Pointer to a ctune_UI_SlideMenu_t object
+ * @param mouse_ctrl_flag Flag to turn feature on/off
+ */
+void ctune_UI_SlideMenu_setMouseCtrl( ctune_UI_SlideMenu_t * menu, bool mouse_ctrl_flag ) {
+    menu->mouse_ctrl = mouse_ctrl_flag;
+    ctune_UI_ScrollBar.setShowControls( &menu->scrollbar, mouse_ctrl_flag );
+}
+
+/**
+ * Gets the mouse control status
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
+ * @return Mouse control state
+ */
+static bool ctune_UI_SlideMenu_mouseCtrl( ctune_UI_SlideMenu_t * menu ) {
+    return menu->mouse_ctrl;
+}
 
 /**
  * Sets the redraw flag on
- * @param menu ctune_UI_SlideMenu_t object
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
  */
 static void ctune_UI_SlideMenu_setRedraw( ctune_UI_SlideMenu_t * menu ) {
     menu->redraw = true;
@@ -372,7 +397,7 @@ static void ctune_UI_SlideMenu_setRedraw( ctune_UI_SlideMenu_t * menu ) {
 
 /**
  * Sets the 'in focus' flag
- * @param win   ctune_UI_SlideMenu_t object
+ * @param win   Pointer to a ctune_UI_SlideMenu_t object
  * @param focus Flag value
  */
 static void ctune_UI_SlideMenu_setFocus( ctune_UI_SlideMenu_t * menu, bool focus ) {
@@ -381,7 +406,7 @@ static void ctune_UI_SlideMenu_setFocus( ctune_UI_SlideMenu_t * menu, bool focus
 
 /**
  * Activate the action on the currently selected menu item based on its type
- * @param menu ctune_UI_SlideMenu_t object
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
  */
 static void ctune_UI_SlideMenu_navKeyEnter( ctune_UI_SlideMenu_t * menu ) {
     if( menu != NULL ) {
@@ -414,7 +439,7 @@ static void ctune_UI_SlideMenu_navKeyEnter( ctune_UI_SlideMenu_t * menu ) {
 
 /**
  * Change selected row to previous entry
- * @param menu ctune_UI_SlideMenu_t object
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
  */
 static void ctune_UI_SlideMenu_navKeyUp( ctune_UI_SlideMenu_t * menu ) {
     ctune_UI_SlideMenu_navKeyRow( menu, 0, -1 );
@@ -422,7 +447,7 @@ static void ctune_UI_SlideMenu_navKeyUp( ctune_UI_SlideMenu_t * menu ) {
 
 /**
  * Change selected row to next entry
- * @param menu ctune_UI_SlideMenu_t object
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
  */
 static void ctune_UI_SlideMenu_navKeyDown( ctune_UI_SlideMenu_t * menu ) {
     ctune_UI_SlideMenu_navKeyRow( menu, 0, +1 );
@@ -430,7 +455,7 @@ static void ctune_UI_SlideMenu_navKeyDown( ctune_UI_SlideMenu_t * menu ) {
 
 /**
  * Change to the submenu/activate ctrl function of currently selected row
- * @param menu ctune_UI_SlideMenu_t object
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
  */
 static void ctune_UI_SlideMenu_navKeyRight( ctune_UI_SlideMenu_t * menu ) {
     if( ctune_UI_SlideMenu_hasCtrlFunction( menu ) ) {
@@ -447,7 +472,7 @@ static void ctune_UI_SlideMenu_navKeyRight( ctune_UI_SlideMenu_t * menu ) {
 
 /**
  * Change to the parent menu/item of currently selected row
- * @param menu ctune_UI_SlideMenu_t object
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
  */
 static void ctune_UI_SlideMenu_navKeyLeft( ctune_UI_SlideMenu_t * menu ) {
     ctune_UI_SlideMenu_navKeyRow( menu, -1, 0 );
@@ -455,7 +480,7 @@ static void ctune_UI_SlideMenu_navKeyLeft( ctune_UI_SlideMenu_t * menu ) {
 
 /**
  * Change selected row to entry a page length away
- * @param menu ctune_UI_SlideMenu_t object
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
  */
 static void ctune_UI_SlideMenu_navKeyPageUp( ctune_UI_SlideMenu_t * menu ) {
     ctune_UI_SlideMenu_navKeyRow( menu, 0, -( menu->canvas_property->rows ) );
@@ -463,7 +488,7 @@ static void ctune_UI_SlideMenu_navKeyPageUp( ctune_UI_SlideMenu_t * menu ) {
 
 /**
  * Change selected row to entry a page length away
- * @param menu ctune_UI_SlideMenu_t object
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
  */
 static void ctune_UI_SlideMenu_navKeyPageDown( ctune_UI_SlideMenu_t * menu ) {
     ctune_UI_SlideMenu_navKeyRow( menu, 0, +( menu->canvas_property->rows ) );
@@ -471,7 +496,7 @@ static void ctune_UI_SlideMenu_navKeyPageDown( ctune_UI_SlideMenu_t * menu ) {
 
 /**
  * Change selection to the first item in the list
- * @param menu ctune_UI_SlideMenu_t object
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
  */
 static void ctune_UI_SlideMenu_navKeyFirst( ctune_UI_SlideMenu_t * menu ) {
     menu->row.selected = 0;
@@ -480,7 +505,7 @@ static void ctune_UI_SlideMenu_navKeyFirst( ctune_UI_SlideMenu_t * menu ) {
 
 /**
  * Change selection to the last item in the list
- * @param menu ctune_UI_SlideMenu_t object
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
  */
 static void ctune_UI_SlideMenu_navKeyLast( ctune_UI_SlideMenu_t * menu ) {
     menu->row.selected = (int) ( Vector.empty( &menu->row.curr_menu->items ) ? 0 : Vector.size( &menu->row.curr_menu->items ) - 1 );
@@ -488,8 +513,37 @@ static void ctune_UI_SlideMenu_navKeyLast( ctune_UI_SlideMenu_t * menu ) {
 }
 
 /**
+ * Select at given coordinates
+ * @param menu RSListWin_t object
+ * @param y    Row location on screen
+ * @param x    Column location on screen
+ */
+static void ctune_UI_SlideMenu_selectAt( ctune_UI_SlideMenu_t * menu, int y, int x ) {
+    if( menu->mouse_ctrl ) {
+        if( wmouse_trafo( menu->canvas_win, &y, &x, false ) ) {
+            ctune_UI_SlideMenu_navKeyRow( menu, 0, (int) ( ( y + menu->row.first_on_page ) - menu->row.selected ) );
+        }
+    }
+}
+
+/**
+ * Checks if area at coordinate is a scroll button
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
+ * @param y    Row location on screen
+ * @param x    Column location on screen
+ * @return Scroll mask
+ */
+static ctune_UI_ScrollMask_m ctune_UI_SlideMenu_isScrollButton( ctune_UI_SlideMenu_t * menu, int y, int x ) {
+    if( menu->mouse_ctrl ) {
+        return ctune_UI_ScrollBar.isScrollButton( &menu->scrollbar, y, x );
+    }
+
+    return 0;
+}
+
+/**
  * Resets selected position to the first item in the root menu
- * @param menu ctune_UI_SlideMenu_t object
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
  */
 static void ctune_UI_SlideMenu_reset( ctune_UI_SlideMenu_t * menu ) {
     menu->row.selected     = 0;
@@ -501,7 +555,7 @@ static void ctune_UI_SlideMenu_reset( ctune_UI_SlideMenu_t * menu ) {
 
 /**
  * Resizes the menu
- * @param menu Pointer to ctune_UI_SlideMenu_t object
+ * @param menu Pointer to Pointer to a ctune_UI_SlideMenu_t object
  */
 static void ctune_UI_SlideMenu_resize( ctune_UI_SlideMenu_t * menu ) {
     CTUNE_LOG( CTUNE_LOG_TRACE, "[ctune_UI_SlideMenu_resize( %p )] Resize event called.", menu );
@@ -531,7 +585,7 @@ static void ctune_UI_SlideMenu_resize( ctune_UI_SlideMenu_t * menu ) {
 
 /**
  * Show updated window
- * @param menu ctune_UI_SlideMenu_t object
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
  * @return Success
  */
 static bool ctune_UI_SlideMenu_show( ctune_UI_SlideMenu_t * menu ) {
@@ -564,7 +618,7 @@ static bool ctune_UI_SlideMenu_show( ctune_UI_SlideMenu_t * menu ) {
 
 /**
  * Hides the SlideMenu (no refresh done)
- * @param menu ctune_UI_SlideMenu_t object
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
  */
 static void ctune_UI_SlideMenu_hide( ctune_UI_SlideMenu_t * menu ) {
     if( menu != NULL ) {
@@ -579,7 +633,7 @@ static void ctune_UI_SlideMenu_hide( ctune_UI_SlideMenu_t * menu ) {
 
 /**
  * De-allocates a slide menu's content
- * @param menu ctune_UI_SlideMenu_t object
+ * @param menu Pointer to a ctune_UI_SlideMenu_t object
  */
 static void ctune_UI_SlideMenu_free( ctune_UI_SlideMenu_t * menu ) {
     if( menu ) {
@@ -618,6 +672,8 @@ const struct ctune_UI_Widget_SlideMenu_Namespace ctune_UI_SlideMenu = {
     .setCanvasProperties = &ctune_UI_SlideMenu_setCanvasProperties,
     .createMenu          = &ctune_UI_SlideMenu_createMenu,
     .createMenuItem      = &ctune_UI_SlideMenu_createMenuItem,
+    .setMouseCtrl        = &ctune_UI_SlideMenu_setMouseCtrl,
+    .mouseCtrl           = &ctune_UI_SlideMenu_mouseCtrl,
     .setRedraw           = &ctune_UI_SlideMenu_setRedraw,
     .setFocus            = &ctune_UI_SlideMenu_setFocus,
     .navKeyEnter         = &ctune_UI_SlideMenu_navKeyEnter,
@@ -629,6 +685,8 @@ const struct ctune_UI_Widget_SlideMenu_Namespace ctune_UI_SlideMenu = {
     .navKeyPageDown      = &ctune_UI_SlideMenu_navKeyPageDown,
     .navKeyFirst         = &ctune_UI_SlideMenu_navKeyFirst,
     .navKeyLast          = &ctune_UI_SlideMenu_navKeyLast,
+    .selectAt            = &ctune_UI_SlideMenu_selectAt,
+    .isScrollButton      = &ctune_UI_SlideMenu_isScrollButton,
     .reset               = &ctune_UI_SlideMenu_reset,
     .resize              = &ctune_UI_SlideMenu_resize,
     .show                = &ctune_UI_SlideMenu_show,

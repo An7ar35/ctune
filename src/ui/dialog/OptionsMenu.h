@@ -53,6 +53,7 @@ typedef struct ctune_UI_Dialog_OptionsMenu {
         int          (* listRowSizeLarge)( ctune_UI_PanelID_e tab, int action_flag_e );
         void         (* getUIPresets)( Vector_t * presets );
         int          (* setUIPreset)( ctune_UI_PanelID_e tab, int preset_e );
+        int          (* mouseSupport)( ctune_UI_PanelID_e tab, int action_flag_e );
     } cb;
 
 } ctune_UI_OptionsMenu_t;
@@ -72,10 +73,11 @@ extern const struct ctune_UI_Dialog_OptionsMenu_Namespace {
 
     /**
      * Initialised a ctune_UI_OptionsMenu_t object
-     * @param om Pointer to ctune_UI_OptionsMenu_t object
+     * @param om         Pointer to ctune_UI_OptionsMenu_t object
+     * @param mouse_ctrl Flag to turn init mouse controls
      * @return Success
      */
-    bool (* init)( ctune_UI_OptionsMenu_t * om );
+    bool (* init)( ctune_UI_OptionsMenu_t * om, bool mouse_ctrl );
 
     /**
      * Sets the redraw flag on
@@ -184,6 +186,13 @@ extern const struct ctune_UI_Dialog_OptionsMenu_Namespace {
          * @param callback Callback function
          */
         void (* setSetUIPresetCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
+
+        /**
+         * Sets the callback method to set the mouse support
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
+         */
+        void (* setMouseSupportCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
 
     } cb;
 

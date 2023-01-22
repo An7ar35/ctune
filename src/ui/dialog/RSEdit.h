@@ -3,42 +3,27 @@
 
 #include <stdbool.h>
 #include <ncurses.h>
-#include <form.h>
 #include <regex.h>
 
-#include "../datastructure/WindowMargin.h"
-#include "../datastructure/WindowProperty.h"
-#include "../widget/Dialog.h"
-#include "../enum/TextID.h"
+#include "../widget/Form.h"
 #include "../enum/FormExit.h"
 #include "../../dto/RadioStationInfo.h"
 
-#define CTUNE_UI_DIALOG_RSEDIT_FIELD_COUNT 34
-
 /**
  * RSEdit object
- * @param initialised    Init flag
- * @param screen_size    Pointer to the parent screen dimensions
- * @param margins        Margins around the form inside the dialog
- * @param dialog         Dialog object used for the UI
- * @param form_dimension Properties of the NCurses form
- * @param form           Pointer to NCurses form
- * @param cache          Cached variables
- * @param cb             Callback methods
+ * @param initialised Init flag
+ * @param form        Form widget
+ * @param cache       Cached variables
+ * @param cb          Callback methods
  */
 typedef struct ctune_UI_Dialog_RSEdit {
     bool                     initialised;
-    const WindowProperty_t * screen_size;
-    WindowMargin_t           margins; //space around the content
-    ctune_UI_Dialog_t        dialog;
-    WindowProperty_t         form_dimension;
-    FORM                   * form;
+    ctune_UI_Form_t          form;
 
     struct {
-        ctune_RadioStationInfo_t   station;
-        size_t                     max_label_width;
-        FIELD                    * fields[CTUNE_UI_DIALOG_RSEDIT_FIELD_COUNT];
-        regex_t                    url_regex;
+        ctune_RadioStationInfo_t station;
+        size_t                   max_label_width;
+        regex_t                  url_regex;
 
     } cache;
 
@@ -72,10 +57,11 @@ extern const struct ctune_UI_RSEdit_Namespace {
 
     /**
      * Initialises RSFind (mostly checks base values are OK)
-     * @param rsfind Pointer to a ctune_UI_RSFind_t object
+     * @param rsfind     Pointer to a ctune_UI_RSFind_t object
+     * @param mouse_ctrl Flag to turn init mouse controls
      * @return Success
      */
-    bool (* init)( ctune_UI_RSEdit_t * rsedit );
+    bool (* init)( ctune_UI_RSEdit_t * rsedit, bool mouse_ctrl );
 
     /**
      * Get the initialised state of the instance
@@ -83,6 +69,13 @@ extern const struct ctune_UI_RSEdit_Namespace {
      * @return Initialised state
      */
     bool (* isInitialised)( ctune_UI_RSEdit_t * rsedit );
+
+    /**
+     * Switch mouse control UI on/off
+     * @param rsedit          Pointer to ctune_UI_RSEdit_t object
+     * @param mouse_ctrl_flag Flag to turn feature on/off
+     */
+    void (* setMouseCtrl)( ctune_UI_RSEdit_t * rsedit, bool mouse_ctrl_flag );
 
     /**
      * Loads a radio station into the form
@@ -112,12 +105,6 @@ extern const struct ctune_UI_RSEdit_Namespace {
      * @return Success
      */
     bool (* show)( ctune_UI_RSEdit_t * rsedit );
-
-    /**
-     * Resize the dialog
-     * @param rsedit Pointer to a ctune_UI_RSEdit_t object
-     */
-    void (* resize)( void * rsedit );
 
     /**
      * Pass keyboard input to the form

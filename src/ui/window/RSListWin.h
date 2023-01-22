@@ -5,6 +5,7 @@
 
 #include "../../datastructure/HashMap.h"
 #include "../datastructure/WindowProperty.h"
+#include "../types/ScrollMask.h"
 #include "../../dto/RadioStationInfo.h"
 #include "../../dto/RadioBrowserFilter.h"
 #include "../../datastructure/Vector.h"
@@ -24,8 +25,10 @@ typedef struct ctune_UI_Window_RSListWin {
     WINDOW                 * canvas_win;
     PANEL                  * indicator_panel;
     WINDOW                 * indicator_win;
+    int                      indicator_width;
     bool                     redraw;
     bool                     in_focus;
+    bool                     mouse_ctrl;
 
     struct {
         bool   large_row;
@@ -75,6 +78,13 @@ extern struct ctune_UI_RSListWinClass {
                                    bool (* getStations)( ctune_RadioBrowserFilter_t *, Vector_t * ),
                                    bool (* toggleFavourite)( ctune_RadioStationInfo_t *, ctune_StationSrc_e ),
                                    unsigned (* getStationState)( const ctune_RadioStationInfo_t * ) );
+
+    /**
+     * Switch mouse control UI on/off
+     * @param win             RSListWin_t object
+     * @param mouse_ctrl_flag Flag to turn feature on/off
+     */
+    void (* setMouseCtrl)( ctune_UI_RSListWin_t * win, bool mouse_ctrl_flag );
 
     /**
      * Sets big row displaying on/off (false: 1 x line, true: 2 x lines + line delimiter)
@@ -168,6 +178,23 @@ extern struct ctune_UI_RSListWinClass {
      * @param win RSListWin_t object
      */
     void (* selectLast)( ctune_UI_RSListWin_t * win );
+
+    /**
+     * Select at given coordinates
+     * @param win   RSListWin_t object
+     * @param y     Row location on screen
+     * @param x     Column location on screen
+     */
+    void (* selectAt)( ctune_UI_RSListWin_t * win, int y, int x );
+
+    /**
+     * Checks if area at coordinate is a scroll button
+     * @param win RSListWin_t object
+     * @param y   Row location on screen
+     * @param x   Column location on screen
+     * @return Scroll mask
+     */
+    ctune_UI_ScrollMask_m (* isScrollButton)( ctune_UI_RSListWin_t * win, int y, int x );
 
     /**
      * Toggles the "favourite" status of the currently selected item

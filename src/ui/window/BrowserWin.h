@@ -41,9 +41,9 @@ typedef struct ctune_UI_BrowserWin {
     struct {
         ctune_UI_TextID_e  cat2ui_text_enum[RADIOBROWSER_CATEGORY_COUNT];
         ctune_ByCategory_e cat2bycat       [RADIOBROWSER_CATEGORY_COUNT];
-        Vector_t lvl1_menu_payloads;
-        Vector_t lvl2_menu_payloads;
-        Vector_t rsi_results;
+        Vector_t           lvl1_menu_payloads;
+        Vector_t           lvl2_menu_payloads;
+        Vector_t           rsi_results;
     } cache;
 
     struct {
@@ -79,6 +79,13 @@ extern const struct ctune_UI_BrowserWin_Namespace {
                                     bool         (* getStationsBy)( const ctune_ByCategory_e, const char *, Vector_t * ),
                                     bool         (* toggleFavourite)( ctune_RadioStationInfo_t *, ctune_StationSrc_e ),
                                     unsigned     (* getStationState)( const ctune_RadioStationInfo_t * ) );
+
+    /**
+     * Switch mouse control UI on/off
+     * @param win             ctune_UI_BrowserWin_t object
+     * @param mouse_ctrl_flag Flag to turn feature on/off
+     */
+    void (* setMouseCtrl)( ctune_UI_BrowserWin_t * win, bool mouse_ctrl_flag );
 
     /**
      * Sets big row displaying on/off in right pane
@@ -210,8 +217,25 @@ extern const struct ctune_UI_BrowserWin_Namespace {
     void (* toggleFav)( ctune_UI_BrowserWin_t * win );
 
     /**
+     * Select at given coordinates
+     * @param win   ctune_UI_BrowserWin_t object
+     * @param y     Row location on screen
+     * @param x     Column location on screen
+     */
+    void (* selectAt)( ctune_UI_BrowserWin_t * win, int y, int x );
+
+    /**
+     * Checks if area at coordinate is a scroll button
+     * @param win ctune_UI_BrowserWin_t object
+     * @param y   Row location on screen
+     * @param x   Column location on screen
+     * @return Scroll mask
+     */
+    ctune_UI_ScrollMask_m (* isScrollButton)( ctune_UI_BrowserWin_t * win, int y, int x );
+
+    /**
      * Gets a RSI pointer to the currently selected item in the right pane or if ctrl row then trigger callback
-     * @param RSListWin_t object
+     * @param  win ctune_UI_BrowserWin_t object
      * @return RadioStationInfo_t object pointer or NULL if out of range of the collection/is ctrl row
      */
     const ctune_RadioStationInfo_t * (* getSelectedStation)( ctune_UI_BrowserWin_t * win );

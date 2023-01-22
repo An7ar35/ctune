@@ -14,6 +14,10 @@ static ctune_UI_BorderWin_t ctune_UI_Widget_BorderWin_create( int colour ) {
         .window = NULL,
         .panel  = NULL,
         .colour = colour,
+        .ctrl   = {
+            .show      = false,
+            .close_btn = { 0, 0, 0, 0 },
+        },
     };
 }
 
@@ -22,22 +26,26 @@ static ctune_UI_BorderWin_t ctune_UI_Widget_BorderWin_create( int colour ) {
  * @param border_win Pointer to an initialised ctune_UI_BorderWin_t object
  * @param property   Size/Position properties of the border window
  * @param title      Title (can be NULL if none is desired)
+ * @param show_ctrl  Flag to paint window controls
  * @return Success
  */
-static bool ctune_UI_Widget_BorderWin_init( ctune_UI_BorderWin_t * border_win, WindowProperty_t * property, const char * title ) {
+static bool ctune_UI_Widget_BorderWin_init( ctune_UI_BorderWin_t * border_win, WindowProperty_t * property, const char * title, bool show_ctrl ) {
     if( border_win == NULL || property == NULL ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "ctune_UI_Widget_BorderWin_init( %p, %p, \"%s\" ) One or more args is NULL.",
-                   border_win, property, ( title == NULL ? "" : title )
+                   "[ctune_UI_Widget_BorderWin_init( %p, %p, \"%s\", %s )] One or more args is NULL.",
+                   border_win, property, ( title == NULL ? "" : title ), ( show_ctrl ? "true" : "false" )
         );
 
         return false; //EARLY RETURN
     }
 
-    if( border_win->panel )
+    if( border_win->panel ) {
         del_panel( border_win->panel );
-    if( border_win->window )
+    }
+
+    if( border_win->window ) {
         delwin( border_win->window );
+    }
 
     border_win->window = newwin( property->rows, property->cols, property->pos_y, property->pos_x );
     border_win->panel  = new_panel( border_win->window );
@@ -46,14 +54,63 @@ static bool ctune_UI_Widget_BorderWin_init( ctune_UI_BorderWin_t * border_win, W
 
     box( border_win->window, 0, 0 );
 
+    int title_col = 0;
+
     if( title != NULL ) {
-        const int title_col = ( ( property->cols / 2 ) - ( (int) strlen( title ) / 2 ) );
+        title_col = ( ( property->cols / 2 ) - ( (int) strlen( title ) / 2 ) );
         mvwprintw( border_win->window, 0, title_col, "%s", title );
+    }
+
+    if( ( border_win->ctrl.show = show_ctrl ) ) {
+        border_win->ctrl.close_btn = (WindowProperty_t){
+            .pos_y = 0,
+            .pos_x = 1,
+            .rows  = 1,
+            .cols  = 3 //"[X]"
+        };
+
+        if( title_col > 4 ) {
+            //              ┌[X][ Search for Station(s) ]───┐
+            //               ^  ^                           │
+            // close_btn.pos_y  title_col
+            mvwprintw( border_win->window,
+                       border_win->ctrl.close_btn.pos_y,
+                       border_win->ctrl.close_btn.pos_x,
+                       "%s",
+                       "[X]" );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_WARNING,
+                       "[ctune_UI_Widget_BorderWin_init( %p, %p, \"%s\", %s )] Not enough space to show window control (cols available: %i).",
+                       border_win, property, ( title == NULL ? "" : title ), ( show_ctrl ? "true" : "false" ), title_col
+            );
+
+            border_win->ctrl.show = false;
+        }
     }
 
     wattroff( border_win->window, border_win->colour );
 
     return true;
+}
+
+/**
+ * Checks if area at coordinate is a control button
+ * @param border_win Pointer to an initialised ctune_UI_BorderWin_t object
+ * @param y          Row location on screen
+ * @param x          Column location on screen
+ * @return Control button mask
+ */
+static ctune_UI_WinCtrlMask_m ctune_UI_Widget_BorderWin_isCtrlButton( ctune_UI_BorderWin_t * border_win, int y, int x ) {
+    if( border_win && border_win->ctrl.show ) {
+        if( wmouse_trafo( border_win->window, &y, &x, false ) && y == 0 ) { //i.e. in window and on first row where the controls are
+            if( x >= border_win->ctrl.close_btn.pos_x && x < ( border_win->ctrl.close_btn.pos_x + border_win->ctrl.close_btn.cols ) ) {
+                return CTUNE_UI_WINCTRLMASK_CLOSE;
+            }
+        }
+    }
+
+    return 0;
 }
 
 /**
@@ -63,7 +120,7 @@ static bool ctune_UI_Widget_BorderWin_init( ctune_UI_BorderWin_t * border_win, W
  */
 static bool ctune_UI_Widget_BorderWin_show( ctune_UI_BorderWin_t * border_win ) {
     if( border_win == NULL ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR, "ctune_UI_Widget_BorderWin_show( %p ) NULL pointer argument.", border_win );
+        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_Widget_BorderWin_show( %p )] NULL pointer argument.", border_win );
         return false; //EARLY RETURN
     }
 
@@ -85,12 +142,12 @@ static bool ctune_UI_Widget_BorderWin_show( ctune_UI_BorderWin_t * border_win ) 
  */
 static bool ctune_UI_Widget_BorderWin_hide( ctune_UI_BorderWin_t * border_win ) {
     if( border_win == NULL ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR, "ctune_UI_Widget_BorderWin_hide( %p ) NULL pointer argument.", border_win );
+        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_Widget_BorderWin_hide( %p )] NULL pointer argument.", border_win );
         return false; //EARLY RETURN
     }
 
     if( border_win->window == NULL || border_win->panel == NULL ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR, "ctune_UI_Widget_BorderWin_hide( %p ) BorderWin not initialised.", border_win );
+        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_Widget_BorderWin_hide( %p )] BorderWin not initialised.", border_win );
         return false; //EARLY RETURN
     }
 
@@ -125,9 +182,10 @@ static void ctune_UI_Widget_BorderWin_free( ctune_UI_BorderWin_t * border_win ) 
  * Namespace constructor
  */
 const struct ctune_UI_Widget_BorderWin_Namespace ctune_UI_BorderWin = {
-    .create = &ctune_UI_Widget_BorderWin_create,
-    .init   = &ctune_UI_Widget_BorderWin_init,
-    .show   = &ctune_UI_Widget_BorderWin_show,
-    .hide   = &ctune_UI_Widget_BorderWin_hide,
-    .free   = &ctune_UI_Widget_BorderWin_free,
+    .create       = &ctune_UI_Widget_BorderWin_create,
+    .init         = &ctune_UI_Widget_BorderWin_init,
+    .isCtrlButton = &ctune_UI_Widget_BorderWin_isCtrlButton,
+    .show         = &ctune_UI_Widget_BorderWin_show,
+    .hide         = &ctune_UI_Widget_BorderWin_hide,
+    .free         = &ctune_UI_Widget_BorderWin_free,
 };

@@ -17,6 +17,7 @@
  */
 static struct {
     bool                     init;
+    bool                     mouse_ctrl;
     const int                col_padding; //space between the key and description columns
     const WindowProperty_t * screen_size;
     const WindowMargin_t     margins;     //space around the content
@@ -32,6 +33,7 @@ static struct {
 
 } private = {
     .init        = false,
+    .mouse_ctrl  = false,
     .col_padding = 2,
     .cache       = { .curr_ctx = CTUNE_UI_CTX_MAIN, },
     .margins     = { 0, 1, 0, 1 },
@@ -189,7 +191,8 @@ static void ctune_UI_ContextHelp_createBorderWin( ctune_UI_Context_e ctx ) {
             ctune_UI_Dialog.createBorderWin( &private.cache.dialogs[CTUNE_UI_CTX_MAIN],
                                              private.screen_size,
                                              private.cb.getDisplayText( CTUNE_UI_TEXT_WIN_TITLE_HELP ),
-                                             &private.margins );
+                                             &private.margins,
+                                             private.mouse_ctrl );
 
             ctune_UI_Dialog.hide( &private.cache.dialogs[CTUNE_UI_CTX_MAIN] );
         } break;
@@ -198,7 +201,8 @@ static void ctune_UI_ContextHelp_createBorderWin( ctune_UI_Context_e ctx ) {
             ctune_UI_Dialog.createBorderWin( &private.cache.dialogs[CTUNE_UI_CTX_FAV_TAB],
                                              private.screen_size,
                                              private.cb.getDisplayText( CTUNE_UI_TEXT_WIN_TITLE_HELP_FAV ),
-                                             &private.margins );
+                                             &private.margins,
+                                             private.mouse_ctrl );
 
             ctune_UI_Dialog.hide( &private.cache.dialogs[CTUNE_UI_CTX_FAV_TAB] );
         } break;
@@ -207,7 +211,8 @@ static void ctune_UI_ContextHelp_createBorderWin( ctune_UI_Context_e ctx ) {
             ctune_UI_Dialog.createBorderWin( &private.cache.dialogs[CTUNE_UI_CTX_SEARCH_TAB],
                                              private.screen_size,
                                              private.cb.getDisplayText( CTUNE_UI_TEXT_WIN_TITLE_HELP_SEARCH ),
-                                             &private.margins );
+                                             &private.margins,
+                                             private.mouse_ctrl );
 
             ctune_UI_Dialog.hide( &private.cache.dialogs[CTUNE_UI_CTX_SEARCH_TAB] );
         } break;
@@ -216,7 +221,8 @@ static void ctune_UI_ContextHelp_createBorderWin( ctune_UI_Context_e ctx ) {
             ctune_UI_Dialog.createBorderWin( &private.cache.dialogs[CTUNE_UI_CTX_BROWSE_TAB],
                                              private.screen_size,
                                              private.cb.getDisplayText( CTUNE_UI_TEXT_WIN_TITLE_HELP_BROWSE ),
-                                             &private.margins );
+                                             &private.margins,
+                                             private.mouse_ctrl );
 
             ctune_UI_Dialog.hide( &private.cache.dialogs[CTUNE_UI_CTX_BROWSE_TAB] );
         } break;
@@ -225,7 +231,8 @@ static void ctune_UI_ContextHelp_createBorderWin( ctune_UI_Context_e ctx ) {
             ctune_UI_Dialog.createBorderWin( &private.cache.dialogs[CTUNE_UI_CTX_RSFIND],
                                              private.screen_size,
                                              private.cb.getDisplayText( CTUNE_UI_TEXT_WIN_TITLE_HELP_RSFIND ),
-                                             &private.margins );
+                                             &private.margins,
+                                             private.mouse_ctrl );
 
             ctune_UI_Dialog.hide( &private.cache.dialogs[CTUNE_UI_CTX_RSFIND] );
         } break;
@@ -234,7 +241,8 @@ static void ctune_UI_ContextHelp_createBorderWin( ctune_UI_Context_e ctx ) {
             ctune_UI_Dialog.createBorderWin( &private.cache.dialogs[CTUNE_UI_CTX_RSINFO],
                                              private.screen_size,
                                              private.cb.getDisplayText( CTUNE_UI_TEXT_WIN_TITLE_HELP_RSINFO ),
-                                             &private.margins );
+                                             &private.margins,
+                                             private.mouse_ctrl );
 
             ctune_UI_Dialog.hide( &private.cache.dialogs[CTUNE_UI_CTX_RSINFO] );
         } break;
@@ -243,7 +251,8 @@ static void ctune_UI_ContextHelp_createBorderWin( ctune_UI_Context_e ctx ) {
             ctune_UI_Dialog.createBorderWin( &private.cache.dialogs[CTUNE_UI_CTX_RSEDIT],
                                              private.screen_size,
                                              private.cb.getDisplayText( CTUNE_UI_TEXT_WIN_TITLE_HELP_RSINFO ),
-                                             &private.margins );
+                                             &private.margins,
+                                             private.mouse_ctrl );
 
             ctune_UI_Dialog.hide( &private.cache.dialogs[CTUNE_UI_CTX_RSEDIT] );
         } break;
@@ -308,6 +317,14 @@ static bool ctune_UI_ContextHelp_init( const WindowProperty_t * parent, const ch
 }
 
 /**
+ * Switch mouse control UI on/off
+ * @param mouse_ctrl_flag Flag to turn feature on/off
+ */
+static void ctune_UI_ContextHelp_setMouseCtrl( bool mouse_ctrl_flag ) {
+    private.mouse_ctrl = mouse_ctrl_flag;
+}
+
+/**
  * Show the help dialog box for the given context
  * @param ctx Context ID enum
  */
@@ -344,14 +361,50 @@ static void ctune_UI_ContextHelp_resize() {
 }
 
 /**
+ * [PRIVATE] Handle mouse event
+ * @param dialog Dialog
+ * @param event  Mouse event mask
+ * @param Exit state
+ */
+static bool ctune_UI_ContextHelp_handleMouseEvent( ctune_UI_Dialog_t * dialog, MEVENT * event ) {
+    const ctune_UI_WinCtrlMask_m win_ctrl = ctune_UI_Dialog.isWinControl( dialog, event->y, event->x );
+    const ctune_UI_ScrollMask_m  scroll   = ctune_UI_WinCtrlMask.scrollMask( win_ctrl );
+
+    if( win_ctrl ) {
+        if( scroll ) {
+            if( event->bstate & BUTTON1_CLICKED ) {
+                ctune_UI_Dialog.incrementalScroll( dialog, scroll );
+
+            } else if( event->bstate & BUTTON1_DOUBLE_CLICKED ) {
+                ctune_UI_Dialog.incrementalScroll( dialog, ctune_UI_ScrollMask.setScrollFactor( scroll, 2 ) );
+
+            } else if( event->bstate & BUTTON1_TRIPLE_CLICKED ) {
+                ctune_UI_Dialog.incrementalScroll( dialog, ctune_UI_ScrollMask.setScrollFactor( scroll, 3 ) );
+
+            } else if( event->bstate & BUTTON3_CLICKED ) {
+                ctune_UI_Dialog.edgeScroll( dialog, scroll );
+            }
+
+        } else if( win_ctrl & CTUNE_UI_WINCTRLMASK_CLOSE ) {
+            if( event->bstate & BUTTON1_CLICKED ) {
+                return true; //EARLY RETURN
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
  * Pass keyboard input to the form
  */
 static void ctune_UI_ContextHelp_captureInput() {
     const ctune_UI_Context_e ctx = private.cache.curr_ctx;
 
     keypad( private.cache.dialogs[ctx].canvas.pad, TRUE );
-    bool exit = false;
-    int  ch;
+    bool   exit = false;
+    int    ch;
+    MEVENT mouse_event;
 
     while( !exit ) {
         ch = wgetch( private.cache.dialogs[ctx].canvas.pad );
@@ -365,37 +418,43 @@ static void ctune_UI_ContextHelp_captureInput() {
 
             case KEY_UP: {
                 if( ctune_UI_Dialog.isScrollableY( &private.cache.dialogs[ctx] ) )
-                    ctune_UI_Dialog.scrollUp( &private.cache.dialogs[ctx] );
+                    ctune_UI_Dialog.incrementalScroll( &private.cache.dialogs[ctx], CTUNE_UI_SCROLL_UP );
                 else
                     exit = true;
             } break;
 
             case KEY_DOWN: {
                 if( ctune_UI_Dialog.isScrollableY( &private.cache.dialogs[ctx] ) )
-                    ctune_UI_Dialog.scrollDown( &private.cache.dialogs[ctx] );
+                    ctune_UI_Dialog.incrementalScroll( &private.cache.dialogs[ctx], CTUNE_UI_SCROLL_DOWN );
                 else
                     exit = true;
             } break;
 
             case KEY_LEFT: {
                 if( ctune_UI_Dialog.isScrollableX( &private.cache.dialogs[ctx] ) )
-                    ctune_UI_Dialog.scrollLeft( &private.cache.dialogs[ctx] );
+                    ctune_UI_Dialog.incrementalScroll( &private.cache.dialogs[ctx], CTUNE_UI_SCROLL_LEFT );
                 else
                     exit = true;
             } break;
 
             case KEY_RIGHT: {
                 if( ctune_UI_Dialog.isScrollableX( &private.cache.dialogs[ctx] ) )
-                    ctune_UI_Dialog.scrollRight( &private.cache.dialogs[ctx] );
+                    ctune_UI_Dialog.incrementalScroll( &private.cache.dialogs[ctx], CTUNE_UI_SCROLL_RIGHT );
                 else
                     exit = true;
             } break;
 
             case KEY_HOME: {
                 if( ctune_UI_Dialog.isScrollableY( &private.cache.dialogs[ctx] ) || ctune_UI_Dialog.isScrollableX( &private.cache.dialogs[ctx] ) )
-                    ctune_UI_Dialog.scrollHome( &private.cache.dialogs[ctx] );
+                    ctune_UI_Dialog.edgeScroll( &private.cache.dialogs[ctx], CTUNE_UI_SCROLL_TO_HOME );
                 else
                     exit = true;
+            } break;
+
+            case KEY_MOUSE: {
+                if( getmouse( &mouse_event ) == OK ) {
+                    exit = ctune_UI_ContextHelp_handleMouseEvent( &private.cache.dialogs[ctx], &mouse_event );
+                }
             } break;
 
             default:
@@ -434,6 +493,7 @@ static void ctune_UI_ContextHelp_free( void ) {
  */
 const struct ctune_UI_ContextHelp_Instance ctune_UI_ContextHelp = {
     .init         = &ctune_UI_ContextHelp_init,
+    .setMouseCtrl = &ctune_UI_ContextHelp_setMouseCtrl,
     .show         = &ctune_UI_ContextHelp_show,
     .resize       = &ctune_UI_ContextHelp_resize,
     .captureInput = &ctune_UI_ContextHelp_captureInput,

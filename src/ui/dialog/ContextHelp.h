@@ -22,6 +22,12 @@ extern const struct ctune_UI_ContextHelp_Instance {
     bool (* init)( const WindowProperty_t * parent, const char * (* getDisplayText)( ctune_UI_TextID_e ) );
 
     /**
+     * Switch mouse control UI on/off
+     * @param mouse_ctrl_flag Flag to turn feature on/off
+     */
+    void (* setMouseCtrl)( bool mouse_ctrl_flag );
+
+    /**
      * Show the help dialog box for the given context
      * @param ctx Context ID enum
      */

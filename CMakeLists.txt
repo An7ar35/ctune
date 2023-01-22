@@ -216,6 +216,10 @@ set(SOURCE_FILES
         src/ui/enum/PanelID.c
         src/ui/enum/TextID.h
         src/ui/enum/InputKeyID.h
+        src/ui/types/WinCtrlMask.h
+        src/ui/types/WinCtrlMask.c
+        src/ui/types/ScrollMask.c
+        src/ui/types/ScrollMask.h
         src/ui/dialog/ContextHelp.c
         src/ui/dialog/ContextHelp.h
         src/ui/dialog/RSInfo.c
@@ -232,6 +236,8 @@ set(SOURCE_FILES
         src/ui/window/BrowserWin.h
         src/ui/widget/Dialog.h
         src/ui/widget/Dialog.c
+        src/ui/widget/Form.c
+        src/ui/widget/Form.h
         src/ui/widget/ScrollWin.c
         src/ui/widget/ScrollWin.h
         src/ui/widget/SlideMenu.c

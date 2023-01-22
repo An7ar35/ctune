@@ -357,6 +357,26 @@ static bool ctune_UI_Dialog_OptionsMenu_populateConfigMenu( ctune_UI_OptionsMenu
         }
     }
 
+    if( om->cb.mouseSupport != NULL ) { //"Enable/Disable mouse support" entry
+        const bool         curr_state = om->cb.mouseSupport( om->cache.curr_panel_id, FLAG_GET_VALUE );
+        const ctune_Flag_e action     = ( curr_state ? FLAG_SET_OFF : FLAG_SET_ON );
+        const char *       text       = om->cb.getDisplayText( ( curr_state ? CTUNE_UI_TEXT_MOUSE_DISABLE : CTUNE_UI_TEXT_MOUSE_ENABLE ) );
+
+        CbPayload_t               * payload   = createCbPayload( om, &om->cache.payloads, om->cb.mouseSupport, action );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, text, payload, ctrlMenuFunctionCb );
+
+        if( payload && menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateConfigMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
+            );
+            error_state = true;
+        }
+    }
+
     if( !ctune_utoi( max_text_width, &om->cache.slide_menu_property.cols ) ) {
         CTUNE_LOG( CTUNE_LOG_FATAL,
                    "[ctune_UI_Dialog_OptionsMenu_populateConfigMenu( %p, %p )] Failed to cast to integer (%lu).",
@@ -656,16 +676,18 @@ static ctune_UI_OptionsMenu_t ctune_UI_Dialog_OptionsMenu_create( const WindowPr
             .listRowSizeLarge    = NULL,
             .getUIPresets        = NULL,
             .setUIPreset         = NULL,
+            .mouseSupport        = NULL,
         }
     };
 }
 
 /**
  * Initialised a ctune_UI_OptionsMenu_t object
- * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @param om         Pointer to ctune_UI_OptionsMenu_t object
+ * @param mouse_ctrl Flag to turn init mouse controls
  * @return Success
  */
-static bool ctune_UI_Dialog_OptionsMenu_init( ctune_UI_OptionsMenu_t * om ) {
+static bool ctune_UI_Dialog_OptionsMenu_init( ctune_UI_OptionsMenu_t * om, bool mouse_ctrl ) {
     if( om == NULL ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_Dialog_OptionsMenu_init( %p )] Argument is NULL.", om );
         return false; //EARLY RETURN
@@ -692,9 +714,13 @@ static bool ctune_UI_Dialog_OptionsMenu_init( ctune_UI_OptionsMenu_t * om ) {
         goto end;
     }
 
-    ctune_UI_SlideMenu.setCanvasProperties( &om->menu, &om->cache.slide_menu_property );
+    ctune_UI_SlideMenu.setCanvasProperties( &om->menu, &om->cache.slide_menu_property, mouse_ctrl );
 
-    if( !ctune_UI_BorderWin.init( &om->border_win, &om->cache.border_win_property, om->cb.getDisplayText( CTUNE_UI_TEXT_WIN_TITLE_OPTIONMENU ) ) ) {
+    const bool borderwin_is_init = ctune_UI_BorderWin.init( &om->border_win,
+                                                            &om->cache.border_win_property,
+                                                            om->cb.getDisplayText( CTUNE_UI_TEXT_WIN_TITLE_OPTIONMENU ),
+                                                            mouse_ctrl );
+    if( !borderwin_is_init ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_Dialog_OptionsMenu_init( %p )] Failed to create border window.", om );
         error_state = true;
         goto end;
@@ -758,15 +784,55 @@ static void ctune_UI_Dialog_OptionsMenu_resize( void * om ) {
         borders->pos_x = ( content->pos_x - margins->left - border_l );
     }
 
-    if( !ctune_UI_BorderWin.init( &opt_menu->border_win, &opt_menu->cache.border_win_property, opt_menu->cb.getDisplayText( CTUNE_UI_TEXT_WIN_TITLE_OPTIONMENU ) ) ) {
+    const bool borderwin_is_init = ctune_UI_BorderWin.init( &opt_menu->border_win,
+                                               &opt_menu->cache.border_win_property,
+                                               opt_menu->cb.getDisplayText( CTUNE_UI_TEXT_WIN_TITLE_OPTIONMENU ),
+                                               ctune_UI_SlideMenu.mouseCtrl( &opt_menu->menu ) );
+
+    if( !borderwin_is_init ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_Dialog_OptionsMenu_resize( %p )] Failed to create border window.", om );
-        return;
+        return; //EARLY RETURN
     }
 
     ctune_UI_SlideMenu.resize( &opt_menu->menu );
     ctune_UI_BorderWin.show( &opt_menu->border_win );
     ctune_UI_SlideMenu.show( &opt_menu->menu );
     keypad( opt_menu->menu.canvas_win, TRUE ); //reinit since `ctune_UI_SlideMenu.resize(..)` will re-create its `canvas_win`
+}
+
+/**
+ * [PRIVATE] Handle mouse event
+ * @param om    Pointer to ctune_UI_OptionsMenu_t object
+ * @param event Mouse event
+ */
+static void ctune_UI_Dialog_OptionsMenu_handleMouseEvent( ctune_UI_OptionsMenu_t * om, MEVENT * event ) {
+    const int win_ctrl = ctune_UI_BorderWin.isCtrlButton( &om->border_win, event->y, event->x );
+    const int scroll   = ctune_UI_SlideMenu.isScrollButton( &om->menu, event->y, event->x );
+
+    if( event->bstate & BUTTON1_CLICKED ) {
+        if( scroll & CTUNE_UI_SCROLL_UP ) {
+            ctune_UI_SlideMenu.navKeyPageUp( &om->menu );
+        } else if( scroll & CTUNE_UI_SCROLL_DOWN ) {
+            ctune_UI_SlideMenu.navKeyPageDown( &om->menu );
+        } else if( win_ctrl & CTUNE_UI_WINCTRLMASK_CLOSE ) {
+            om->cache.input_captured = false;
+        } else {
+            ctune_UI_SlideMenu.selectAt( &om->menu, event->y, event->x );
+        }
+
+    } else if( event->bstate & BUTTON1_DOUBLE_CLICKED && scroll == 0 ) {
+        ctune_UI_SlideMenu.selectAt( &om->menu, event->y, event->x );
+        ctune_UI_SlideMenu.show( &om->menu );
+        ctune_UI_SlideMenu.navKeyEnter( &om->menu );
+
+    } else if( event->bstate & BUTTON3_CLICKED ) {
+        if( scroll & CTUNE_UI_SCROLL_UP ) {
+            ctune_UI_SlideMenu.navKeyFirst( &om->menu );
+
+        } else if( scroll & CTUNE_UI_SCROLL_DOWN ) {
+            ctune_UI_SlideMenu.navKeyLast( &om->menu );
+        }
+    }
 }
 
 /**
@@ -779,6 +845,7 @@ static void ctune_UI_Dialog_OptionsMenu_captureInput( ctune_UI_OptionsMenu_t * o
 
     om->cache.input_captured = true;
     volatile int character;
+    MEVENT       mouse_event;
 
     while( om->cache.input_captured ) {
         character = wgetch( om->menu.canvas_win );
@@ -796,7 +863,16 @@ static void ctune_UI_Dialog_OptionsMenu_captureInput( ctune_UI_OptionsMenu_t * o
             case CTUNE_UI_ACTION_PAGE_UP     : { ctune_UI_SlideMenu.navKeyPageUp( &om->menu );   } break;
             case CTUNE_UI_ACTION_PAGE_DOWN   : { ctune_UI_SlideMenu.navKeyPageDown( &om->menu ); } break;
             case CTUNE_UI_ACTION_TRIGGER     : { ctune_UI_SlideMenu.navKeyEnter( &om->menu );    } break;
-            default                          : { om->cache.input_captured = false;               } break;
+
+            case CTUNE_UI_ACTION_MOUSE_EVENT : {
+                if( getmouse( &mouse_event ) == OK ) {
+                    ctune_UI_Dialog_OptionsMenu_handleMouseEvent( om, &mouse_event );
+                }
+            } break;
+
+            default: {
+                om->cache.input_captured = false;
+            } break;
         }
 
         if( om->cache.input_captured ) {
@@ -951,6 +1027,17 @@ static void ctune_UI_Dialog_OptionsMenu_cb_setSetUIPresetCallback( ctune_UI_Opti
 }
 
 /**
+ * Sets the callback method to set the mouse support
+ * @param om       Pointer to ctune_UI_OptionsMenu_t object
+ * @param callback Callback function
+ */
+static void ctune_UI_Dialog_OptionsMenu_cb_setMouseSupportCallback( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback ) {
+    if( om != NULL ) {
+        om->cb.mouseSupport = callback;
+    }
+}
+
+/**
  * Namespace constructor
  */
 const struct ctune_UI_Dialog_OptionsMenu_Namespace ctune_UI_OptionsMenu = {
@@ -973,5 +1060,6 @@ const struct ctune_UI_Dialog_OptionsMenu_Namespace ctune_UI_OptionsMenu = {
         .setListRowSizeLargeCallback        = &ctune_UI_Dialog_OptionsMenu_cb_setSetListRowSizeLarge,
         .setGetUIPresetCallback             = &ctune_UI_Dialog_OptionsMenu_cb_setGetUIPresetCallback,
         .setSetUIPresetCallback             = &ctune_UI_Dialog_OptionsMenu_cb_setSetUIPresetCallback,
+        .setMouseSupportCallback            = &ctune_UI_Dialog_OptionsMenu_cb_setMouseSupportCallback,
     },
 };
