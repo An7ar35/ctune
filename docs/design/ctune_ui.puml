@@ -17,20 +17,24 @@ package ui #lightgrey {
         component KeyDescription
         component KeyBinding
         component Theme
+        component Icons
         interface " " as iLanguage #green
         interface " " as iTheme #green
         interface " " as iKeyBinding #green
+        interface " " as iIcons #green
 
         Language -down- iLanguage
         Theme -down- iTheme
         KeyBinding -down- iKeyBinding
+        Icons -down- iIcons
 
-        KeyBinding -> KeyDescription
+        KeyBinding ---> KeyDescription
         KeyBinding -> Language
     }
 
     UI --> KeyBinding
     UI --> Language
+    UI --> Icons
     UI --> Theme
 
     package widget #white {
@@ -39,11 +43,13 @@ package ui #lightgrey {
         component SlideMenu
         component Dialog
         component ScrollWin
+        component Form
 
         Dialog    *-- ScrollWin
         Dialog    *-- ScrollBar
-        Dialog    *-- BorderWin
+        Dialog    *--- BorderWin
         SlideMenu *-- ScrollBar
+        Form      *-right- Dialog
     }
 
 
@@ -71,9 +77,9 @@ package ui #lightgrey {
 
     BrowserWin  *-- SlideMenu
     OptionsMenu *-- SlideMenu
-    RSFind      *-- Dialog
+    RSFind      *-- Form
     RSInfo      *-- Dialog
-    RSEdit      *-- Dialog
+    RSEdit      *-- Form
     OptionsMenu *-- BorderWin
 
     UI      --> OptionsMenu
@@ -86,11 +92,13 @@ package ui #lightgrey {
 
 
 
-    note "**Interface/Callback:**\ngetFieldText( TextID : enum ) : const char *" as LanguageCB #lightblue
+    note "**Interface/Callback:**\ntext( TextID : enum ) : const char *" as LanguageCB #lightblue
+    note "**Interface/Callback:**\nicon( IconID : enum ) : const char *" as IconCB #lightblue
 '    note "**Interface/Callback:**\nattribute( RegionID : enum ) : int" as ThemeCB #lightblue
 '    note "**Interface/Callback:**\ngetAction( ContextID: enum, Key: int ) : ActionID" as KeyBindingCB #lightblue
 
-    LanguageCB .[#blue]..> Language
+    LanguageCB .up[#blue]..> iLanguage
+    IconCB .up[#blue]..> iIcons
 '    ThemeCB .[#blue].> Theme
 '    KeyBindingCB .[#blue].> KeyBinding
 }

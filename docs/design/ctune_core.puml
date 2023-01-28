@@ -32,6 +32,7 @@ package ctune #lightgrey {
     package fs #white {
         component PlaybackLog
         component Settings
+        component XDG
         component Plugin
 
         package "plugins/player/" as plugins_in #lightgrey {
@@ -77,6 +78,7 @@ package ctune #lightgrey {
         Plugin .[#RoyalBlue]..> sdl.so
         Plugin .[#RoyalBlue]..> sndio.so
 
+        Settings -> XDG
         Settings -down-> cfgfile
         Settings -down-> favfile
 
@@ -158,9 +160,11 @@ package ctune #lightgrey {
     Controller  --->  PlaybackLog
     Controller  -->   Settings
 
-
+    interface iXDG as "XDG"
+    iXDG -- XDG
     Settings    ----> JSON
     Settings    ----> KVPairs
+    driver --( iXDG
 
 
     note "**Callbacks:**\n- setCurrStation( RadioStationInfo_t * ) : void\n- printSongInfo( const char * ) : void\n- printVolume( int ) : void\n- printPlaybackState( bool ) : void\n- printSearchingState( bool ) : void" as Callbacks1 #lightblue

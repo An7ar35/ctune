@@ -62,12 +62,13 @@ The configuration is generated at first launch in `~/.config/ctune/ctune.cfg`. T
 | `IO::OverwritePlayLog`                | bool         | `true`          | Flag to overwrite play-log instead of appending to it                                                     |
 | `IO::StreamTimeout`                   | unsigned int | `5`             | Timeout value for streaming in seconds*                                                                   |
 | `IO::NetworkTimeout`                  | unsigned int | `8`             | Timeout value for the network calls in seconds                                                            |
+| `UI::Mouse`                           | bool         | `false`         | Flag to enable mouse support                                                                              |
+| `UI::UnicodeIcons`                    | bool         | `false`         | Flag to enable unicode icons (terminal font should support that)                                          |
 | `UI::Favourites::ShowTheme`           | bool         | `true`          | Flag to show source theming on the Favourites tab                                                         |
 | `UI::Favourites::UseCustomTheme`      | bool         | `true`          | Flag to use the 'custom' preset's station source colouring instead of the currently selected preset's     |                                               |
 | `UI::Favourites::UseLargeRows`        | bool         | `true`          | Flag to use large format row entries in the Favourites tab                                                |
 | `UI::Search::UseLargeRows`            | bool         | `true`          | Flag to use large format row entries in the Search tab                                                    |
 | `UI::Browser::UseLargeRows`           | bool         | `false`         | Flag to use large format row entries in the Browser tab                                                   |
-| `UI::UnicodeIcons`                    | bool         | `false`         | Flag to enable unicode icons (terminal font should support that)                                          |
  | `UI::Theme::preset`                   | string       | `default`       | Theme preset name                                                                                         |
 | `UI::Theme`                           | colour pair  | `{WHITE,BLACK}` | Base theme colours (foreground, background)                                                               |
 | `UI::Theme::row`                      | colour pair  | `{WHITE,BLACK}` | Base theme colours for row entries (foreground, background)                                               |
