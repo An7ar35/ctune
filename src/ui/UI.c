@@ -2194,7 +2194,11 @@ static void ctune_UI_printVolume( const int vol ) {
         return; //EARLY RETURN
 
     ui.cache.curr_vol = vol;
-    mvwprintw( ui.panel_windows[CTUNE_UI_PANEL_STATUS_3], 0, 0, "Vol: %3d%%", vol );
+
+    mvwprintw( ui.panel_windows[ CTUNE_UI_PANEL_STATUS_3 ], 0, 0,
+               "%s %3d%%",
+               ctune_UI_Icons.icon( CTUNE_UI_ICON_VOLUME ), vol );
+
     update_panels();
     refresh();
     doupdate();

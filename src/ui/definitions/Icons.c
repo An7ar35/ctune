@@ -38,6 +38,7 @@ static const struct IconSet icons[CTUNE_UI_ICON_COUNT] = {
     [CTUNE_UI_ICON_STOPPED      ] = { .ascii = ".", .unicode = "■" },
     [CTUNE_UI_ICON_PLAYING      ] = { .ascii = ">", .unicode = "▶" },
     [CTUNE_UI_ICON_WINCTRL_CLOSE] = { .ascii = "X", .unicode = "⛌" },
+    [CTUNE_UI_ICON_VOLUME       ] = { .ascii = "Vol:", .unicode = "   ◢" },
 };
 
 static bool unicode_support = false;

@@ -35,6 +35,7 @@ typedef enum ctune_UI_IconID {
     CTUNE_UI_ICON_STOPPED,
     CTUNE_UI_ICON_PLAYING,
     CTUNE_UI_ICON_WINCTRL_CLOSE,
+    CTUNE_UI_ICON_VOLUME,
 
     CTUNE_UI_ICON_COUNT,
 } ctune_UI_IconID_e;
