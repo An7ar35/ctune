@@ -1265,7 +1265,7 @@ static void ctune_UI_createPanels( void ) {
                                               ui.size.title_bar.pos_y,
                                               ui.size.title_bar.pos_x );
                 wbkgd( ui.panel_windows[i], ctune_UI_Theme.color( CTUNE_UI_ITEM_TITLE ) );
-                mvwprintw( ui.panel_windows[i], 0, 1, ctune_UI_Language.text( CTUNE_UI_TEXT_WIN_TITLE_MAIN ) );
+                mvwprintw( ui.panel_windows[i], 0, 1, "%s", ctune_UI_Language.text( CTUNE_UI_TEXT_WIN_TITLE_MAIN ) );
             } break;
 
             case CTUNE_UI_PANEL_STATUS_1: {

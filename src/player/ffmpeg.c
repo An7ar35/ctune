@@ -311,7 +311,7 @@ static int ctune_Player_createBuffer( uint8_t ** buffer_ptr, uint64_t channel_la
         );
 
         ffmpeg_player.error = CTUNE_ERR_BAD_FUNC_ARGS;
-        error_state        = true;
+        error_state         = true;
         goto end;
     }
 
@@ -340,7 +340,7 @@ static int ctune_Player_createBuffer( uint8_t ** buffer_ptr, uint64_t channel_la
         );
 
         ffmpeg_player.error = CTUNE_ERR_STREAM_BUFFER_ALLOC;
-        error_state        = true;
+        error_state         = true;
         goto end;
     }
 

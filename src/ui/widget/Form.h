@@ -242,7 +242,7 @@ extern const struct ctune_UI_Widget_Form_Namespace {
          * @param form    Pointer to a ctune_UI_Form_t object
          * @param field_i Index of the field to set
          * @param attr    Field attributes
-         * @return
+         * @return E_OK (Errors: E_BAD_ARGUMENT, E_SYSTEM_ERROR)
          */
         int (* setBackground)( ctune_UI_Form_t * form, size_t field_i, chtype attr );
 

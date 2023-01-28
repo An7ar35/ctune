@@ -992,10 +992,10 @@ static bool ctune_UI_RSEdit_handleMouseEvent( ctune_UI_RSEdit_t * rsedit, MEVENT
     //TODO sort out issue with url and resolved_url field only being underlined when clicked on the first time
 
     if( clicked_field ) {
-        ctune_UI_RSEdit_highlightCurrField( rsedit );
-        ctune_UI_Form.display.refreshView( &rsedit->form );
-
         if( ctune_UI_RSEdit_isButton( clicked_field_id ) ) {
+            ctune_UI_RSEdit_highlightCurrField( rsedit );
+            ctune_UI_Form.display.refreshView( &rsedit->form );
+
             if( clicked_field_id == BUTTON_AUTODETECT ) {
                 ctune_UI_RSEdit_autodetectStreamProperties( rsedit, &rsedit->cache.station );
 
