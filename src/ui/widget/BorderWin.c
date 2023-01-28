@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "../../logger/Logger.h"
+#include "../definitions/Icons.h"
 
 /**
  * Creates an a BorderWin_t object ready for initialisation
@@ -76,8 +77,8 @@ static bool ctune_UI_Widget_BorderWin_init( ctune_UI_BorderWin_t * border_win, W
             mvwprintw( border_win->window,
                        border_win->ctrl.close_btn.pos_y,
                        border_win->ctrl.close_btn.pos_x,
-                       "%s",
-                       "[X]" );
+                       "[%s]",
+                       ctune_UI_Icons.icon( CTUNE_UI_ICON_WINCTRL_CLOSE ) );
 
         } else {
             CTUNE_LOG( CTUNE_LOG_WARNING,

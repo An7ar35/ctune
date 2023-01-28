@@ -37,6 +37,7 @@ static const struct IconSet icons[CTUNE_UI_ICON_COUNT] = {
     [CTUNE_UI_ICON_RIGHT_ARROW  ] = { .ascii = ">", .unicode = "►" },
     [CTUNE_UI_ICON_STOPPED      ] = { .ascii = ".", .unicode = "■" },
     [CTUNE_UI_ICON_PLAYING      ] = { .ascii = ">", .unicode = "▶" },
+    [CTUNE_UI_ICON_WINCTRL_CLOSE] = { .ascii = "X", .unicode = "⛌" },
 };
 
 static bool unicode_support = false;
