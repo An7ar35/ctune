@@ -41,6 +41,7 @@ static bool ctune_UIConfig_copy( const ctune_UIConfig_t * from, ctune_UIConfig_t
     }
 
     to->mouse               = from->mouse;
+    to->unicode_icons       = from->unicode_icons;
     to->fav_tab             = from->fav_tab;
     to->search_tab          = from->search_tab;
     to->browse_tab          = from->browse_tab;
@@ -53,7 +54,7 @@ static bool ctune_UIConfig_copy( const ctune_UIConfig_t * from, ctune_UIConfig_t
 
 /**
  * Set/Gets the mouse flag
- * @param cfg Pointer to ctune_UIConfig_t object
+ * @param cfg  Pointer to ctune_UIConfig_t object
  * @param flag Flag action
  * @return Property value after operation
  */
@@ -71,12 +72,17 @@ bool ctune_UIConfig_mouse( ctune_UIConfig_t * cfg, ctune_Flag_e flag ) {
 
 /**
  * Gets the unicode icon flag property
- * @param cfg Pointer to ctune_UIConfig_t object
+ * @param cfg  Pointer to ctune_UIConfig_t object
+ * @param flag Flag action
  * @return Flag state
  */
-bool ctune_UIConfig_unicodeIcons( ctune_UIConfig_t * cfg ) {
+bool ctune_UIConfig_unicodeIcons( ctune_UIConfig_t * cfg, ctune_Flag_e flag ) {
     if( cfg ) {
-        return cfg->unicode_icons;
+        switch( flag ) {
+            case FLAG_SET_OFF: return ( cfg->unicode_icons = false );
+            case FLAG_SET_ON : return ( cfg->unicode_icons = true );
+            default          : return cfg->unicode_icons;
+        }
     }
 
     return false;

@@ -684,6 +684,26 @@ static int ctune_UI_setUITheme( ctune_UI_PanelID_e tab, int ui_preset_enum ) {
 }
 
 /**
+ * [PRIVATE] Sets the unicode icon state
+ * @param tab PanelID of the current tab
+ * @param action_flag_e Action to take (get/set)
+ * @return State of the unicode icon usage
+ */
+static int ctune_UI_setUnicodeIcons( ctune_UI_PanelID_e tab, int action_flag_e ) {
+    ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
+
+    ctune_UIConfig_t * ui_config = ctune_Controller.cfg.getUIConfig();
+    const bool         state     = ctune_UIConfig.unicodeIcons( ui_config, action_flag_e );
+
+    if( action_flag_e != FLAG_GET_VALUE ) {
+        ctune_UI_Icons.setUnicode( state );
+        ctune_UI_Resizer.resize();
+    }
+
+    return state;
+}
+
+/**
  * [PRIVATE] Toggles the favourite state of a selected station in any of the tabs
  * @param tab PanelID of the current tab
  * @param arg (unused)
@@ -942,6 +962,7 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_OptionsMenu.cb.setSetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_setUITheme );
             ctune_UI_OptionsMenu.cb.setFavTabCustomThemingCallback( &ui.dialogs.optmenu, ctune_UI_favouriteTabCustomTheming );
             ctune_UI_OptionsMenu.cb.setMouseSupportCallback( &ui.dialogs.optmenu, ctune_UI_setMouseSupport );
+            ctune_UI_OptionsMenu.cb.setUnicodeIconsCallback( &ui.dialogs.optmenu, ctune_UI_setUnicodeIcons );
 
             if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu, ctune_UIConfig.mouse( ui_config, FLAG_GET_VALUE ) ) ) {
                 ctune_UI_OptionsMenu.show( &ui.dialogs.optmenu );
@@ -966,6 +987,7 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_OptionsMenu.cb.setGetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_getUIThemes );
             ctune_UI_OptionsMenu.cb.setSetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_setUITheme );
             ctune_UI_OptionsMenu.cb.setMouseSupportCallback( &ui.dialogs.optmenu, ctune_UI_setMouseSupport );
+            ctune_UI_OptionsMenu.cb.setUnicodeIconsCallback( &ui.dialogs.optmenu, ctune_UI_setUnicodeIcons );
 
             if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu, ctune_UIConfig.mouse( ui_config, FLAG_GET_VALUE ) ) ) {
                 ctune_UI_OptionsMenu.show( &ui.dialogs.optmenu );
@@ -1695,7 +1717,7 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
         ui.init_stages[CTUNE_UI_INITSTAGE_KEYBINDS] = true;
     }
 
-    ctune_UI_Icons.setUnicode( ctune_UIConfig.unicodeIcons( ctune_Controller.cfg.getUIConfig() ) );
+    ctune_UI_Icons.setUnicode( ctune_UIConfig.unicodeIcons( ctune_Controller.cfg.getUIConfig(), FLAG_GET_VALUE ) );
 
     if( ( stdscr = initscr() ) == NULL ) {
         CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i, %i )] Failed `initscr()`.", show_cursor, mouse_nav );

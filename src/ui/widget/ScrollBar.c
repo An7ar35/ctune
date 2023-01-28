@@ -76,16 +76,16 @@ static void ctune_UI_Widget_ScrollBar_drawCanvas( ctune_UI_ScrollBar_t * scrollb
                 switch( scrollbar->bar_position ) {
                     case TOP: //fallthrough
                     case BOTTOM: {
-                        mvwaddstr( scrollbar->canvas_win, 0, 0, ctune_UI_Icons.icon( CTUNE_UI_ICON_LEFT_ARROW_B ) );
+                        mvwaddstr( scrollbar->canvas_win, 0, 0, ctune_UI_Icons.icon( CTUNE_UI_ICON_SCROLL_LEFT ) );
                         mvwhline( scrollbar->canvas_win, 0, display_offset, ACS_HLINE, scroller_size );
-                        mvwaddstr( scrollbar->canvas_win, 0, ( scrollbar->bar_canvas_length - 1 ), ctune_UI_Icons.icon( CTUNE_UI_ICON_RIGHT_ARROW_B ) );
+                        mvwaddstr( scrollbar->canvas_win, 0, ( scrollbar->bar_canvas_length - 1 ), ctune_UI_Icons.icon( CTUNE_UI_ICON_SCROLL_RIGHT ) );
                     } break;
 
                     case LEFT: //fallthrough
                     case RIGHT: {
-                        mvwaddstr( scrollbar->canvas_win, 0, 0, ctune_UI_Icons.icon( CTUNE_UI_ICON_UP_ARROW_B ) );
+                        mvwaddstr( scrollbar->canvas_win, 0, 0, ctune_UI_Icons.icon( CTUNE_UI_ICON_SCROLL_UP ) );
                         mvwvline( scrollbar->canvas_win, display_offset, 0, ACS_VLINE, scroller_size );
-                        mvwaddstr( scrollbar->canvas_win, ( scrollbar->bar_canvas_length - 1 ), 0, ctune_UI_Icons.icon( CTUNE_UI_ICON_DOWN_ARROW_B ) );
+                        mvwaddstr( scrollbar->canvas_win, ( scrollbar->bar_canvas_length - 1 ), 0, ctune_UI_Icons.icon( CTUNE_UI_ICON_SCROLL_DOWN ) );
                     } break;
                 }
 

@@ -311,6 +311,26 @@ static bool ctune_UI_Dialog_OptionsMenu_populateConfigMenu( ctune_UI_OptionsMenu
         }
     }
 
+    if( om->cb.unicodeIcons != NULL ) { //"ASCII/Unicode icons" entry
+        const bool         curr_state = om->cb.unicodeIcons( om->cache.curr_panel_id, FLAG_GET_VALUE );
+        const ctune_Flag_e action     = ( curr_state ? FLAG_SET_OFF : FLAG_SET_ON );
+        const char *       text       = om->cb.getDisplayText( ( curr_state ? CTUNE_UI_TEXT_ICONS_ASCII : CTUNE_UI_TEXT_ICONS_UNICODE ) );
+
+        CbPayload_t               * payload   = createCbPayload( om, &om->cache.payloads, om->cb.unicodeIcons, action );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, text, payload, ctrlMenuFunctionCb );
+
+        if( payload && menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateConfigMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
+            );
+            error_state = true;
+        }
+    }
+
     if( om->cb.favTabTheming != NULL ) { //"Toggle theming" entry
         const bool         curr_state = om->cb.favTabTheming( om->cache.curr_panel_id, FLAG_GET_VALUE );
         const ctune_Flag_e action     = ( curr_state ? FLAG_SET_OFF : FLAG_SET_ON );
@@ -677,6 +697,7 @@ static ctune_UI_OptionsMenu_t ctune_UI_Dialog_OptionsMenu_create( const WindowPr
             .getUIPresets        = NULL,
             .setUIPreset         = NULL,
             .mouseSupport        = NULL,
+            .unicodeIcons        = NULL,
         }
     };
 }
@@ -1038,6 +1059,17 @@ static void ctune_UI_Dialog_OptionsMenu_cb_setMouseSupportCallback( ctune_UI_Opt
 }
 
 /**
+ * Sets the callback method to set unicode icons on/off
+ * @param om       Pointer to ctune_UI_OptionsMenu_t object
+ * @param callback Callback function
+ */
+static void ctune_UI_Dialog_OptionsMenu_cb_setUnicodeIconsCallback( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback ) {
+    if( om != NULL ) {
+        om->cb.unicodeIcons = callback;
+    }
+}
+
+/**
  * Namespace constructor
  */
 const struct ctune_UI_Dialog_OptionsMenu_Namespace ctune_UI_OptionsMenu = {
@@ -1061,5 +1093,6 @@ const struct ctune_UI_Dialog_OptionsMenu_Namespace ctune_UI_OptionsMenu = {
         .setGetUIPresetCallback             = &ctune_UI_Dialog_OptionsMenu_cb_setGetUIPresetCallback,
         .setSetUIPresetCallback             = &ctune_UI_Dialog_OptionsMenu_cb_setSetUIPresetCallback,
         .setMouseSupportCallback            = &ctune_UI_Dialog_OptionsMenu_cb_setMouseSupportCallback,
+        .setUnicodeIconsCallback            = &ctune_UI_Dialog_OptionsMenu_cb_setUnicodeIconsCallback,
     },
 };

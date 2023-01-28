@@ -51,7 +51,7 @@ extern const struct ctune_UIConfig_Namespace {
 
     /**
      * Set/Gets the mouse flag
-     * @param cfg Pointer to ctune_UIConfig_t object
+     * @param cfg  Pointer to ctune_UIConfig_t object
      * @param flag Flag action
      * @return Property value after operation
      */
@@ -59,10 +59,11 @@ extern const struct ctune_UIConfig_Namespace {
 
     /**
      * Gets the unicode icon flag property
-     * @param cfg Pointer to ctune_UIConfig_t object
+     * @param cfg  Pointer to ctune_UIConfig_t object
+     * @param flag Flag action
      * @return Flag state
      */
-    bool (* unicodeIcons)( ctune_UIConfig_t * cfg );
+    bool (* unicodeIcons)( ctune_UIConfig_t * cfg, ctune_Flag_e flag );
 
     struct {
         /**

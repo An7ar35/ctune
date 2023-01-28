@@ -178,12 +178,12 @@ static void ctune_UI_SlideMenu_drawCanvas( ctune_UI_SlideMenu_t * menu, bool res
 
             mvwhline( menu->canvas_win, row, 0, ' ', menu->canvas_property->cols );
             if( item->type == CTUNE_UI_SLIDEMENU_PARENT )
-                mvwprintw( menu->canvas_win, row, 0, "%s ", ctune_UI_Icons.icon( CTUNE_UI_ICON_LEFT_ARROW_B ) );
+                mvwprintw( menu->canvas_win, row, 0, "%s ", ctune_UI_Icons.icon( CTUNE_UI_ICON_LEFT_ARROW ) );
 
             mvwprintw( menu->canvas_win, row, 2, "%s", item->text._raw );
 
             if( item->type == CTUNE_UI_SLIDEMENU_MENU )
-                mvwprintw( menu->canvas_win, row, ( menu->canvas_property->cols - 3 ), " %s", ctune_UI_Icons.icon( CTUNE_UI_ICON_RIGHT_ARROW_B ) );
+                mvwprintw( menu->canvas_win, row, ( menu->canvas_property->cols - 3 ), " %s", ctune_UI_Icons.icon( CTUNE_UI_ICON_RIGHT_ARROW ) );
 
             wattroff( menu->canvas_win, row_theme );
 

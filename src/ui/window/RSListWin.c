@@ -480,10 +480,10 @@ static void ctune_UI_RSListWin_drawCanvas( ctune_UI_RSListWin_t * win, bool resi
     if( win->mouse_ctrl ) {
         const char * up   = ( win->row.selected == 0
                               ? ctune_UI_Icons.icon( CTUNE_UI_ICON_VOID )
-                              : ctune_UI_Icons.icon( CTUNE_UI_ICON_UP_ARROW_B ) );
+                              : ctune_UI_Icons.icon( CTUNE_UI_ICON_UP_ARROW ) );
         const char * down = ( ( win->row.selected >= Vector.size( &win->entries ) || win->row.selected == Vector.size( &win->entries ) - 1 )
                               ? ctune_UI_Icons.icon( CTUNE_UI_ICON_VOID )
-                              : ctune_UI_Icons.icon( CTUNE_UI_ICON_DOWN_ARROW_B ) );
+                              : ctune_UI_Icons.icon( CTUNE_UI_ICON_DOWN_ARROW ) );
 
         if( win->row.selected >= Vector.size( &win->entries ) ) {
             mvwprintw( win->indicator_win, 0, 1, "%s [%*c/%lu] %s", up, entry_count_ln, '-', Vector.size( &win->entries ), down );
