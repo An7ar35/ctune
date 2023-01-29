@@ -989,8 +989,6 @@ static bool ctune_UI_RSEdit_handleMouseEvent( ctune_UI_RSEdit_t * rsedit, MEVENT
     FIELD *   clicked_field       = ctune_UI_Form.mouse.click( &rsedit->form, LABEL_COUNT, FIELD_LAST, event->y, event->x, &pos );
     const int clicked_field_id    = ctune_UI_Form.field.currentIndex( &rsedit->form );
 
-    //TODO sort out issue with url and resolved_url field only being underlined when clicked on the first time
-
     if( clicked_field ) {
         if( ctune_UI_RSEdit_isButton( clicked_field_id ) ) {
             ctune_UI_RSEdit_highlightCurrField( rsedit );
@@ -1012,6 +1010,7 @@ static bool ctune_UI_RSEdit_handleMouseEvent( ctune_UI_RSEdit_t * rsedit, MEVENT
 
         } else {
             ctune_UI_RSEdit_highlightCurrField( rsedit );
+            ctune_UI_Form.input.fwdToFormDriver( &rsedit->form, REQ_END_LINE );
         }
     }
 
@@ -1030,8 +1029,9 @@ static ctune_FormExit_e ctune_UI_RSEdit_captureInput( ctune_UI_RSEdit_t * rsedit
     MEVENT           mouse_event;
 
     ctune_UI_Form.input.start( &rsedit->form );
-    ctune_UI_Form.input.fwdToFormDriver( &rsedit->form, REQ_FIRST_FIELD );
     ctune_UI_RSEdit_highlightCurrField( rsedit );
+    ctune_UI_Form.input.fwdToFormDriver( &rsedit->form, REQ_FIRST_FIELD );
+    ctune_UI_Form.input.fwdToFormDriver( &rsedit->form, REQ_END_LINE );
     ctune_UI_Form.display.refreshView( &rsedit->form );
 
     while( !exit ) {
