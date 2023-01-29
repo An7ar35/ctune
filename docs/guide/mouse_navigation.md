@@ -9,7 +9,7 @@ Mouse support must be enabled inside the Options menu (`O`) first (`Configuratio
 
 ![img](annotated1_v1.2.0.png)
 
-1. Right click the title bar area to open the configuration menu
+1. Middle click the title bar area to open the configuration menu
 2. Left click to start/stop a queued station
 3. Right click queued station name to open the information dialog
 4. Volume: Left click to increase the volume and right click to decrease it.
