@@ -722,10 +722,11 @@ static int ctune_UI_toggleFavourite( ctune_UI_PanelID_e tab, int arg /*unused*/ 
         if( ctune_Controller.cfg.isFavourite( rsi, ctune_RadioStationInfo.get.stationSource( rsi ) ) ) {
             ctune_UI_writeToMsgLine( ctune_UI_Language.text( CTUNE_UI_TEXT_MSG_CONFIRM_UNFAV ) );
 
-            if( ( ch = getch() ) == 'y' )
+            if( ( ch = getch() ) == 'y' ) {
                 ctune_UI_RSListWin.toggleFav( &ui.tabs.favourites );
-            else
+            } else {
                 refresh = false;
+            }
 
         } else {
             ctune_UI_RSListWin.toggleFav( &ui.tabs.favourites );
@@ -743,10 +744,11 @@ static int ctune_UI_toggleFavourite( ctune_UI_PanelID_e tab, int arg /*unused*/ 
         if( ctune_Controller.cfg.isFavourite( rsi, ctune_RadioStationInfo.get.stationSource( rsi ) ) ) {
             ctune_UI_writeToMsgLine( ctune_UI_Language.text( CTUNE_UI_TEXT_MSG_CONFIRM_UNFAV ) );
 
-            if( ( ch = getch() ) == 'y' )
+            if( ( ch = getch() ) == 'y' ) {
                 ctune_UI_RSListWin.toggleFav( &ui.tabs.search );
-            else
+            } else {
                 refresh = false;
+            }
 
         } else {
             ctune_UI_RSListWin.toggleFav( &ui.tabs.search );
@@ -761,10 +763,11 @@ static int ctune_UI_toggleFavourite( ctune_UI_PanelID_e tab, int arg /*unused*/ 
         if( ctune_Controller.cfg.isFavourite( rsi, ctune_RadioStationInfo.get.stationSource( rsi ) ) ) {
             ctune_UI_writeToMsgLine( ctune_UI_Language.text( CTUNE_UI_TEXT_MSG_CONFIRM_UNFAV ) );
 
-            if( ( ch = getch() ) == 'y' )
+            if( ( ch = getch() ) == 'y' ) {
                 ctune_UI_BrowserWin.toggleFav( &ui.tabs.browser );
-            else
+            } else {
                 refresh = false;
+            }
 
         } else {
             ctune_UI_BrowserWin.toggleFav( &ui.tabs.browser );

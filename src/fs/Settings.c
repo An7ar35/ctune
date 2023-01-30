@@ -110,21 +110,6 @@ static struct ctune_Settings_Fav {
 } favourites;
 
 /**
- * [PRIVATE] Checks if there are no favourites
- * @return Empty state for all types of favourites
- */
-static bool ctune_Settings_noFavourites( void ) {
-    bool no_favs = true;
-
-    for( int i = 0; i < CTUNE_STATIONSRC_COUNT; ++i ) {
-        if( !HashMap.empty( &favourites.favs[i] ) )
-            no_favs = false;
-    }
-
-    return no_favs;
-}
-
-/**
  * [PRIVATE] Gets the total number of favourites stations in the collections
  * @return Tally of all favourites
  */
@@ -804,9 +789,6 @@ static bool ctune_Settings_loadFavourites() {
  * @return Success
  */
 static bool ctune_Settings_saveFavourites() {
-    if( ctune_Settings_noFavourites() )
-        return true; //EARLY RETURN - nothing to export
-
     CTUNE_LOG( CTUNE_LOG_MSG,
                "[ctune_Settings_saveFavourites()] Saving %lu favourite station(s) to file \"%s\".",
                ctune_Settings_favouriteCount(), favourites.file_name
@@ -816,7 +798,7 @@ static bool ctune_Settings_saveFavourites() {
     String_t file_path    = String.init();
     FILE *   file         = NULL;
     String_t json         = String.init();
-    Vector_t station_list  = Vector.init( sizeof( ctune_RadioStationInfo_t ), ctune_RadioStationInfo.freeContent );
+    Vector_t station_list = Vector.init( sizeof( ctune_RadioStationInfo_t ), ctune_RadioStationInfo.freeContent );
 
     ctune_XDG.resolveCfgFilePath( favourites.file_name, &file_path );
 
@@ -828,8 +810,9 @@ static bool ctune_Settings_saveFavourites() {
         goto end;
     }
 
-    for( int i = 0; i < CTUNE_STATIONSRC_COUNT; ++i )
-        HashMap.export( &favourites.favs[i], &station_list, ctune_RadioStationInfo.init, ctune_RadioStationInfo.copy );
+    for( int i = 0; i < CTUNE_STATIONSRC_COUNT; ++i ) {
+        HashMap.export( &favourites.favs[ i ], &station_list, ctune_RadioStationInfo.init, ctune_RadioStationInfo.copy );
+    }
 
     if( !ctune_parser_JSON.parseRadioStationListToJSON( &station_list, &json ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_saveFavourites()] Failed to parse stations to JSON format." );

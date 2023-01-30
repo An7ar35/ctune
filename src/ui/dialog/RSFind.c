@@ -544,7 +544,7 @@ static bool ctune_UI_RSFind_createFields( ctune_UI_RSFind_t * rsfind ) {
     bool ret[FIELD_LAST]; //errors
     //Field labels                                                                                                   rows        cols                y   x
     ret[LABEL_EXACT         ] = ctune_UI_Form.field.create( &rsfind->form, LABEL_EXACT,          (WindowProperty_t){ row_height, label_col_width,     0, toggle_label_col } );
-    ret[LABEL_COUNTRY       ] = ctune_UI_Form.field.create( &rsfind->form, LABEL_NAME,           (WindowProperty_t){ row_height, label_col_width,     2, label_col } );
+    ret[LABEL_NAME          ] = ctune_UI_Form.field.create( &rsfind->form, LABEL_NAME,           (WindowProperty_t){ row_height, label_col_width,     2, label_col } );
     ret[LABEL_COUNTRY       ] = ctune_UI_Form.field.create( &rsfind->form, LABEL_COUNTRY,        (WindowProperty_t){ row_height, label_col_width,     4, label_col } );
     ret[LABEL_COUNTRY_CODE  ] = ctune_UI_Form.field.create( &rsfind->form, LABEL_COUNTRY_CODE,   (WindowProperty_t){ row_height, label_col_width,     6, label_col } );
     ret[LABEL_STATE         ] = ctune_UI_Form.field.create( &rsfind->form, LABEL_STATE,          (WindowProperty_t){ row_height, label_col_width,     8, label_col } );
