@@ -122,13 +122,13 @@ static void ctune_Player_timeoutCallback( int err ) {
 static int ctune_Player_setupStreamInput( AVFormatContext * in_format_ctx, AVCodec ** in_codec, int * audio_stream_i, const char * url ) {
     in_format_ctx->flags                = AVFMT_FLAG_NONBLOCK;
     in_format_ctx->probesize            = 10000000; //bytes
-    in_format_ctx->max_analyze_duration =  8000000; //milliseconds
+    in_format_ctx->max_analyze_duration =  8000000; //microseconds
 
     CTUNE_LOG( CTUNE_LOG_DEBUG,
                "[ctune_Player_setupStreamInput( %p, %i, %s )] "
-               "Setting up stream input (Probe size = %lu bytes, Max analysis time = %lu ms)...",
+               "Setting up stream input (Probe size = %lu bytes, Max analysis time = %lus)...",
                in_format_ctx, *audio_stream_i, url,
-               in_format_ctx->probesize, in_format_ctx->max_analyze_duration
+               in_format_ctx->probesize, ( in_format_ctx->max_analyze_duration / 1000000 )
     );
 
     if( avformat_open_input( &in_format_ctx, url, NULL, NULL ) < 0 ) {
@@ -563,11 +563,13 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
 
     end: //cleanup
         CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_Player_playRadioStream( \"%s\", %i, %is )] Shutting down stream.", radio_stream_url, volume, timeout_val );
-        if( error_state )
+        if( error_state ) {
             ctune_err.set( ffmpeg_player.error );
+        }
 
-        if( out_buffer )
+        if( out_buffer ) {
             free( out_buffer );
+        }
 
         if( stages[STAGE_AUDIO_OUT] ) {
             ffmpeg_player.audio_out->shutdown();
@@ -594,8 +596,9 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
             avformat_close_input( &in_format_ctx );
         }
 
-        if( stages[STAGE_INPUT_CODEC] && in_codec_ctx )
+        if( stages[STAGE_INPUT_CODEC] && in_codec_ctx ) {
             avcodec_free_context( &in_codec_ctx );
+        }
 
         free( radio_stream_url );
 
@@ -720,8 +723,9 @@ bool ctune_Player_testStream( const char * url, int timeout_val, String_t * code
             avformat_close_input( &in_format_ctx );
         }
 
-        if( stages[STAGE_INPUT_CODEC] && in_codec_ctx )
+        if( stages[STAGE_INPUT_CODEC] && in_codec_ctx ) {
             avcodec_free_context( &in_codec_ctx );
+        }
 
         free( radio_stream_url );
 

@@ -235,6 +235,92 @@ static bool ctune_UI_Dialog_OptionsMenu_populateUIThemeMenu( ctune_UI_OptionsMen
 }
 
 /**
+ * [PRIVATE] Populates the "Stream timeout" sub-menu
+ * @param om   Pointer to ctune_UI_OptionsMenu_t object
+ * @param root Pointer to SlideMenu item from which to spawn the menu from
+ * @return Success
+ */
+static bool ctune_UI_Dialog_OptionsMenu_populateStreamTimeoutMenu( ctune_UI_OptionsMenu_t * om, ctune_UI_SlideMenu_Item_t * root ) {
+    bool error_state = false;
+
+    if( ctune_UI_SlideMenu.createMenu( &root->sub_menu, root->parent_menu, root->index ) == NULL ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_UI_Dialog_OptionsMenu_populateStreamTimeoutMenu( %p, %p )] "
+                   "Failed to create sub menu for item ('%s').",
+                   om, root, root->text._raw
+        );
+
+        error_state = true;
+        goto end;
+    }
+
+    size_t max_text_width = om->cache.slide_menu_property.cols;
+
+    { //"Go back" entry
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_CONFIGURATION );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_PARENT, text, NULL, NULL );
+
+        if( menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateStreamTimeoutMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
+            );
+
+            error_state = true;
+            goto end;
+        }
+    }
+
+    { //Stream timeout value entries
+        const int min_timeout     = 2;
+        const int max_timeout     = 10;
+        const int current_timeout = om->cb.streamTimeout( om->cache.curr_panel_id, -1 );
+
+        for( int i = min_timeout; i <= max_timeout; ++i ) {
+            String_t text = String.init();
+
+            ctune_ltos( i, &text );
+
+            if( i == current_timeout ) {
+                String.append_back( &text, "s *" );
+            } else {
+                String.append_back( &text, "s" );
+            }
+
+            CbPayload_t               * payload   = createCbPayload( om, &om->cache.payloads, om->cb.streamTimeout, i );
+            ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, text._raw, payload, ctrlMenuFunctionCb );
+
+            if( payload && menu_item ) {
+                max_text_width = ctune_max_ul( max_text_width, String.length( &text ) );
+
+            } else {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[ctune_UI_Dialog_OptionsMenu_populateStreamTimeoutMenu( %p )] Failed creation of menu item '%s'.",
+                           om, text._raw
+                );
+                error_state = true;
+            }
+
+            String.free( &text );
+        }
+    }
+
+    if( !ctune_utoi( max_text_width, &om->cache.slide_menu_property.cols ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL,
+                   "[ctune_UI_Dialog_OptionsMenu_populateStreamTimeoutMenu( %p, %p )] Failed to cast to integer (%lu).",
+                   om, root, max_text_width
+        );
+        error_state = true;
+    }
+
+    end:
+        return !( error_state );
+}
+
+/**
  * [PRIVATE] Populates the "configuration" sub-menu
  * @param om Pointer to ctune_UI_OptionsMenu_t object
  * @param root Pointer to SlideMenu item from which to spawn the menu from
@@ -392,6 +478,22 @@ static bool ctune_UI_Dialog_OptionsMenu_populateConfigMenu( ctune_UI_OptionsMenu
             CTUNE_LOG( CTUNE_LOG_ERROR,
                        "[ctune_UI_Dialog_OptionsMenu_populateConfigMenu( %p, %p )] Failed creation of menu item '%s'.",
                        om, root, text
+            );
+            error_state = true;
+        }
+    }
+
+    if( om->cb.streamTimeout != NULL ) { //Stream timeout menu
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_STREAM_TIMEOUT );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_MENU, text, NULL, NULL );
+
+        if( menu_item && ctune_UI_Dialog_OptionsMenu_populateStreamTimeoutMenu( om, menu_item ) ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateRootMenu( %p )] Failed creation of menu item '%s'.",
+                       om, text
             );
             error_state = true;
         }
@@ -698,6 +800,7 @@ static ctune_UI_OptionsMenu_t ctune_UI_Dialog_OptionsMenu_create( const WindowPr
             .setUIPreset         = NULL,
             .mouseSupport        = NULL,
             .unicodeIcons        = NULL,
+            .streamTimeout       = NULL,
         }
     };
 }
@@ -1070,6 +1173,17 @@ static void ctune_UI_Dialog_OptionsMenu_cb_setUnicodeIconsCallback( ctune_UI_Opt
 }
 
 /**
+ * Sets the callback method to set/get the stream timeout value in the configuration
+ * @param om       Pointer to ctune_UI_OptionsMenu_t object
+ * @param callback Callback function
+ */
+static void ctune_UI_Dialog_OptionsMenu_setStreamTimeoutValueCallback( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback ) {
+    if( om != NULL ) {
+        om->cb.streamTimeout = callback;
+    }
+}
+
+/**
  * Namespace constructor
  */
 const struct ctune_UI_Dialog_OptionsMenu_Namespace ctune_UI_OptionsMenu = {
@@ -1094,5 +1208,6 @@ const struct ctune_UI_Dialog_OptionsMenu_Namespace ctune_UI_OptionsMenu = {
         .setSetUIPresetCallback             = &ctune_UI_Dialog_OptionsMenu_cb_setSetUIPresetCallback,
         .setMouseSupportCallback            = &ctune_UI_Dialog_OptionsMenu_cb_setMouseSupportCallback,
         .setUnicodeIconsCallback            = &ctune_UI_Dialog_OptionsMenu_cb_setUnicodeIconsCallback,
+        .setStreamTimeoutValueCallback      = &ctune_UI_Dialog_OptionsMenu_setStreamTimeoutValueCallback,
     },
 };

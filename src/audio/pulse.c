@@ -18,7 +18,6 @@ static volatile int ctune_audio_mix_volume = 0;
  * PulseAudio server information
  */
 static struct {
-
     pa_threaded_mainloop * main_loop;
     int                    main_loop_ret_val;
     pa_mainloop_api      * mainloop_api;
@@ -28,6 +27,15 @@ static struct {
     pa_cvolume             channel_volume;
     pa_sample_spec         sample_specs;
     volatile sig_atomic_t  ready;
+
+    /* Event counters */
+    uint64_t overflow_count;
+
+    struct LatencyChanges {
+        uint64_t count;
+        float    low;
+        float    high;
+    } latency;
 
 } pulse_audio_server;
 
@@ -183,7 +191,7 @@ static void notifyContextStateChangeCallback( pa_context * context, void * mainl
             break;
 
         case PA_CONTEXT_FAILED:
-            CTUNE_LOG( CTUNE_LOG_ERROR, "[getContextStateCallback( %p, %p )] PulseAudio context failure: %s.",
+            CTUNE_LOG( CTUNE_LOG_ERROR, "[getContextStateCallback( %p, %p )] PulseAudio context failure: %s",
                      context, mainloop, pa_strerror( pa_context_errno( context ) )
             );
             break;
@@ -239,20 +247,15 @@ static void notifyStreamStateChangeCallBack( pa_stream * stream, void * mainloop
     pa_threaded_mainloop_signal( mainloop, 0 );
 }
 
-static void streamSuccessCallback( pa_stream * stream, int success, void * userdata ) {
-    CTUNE_LOG( CTUNE_LOG_DEBUG,
-               "[streamSuccessCallback( %p, %d, %p )] PulseAudio stream event success.",
-               stream, success, userdata
-    );
-}
-
 static void notifyStreamOverflowCallback( pa_stream * stream, void * userdata ) {
-    CTUNE_LOG( CTUNE_LOG_WARNING,
-               "[notifyStreamOverflowCallback( %p, %p )] PulseAudio stream overflow detected - flushing buffer.",
-               stream, userdata
-    );
+    if( ++pulse_audio_server.overflow_count == UINT64_MAX ) {
+        CTUNE_LOG( CTUNE_LOG_WARNING,
+                   "[notifyStreamOverflowCallback( %p, %p )] PulseAudio stream overflowed %lu times (counter reset).",
+                   stream, userdata, pulse_audio_server.overflow_count
+        );
 
-    pa_stream_flush( stream, streamSuccessCallback, NULL );
+        pulse_audio_server.overflow_count = 0;
+    }
 }
 
 static void notifyStreamUnderflowCallback( pa_stream * stream, void * userdata ) {
@@ -262,6 +265,35 @@ static void notifyStreamUnderflowCallback( pa_stream * stream, void * userdata )
                userdata,
                pa_stream_get_underflow_index( stream )
     );
+}
+
+static void notifyLatencyUpdateCallback( pa_stream * stream, void * userdata ) {
+    if( ++pulse_audio_server.latency.count == UINT64_MAX ) {
+        CTUNE_LOG( CTUNE_LOG_WARNING,
+                   "[notifyLatencyUpdateCallback( %p, %p )] PulseAudio stream latency changed %lu times (counter reset).",
+                   stream, userdata, pulse_audio_server.latency.count
+        );
+
+        pulse_audio_server.latency.count = 0;
+    }
+
+    pa_usec_t latency;
+    int       negative = 0;
+
+    if( pa_stream_get_latency( stream, &latency, &negative ) >= 0 ) {
+        const float val = ( (float) latency  * ( negative  ? -1.0f : 1.0f ) );
+
+        if( pulse_audio_server.latency.low == 0. && pulse_audio_server.latency.high == 0. ) {
+            pulse_audio_server.latency.low  = val;
+            pulse_audio_server.latency.high = val;
+
+        } else if( val > pulse_audio_server.latency.high ) {
+                pulse_audio_server.latency.high = val;
+
+        } else if( val < pulse_audio_server.latency.low ) {
+                pulse_audio_server.latency.low = val;
+        }
+    }
 }
 
 /**
@@ -330,7 +362,22 @@ static bool ctune_audio_changeVolume( int delta ) {
  * Calls all the cleaning/closing/shutdown functions for the PulseAudio server
  */
 static void ctune_audio_shutdownAudioOut() {
+    if( pulse_audio_server.overflow_count ) {
+        CTUNE_LOG( CTUNE_LOG_WARNING,
+                   "[ctune_audio_shutdownAudioOut()] PulseAudio stream overflowed %lu times.",
+                   pulse_audio_server.overflow_count
+        );
+    }
+
+    if( pulse_audio_server.latency.count ) {
+        CTUNE_LOG( CTUNE_LOG_MSG,
+                   "[ctune_audio_shutdownAudioOut()] PulseAudio stream latency changed %lu times (%0.0f <-> %0.0f useconds).",
+                   pulse_audio_server.latency.count, pulse_audio_server.latency.low, pulse_audio_server.latency.high
+        );
+    }
+
     pulse_audio_server.ready = false;
+
     if( pulse_audio_server.main_loop )
         pa_threaded_mainloop_stop( pulse_audio_server.main_loop );
     if( pulse_audio_server.context )
@@ -362,6 +409,8 @@ static int ctune_audio_initAudioOut( ctune_OutputFmt_e fmt, int sample_rate, uin
     pa_proplist_sets( property_list, PA_PROP_APPLICATION_ID, CTUNE_APPNAME );
     pa_proplist_sets( property_list, PA_PROP_APPLICATION_NAME, CTUNE_APPNAME );
 
+    pulse_audio_server.overflow_count        = 0;
+    pulse_audio_server.latency               = (struct LatencyChanges){ 0, 0.0f, 0.0f };
     pulse_audio_server.ready                 = false;
     pulse_audio_server.main_loop             = pa_threaded_mainloop_new();
     pulse_audio_server.main_loop_ret_val     = 0;
@@ -432,16 +481,22 @@ static int ctune_audio_initAudioOut( ctune_OutputFmt_e fmt, int sample_rate, uin
 
     //create playback stream
     pa_stream_set_state_callback( pulse_audio_server.stream, notifyStreamStateChangeCallBack, pulse_audio_server.main_loop );
-    pa_stream_set_overflow_callback( pulse_audio_server.stream, notifyStreamOverflowCallback, pulse_audio_server.main_loop );
     pa_stream_set_underflow_callback( pulse_audio_server.stream, notifyStreamUnderflowCallback, pulse_audio_server.main_loop );
+    pa_stream_set_overflow_callback( pulse_audio_server.stream, notifyStreamOverflowCallback, pulse_audio_server.main_loop );
+    pa_stream_set_latency_update_callback( pulse_audio_server.stream, notifyLatencyUpdateCallback, pulse_audio_server.main_loop );
 
-    pa_cvolume * init_volume = &pulse_audio_server.channel_volume;
+    pa_cvolume   * init_volume = &pulse_audio_server.channel_volume;
+    pa_buffer_attr buffer_attributes = { .tlength   = -1,
+                                         .minreq    = -1,
+                                         .maxlength = -1,
+                                         .prebuf    = -1,
+                                         .fragsize  = -1, };
 
     ctune_audio_setVolume( volume );
 
-    const pa_stream_flags_t flags = PA_STREAM_ADJUST_LATENCY;
+    const pa_stream_flags_t flags = PA_STREAM_ADJUST_LATENCY | PA_STREAM_VARIABLE_RATE | PA_STREAM_AUTO_TIMING_UPDATE | PA_STREAM_INTERPOLATE_TIMING;
 
-    if( pa_stream_connect_playback( pulse_audio_server.stream, NULL, NULL, flags, init_volume, NULL ) ) {
+    if( pa_stream_connect_playback( pulse_audio_server.stream, NULL, &buffer_attributes, flags, init_volume, NULL ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_audio_initAudioOut( %d, %i, %u, %u, %i )] Failed to connect PulseAudio stream to the default audio output sink.",
                    fmt, sample_rate, channels, samples, volume

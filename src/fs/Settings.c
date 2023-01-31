@@ -619,6 +619,25 @@ static int ctune_Settings_getStreamTimeoutVal( void ) {
 }
 
 /**
+ * Sets teh timeout value in seconds for connecting to and playing a stream
+ * @param val Timeout value in seconds (1-10 inclusive)
+ * @return Success
+ */
+static bool ctune_Settings_setStreamTimeoutVal( int val ) {
+    if( 0 < val && val <= 10) {
+        CTUNE_LOG( CTUNE_LOG_DEBUG,
+                   "[ctune_Settings_setStreamTimeoutVal( %i )] Stream timeout value set: %i -> %i",
+                   val, config.timeout_stream_val, val
+        );
+
+        config.timeout_stream_val = val;
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Gets the timout value in seconds for querying a network service
  * @return Timeout value in seconds
  */
@@ -1041,6 +1060,7 @@ const struct ctune_Settings_Instance ctune_Settings = {
         .setLastPlayedStation   = &ctune_Settings_setLastPlayedStation,
         .playbackLogOverwrite   = &ctune_Settings_playbackLogOverwrite,
         .getStreamTimeoutVal    = &ctune_Settings_getStreamTimeoutVal,
+        .setStreamTimeoutVal    = &ctune_Settings_setStreamTimeoutVal,
         .getNetworkTimeoutVal   = &ctune_Settings_getNetworkTimeoutVal,
         .enableMouse            = &ctune_Settings_enableMouse,
         .getUIConfig            = &ctune_Settings_getUIConfig,

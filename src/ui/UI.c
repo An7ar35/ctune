@@ -704,6 +704,24 @@ static int ctune_UI_setUnicodeIcons( ctune_UI_PanelID_e tab, int action_flag_e )
 }
 
 /**
+ * [PRIVATE] Sets the stream timeout value
+ * @param tab   PanelID of the current tab
+ * @param value Value in seconds (<0 will just return the current value without setting anything)
+ * @return Current value
+ */
+static int ctune_UI_setStreamTimeOut( ctune_UI_PanelID_e tab, int value ) {
+    ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
+
+    const int curr = ctune_Controller.cfg.getStreamTimeout();
+
+    if( value >= 0 && ctune_Controller.cfg.setStreamTimeout( value ) ) {
+        return value;
+    }
+
+    return curr;
+}
+
+/**
  * [PRIVATE] Toggles the favourite state of a selected station in any of the tabs
  * @param tab PanelID of the current tab
  * @param arg (unused)
@@ -966,6 +984,7 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_OptionsMenu.cb.setFavTabCustomThemingCallback( &ui.dialogs.optmenu, ctune_UI_favouriteTabCustomTheming );
             ctune_UI_OptionsMenu.cb.setMouseSupportCallback( &ui.dialogs.optmenu, ctune_UI_setMouseSupport );
             ctune_UI_OptionsMenu.cb.setUnicodeIconsCallback( &ui.dialogs.optmenu, ctune_UI_setUnicodeIcons );
+            ctune_UI_OptionsMenu.cb.setStreamTimeoutValueCallback( &ui.dialogs.optmenu, ctune_UI_setStreamTimeOut );
 
             if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu, ctune_UIConfig.mouse( ui_config, FLAG_GET_VALUE ) ) ) {
                 ctune_UI_OptionsMenu.show( &ui.dialogs.optmenu );
@@ -991,6 +1010,7 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_OptionsMenu.cb.setSetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_setUITheme );
             ctune_UI_OptionsMenu.cb.setMouseSupportCallback( &ui.dialogs.optmenu, ctune_UI_setMouseSupport );
             ctune_UI_OptionsMenu.cb.setUnicodeIconsCallback( &ui.dialogs.optmenu, ctune_UI_setUnicodeIcons );
+            ctune_UI_OptionsMenu.cb.setStreamTimeoutValueCallback( &ui.dialogs.optmenu, ctune_UI_setStreamTimeOut );
 
             if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu, ctune_UIConfig.mouse( ui_config, FLAG_GET_VALUE ) ) ) {
                 ctune_UI_OptionsMenu.show( &ui.dialogs.optmenu );
@@ -1885,7 +1905,7 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
 
     CTUNE_LOG( CTUNE_LOG_DEBUG,
                "[ctune_UI_setup( %i, %i )] Init = [%i][%i][%i][%i][%i][%i][%i][%i][%i][%i]",
-               show_cursor,
+               show_cursor, mouse_nav,
                ui.init_stages[CTUNE_UI_INITSTAGE_KEYBINDS],
                ui.init_stages[CTUNE_UI_INITSTAGE_STDSCR],
                ui.init_stages[CTUNE_UI_INITSTAGE_THEME],

@@ -55,6 +55,7 @@ typedef struct ctune_UI_Dialog_OptionsMenu {
         int          (* setUIPreset)( ctune_UI_PanelID_e tab, int preset_e );
         int          (* mouseSupport)( ctune_UI_PanelID_e tab, int action_flag_e );
         int          (* unicodeIcons)( ctune_UI_PanelID_e tab, int action_flag_e );
+        int          (* streamTimeout)( ctune_UI_PanelID_e tab, int value );
     } cb;
 
 } ctune_UI_OptionsMenu_t;
@@ -201,6 +202,13 @@ extern const struct ctune_UI_Dialog_OptionsMenu_Namespace {
          * @param callback Callback function
          */
         void (* setUnicodeIconsCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
+
+        /**
+         * Sets the callback method to set/get the stream timeout value in the configuration
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
+         */
+        void (* setStreamTimeoutValueCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
 
     } cb;
 
