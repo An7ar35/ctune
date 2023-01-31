@@ -244,7 +244,7 @@ static bool ctune_UI_Widget_ScrollBar_setPosition( ctune_UI_ScrollBar_t * scroll
 
         if( limit_reached ) {
             scrollbar->curr_increment = scrollbar->page_increments;
-            scrollbar->scroller_pos   = ( (double) scrollbar->page_increments * scrollbar->page_inc_val );
+            scrollbar->scroller_pos   = (double)( scrollbar->bar_length - scrollbar->scroller_size );
         } else {
             scrollbar->curr_increment = pos;
             scrollbar->scroller_pos   = ( (double) pos * scrollbar->page_inc_val );
