@@ -286,15 +286,14 @@ static bool ctune_RadioBrowser_downloadCategoryItems(
     struct String       final_uri = String.init();
     struct String       rcv_buff  = String.init();
 
-    {
+    String.append_back( &final_uri, base_path );
+    String.append_back( &final_uri, ctune_ListCategory.str( category ) );
+
+    if( filter ) {
         struct String filter_str = String.init();
 
         ctune_RadioBrowserFilter.parameteriseFields( filter, &filter_str );
-
-        String.append_back( &final_uri, base_path );
-        String.append_back( &final_uri, ctune_ListCategory.str( category ) );
         String.append_back( &final_uri, filter_str._raw );
-
         String.free( &filter_str );
     }
 
