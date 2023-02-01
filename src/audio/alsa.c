@@ -49,7 +49,7 @@ static struct {
 /**
  * [PRIVATE] Get the equivalent SLD format from a ctune output format
  * @param fmt ctune output format
- * @return Equivalent SDL format
+ * @return Equivalent Alsa format
  */
 static snd_pcm_format_t ctune_audio_translateToALSAFormat( ctune_OutputFmt_e fmt ) {
     switch( fmt ) {
@@ -334,7 +334,7 @@ static int ctune_audio_initAudioOut( ctune_OutputFmt_e fmt, int sample_rate, uin
 
     failed:
         ctune_audio_shutdownAudioOut();
-        return -CTUNE_ERR_PULSE_INIT;
+        return -CTUNE_ERR_ALSA_INIT;
 }
 
 /**

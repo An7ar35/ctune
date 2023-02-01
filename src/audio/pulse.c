@@ -42,7 +42,7 @@ static struct {
 /**
  * [PRIVATE] Get the equivalent SLD format from a ctune output format
  * @param fmt ctune output format
- * @return Equivalent SDL format
+ * @return Equivalent PulseAudio format
  */
 static pa_sample_format_t ctune_audio_translateToALSAFormat( ctune_OutputFmt_e fmt ) {
     switch( fmt ) {

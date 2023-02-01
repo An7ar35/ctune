@@ -69,30 +69,37 @@ struct {
 static void ctune_Player_avLogCallback( void * avcl, int level, const char * fmt, va_list vl ) {
     static const int LINE_SIZE = 256;
 
-    int  prefix = 1;
-    int  writen = 0;
+    int  prefix  = 1;
+    int  written = 0;
     char line_buffer[LINE_SIZE];
 
-    if( ( writen = av_log_format_line2( avcl, level, fmt, vl, line_buffer, LINE_SIZE, &prefix ) ) < 0 ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Player_avLogCallback( %p, %i, %fmt, ... )] Failed to format FFMPEG log line: ", avcl, level, fmt, writen );
+    if( ( written = av_log_format_line2( avcl, level, fmt, vl, line_buffer, LINE_SIZE, &prefix ) ) < 0 ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Player_avLogCallback( %p, %i, %fmt, ... )] Failed to format FFMPEG log line: ", avcl, level, fmt, written );
 
     } else {
+        if( written > 0 ) {
+            line_buffer[written - 1] = '\0'; //removes newline character ffmpeg writes at the end of the line (Seriously, why does it do that?!?)
+        }
+
         switch( level ) {
             case AV_LOG_PANIC: //fallthrough - (0) Something went really wrong, and we will crash now.
             case AV_LOG_FATAL: //(8) Something went wrong and recovery is not possible.
-                CTUNE_LOG( CTUNE_LOG_FATAL, line_buffer );
+                CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_Player_avLogCallback(..)] FFMPEG: %s", line_buffer );
                 break;
 
             case AV_LOG_ERROR: //(16) Something went wrong and cannot losslessly be recovered.
-                CTUNE_LOG( CTUNE_LOG_ERROR, line_buffer );
+                CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Player_avLogCallback(..)] FFMPEG: %s", line_buffer );
                 break;
 
             case AV_LOG_WARNING: //(24) Something somehow does not look correct.
-                CTUNE_LOG( CTUNE_LOG_WARNING, line_buffer );
+                CTUNE_LOG( CTUNE_LOG_WARNING, "[ctune_Player_avLogCallback(..)] FFMPEG: %s", line_buffer );
+                break;
+
+            case AV_LOG_INFO:    //(32) fallthrough - Standard information.
+                CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_Player_avLogCallback(..)] FFMPEG: %s", line_buffer );
                 break;
 
             /* these msgs are not that relevant for ctune and just pollute the log mostly */
-            case AV_LOG_INFO:    //(32) fallthrough - Standard information.
             case AV_LOG_VERBOSE: //(40) fallthrough - Detailed information.
             case AV_LOG_DEBUG:   //(48) fallthrough - Stuff which is only useful for libav* developers.
             case AV_LOG_TRACE:   //(56) fallthrough
@@ -165,9 +172,9 @@ static int ctune_Player_setupStreamInput( AVFormatContext * in_format_ctx, AVCod
 
     CTUNE_LOG( CTUNE_LOG_DEBUG,
                "[ctune_Player_setupStreamInput( %p, %i, %p )] "
-               "Input stream setup complete: { codec = '%s', channels = %d, sample-rate = %d, bit-rate = %ld, frame-size = %d }",
+               "Input stream setup complete: { codec = '%s', channels = %d, sample-rate = %d, bits per samples = %ld, bit-rate = %ld, frame-size = %d }",
                in_format_ctx, *audio_stream_i, url,
-               avcodec_get_name( parameters->codec_id ), parameters->ch_layout.nb_channels, parameters->sample_rate, parameters->bit_rate, parameters->frame_size
+               avcodec_get_name( parameters->codec_id ), parameters->ch_layout.nb_channels, parameters->sample_rate, parameters->bits_per_coded_sample, parameters->bit_rate, parameters->frame_size
     );
 
     return 0;
@@ -237,14 +244,16 @@ static bool ctune_Player_setupInputCodec( AVCodecParameters * parameters, AVCode
  */
 static bool ctune_Player_setupResampler( SwrContext ** resample_ctx, AVCodecParameters * codec_params, enum AVSampleFormat in_sample_format, enum AVSampleFormat out_sample_format ) {
     CTUNE_LOG( CTUNE_LOG_DEBUG,
-               "[ctune_Player_setupResampler( %p, %p, %i )] Setting up re-sampler...",
-               resample_ctx, codec_params, in_sample_format
+               "[ctune_Player_setupResampler( %p, %p, '%s', '%s' )] "
+               "Setting up re-sampler...",
+               resample_ctx, codec_params, av_get_sample_fmt_name( in_sample_format ), av_get_sample_fmt_name( out_sample_format )
     );
 
     if( ( *resample_ctx = swr_alloc() ) == NULL ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_Player_setupResampler( %p, %p, %i )] Failed to allocate memory to the re-sampler context.",
-                   resample_ctx, codec_params, in_sample_format
+                   "[ctune_Player_setupResampler( %p, %p, '%s', '%s' )] "
+                   "Failed to allocate memory to the re-sampler context.",
+                   resample_ctx, codec_params, av_get_sample_fmt_name( in_sample_format ), av_get_sample_fmt_name( out_sample_format )
         );
         return false;
     }
@@ -256,14 +265,16 @@ static bool ctune_Player_setupResampler( SwrContext ** resample_ctx, AVCodecPara
     av_channel_layout_describe( &ffmpeg_player.out_channel_layout, &channel_layout_str[0], 200 );
 
     ret = swr_alloc_set_opts2( resample_ctx,
-                               &ffmpeg_player.out_channel_layout, out_sample_format, codec_params->sample_rate,
-                               &codec_params->ch_layout, in_sample_format, codec_params->sample_rate,
+                               &ffmpeg_player.out_channel_layout, out_sample_format, codec_params->sample_rate, //out
+                               &codec_params->ch_layout, in_sample_format, codec_params->sample_rate,           //in
                                0, NULL );
 
     if( ret < 0 ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_Player_setupResampler( %p, %p, %i )] Failed allocation options to the re-sampler context: %s (%d)",
-                   resample_ctx, codec_params, in_sample_format, av_err2str( ret ), AVERROR( ret )
+                   "[ctune_Player_setupResampler( %p, %p, '%s', '%s' )] "
+                   "Failed allocation options to the re-sampler context: %s (%d)",
+                   resample_ctx, codec_params, av_get_sample_fmt_name( in_sample_format ), av_get_sample_fmt_name( out_sample_format ),
+                   av_err2str( ret ), AVERROR( ret )
         );
         return false;
     }
@@ -272,21 +283,21 @@ static bool ctune_Player_setupResampler( SwrContext ** resample_ctx, AVCodecPara
 
     if( ret < 0 ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_Player_setupResampler( %p, %p, %i )] Failed re-sampler initialisation: %s",
-                   resample_ctx, codec_params, in_sample_format, av_err2str( ret )
+                   "[ctune_Player_setupResampler( %p, %p, '%s', '%s' )] "
+                   "Failed re-sampler initialisation: %s",
+                   resample_ctx, codec_params, av_get_sample_fmt_name( in_sample_format ), av_get_sample_fmt_name( out_sample_format ),
+                   av_err2str( ret )
         );
         return false;
     };
 
     CTUNE_LOG( CTUNE_LOG_DEBUG,
-               "[ctune_Player_setupResampler( %p, %p, %i )] Re-sampler setup complete: "
-               "{ frame size: %d, sample format: '%s', sample rate: %d, channels: %d (%s) }",
-               resample_ctx, codec_params, in_sample_format,
-               codec_params->frame_size,
-               av_get_sample_fmt_name( out_sample_format ),
-               codec_params->sample_rate,
-               ffmpeg_player.out_channel_layout.nb_channels,
-               channel_layout_str
+               "[ctune_Player_setupResampler( %p, %p, '%s', '%s' )] Re-sampler setup complete: "
+               "{ channel layout: %d, sample format: '%s', sample rate: %d, frame size: %d }->"
+               "{ channel layout: %d (%s), sample format: '%s', sample rate: %d }",
+               resample_ctx, codec_params, av_get_sample_fmt_name( in_sample_format ), av_get_sample_fmt_name( out_sample_format ),
+               codec_params->ch_layout.nb_channels, av_get_sample_fmt_name( in_sample_format ), codec_params->sample_rate, codec_params->frame_size,
+               ffmpeg_player.out_channel_layout.nb_channels, channel_layout_str, av_get_sample_fmt_name( out_sample_format ), codec_params->sample_rate
     );
 
     return true;
@@ -419,7 +430,7 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
         stages[STAGE_STREAM_INPUT] = true;
     }
 
-    #ifndef NDEBUG
+    #ifdef DEBUG
         av_dump_format( in_format_ctx, 0, radio_stream_url, 0 ); //prints all sorts of info about stream
     #endif
 
@@ -475,7 +486,7 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
     ctune_Timeout.reset( &timeout_timer );
 
     while( ffmpeg_player.cb.playback_ctrl_callback( CTUNE_PLAYBACK_CTRL_STATE ) == CTUNE_PLAYER_STATE_PLAYING
-           && ( ret = av_read_frame( in_format_ctx, packet ) ) >= 0 )
+        && ( ret = av_read_frame( in_format_ctx, packet ) ) >= 0 )
     {
         //check if metadata has been changed (i.e. new song playing)
         if( in_format_ctx->event_flags == AVFMT_EVENT_FLAG_METADATA_UPDATED ) {
@@ -618,11 +629,11 @@ static void ctune_Player_init(
     bool(* playback_ctrl_callback)( enum CTUNE_PLAYBACK_CTRL ),
     void(* song_change_callback)( const char * ) )
 {
-    #ifndef NDEBUG
-        av_log_set_level( AV_LOG_ERROR );
-    #else
+    if( ctune_Logger.logLevel() <= CTUNE_LOG_DEBUG ) {
+        av_log_set_level( AV_LOG_INFO );
+    } else {
         av_log_set_level( AV_LOG_QUIET );
-    #endif
+    }
 
     av_log_set_callback( ctune_Player_avLogCallback );
 
