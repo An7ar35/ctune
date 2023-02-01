@@ -9,7 +9,7 @@ It uses the RadioBrowser API to search and get radio stream information.
 
 ## Showcase video
 
-https://www.eadavison.com/source/2023/ctune/Release%201.2/video/showcase.mp4
+[*Click here to watch the video (~45MB)*](https://www.eadavison.com/source/2023/ctune/Release%201.2/video/showcase.mp4)
 
 ## Features
 
