@@ -34,6 +34,12 @@ extern const struct ctune_Logger_Singleton {
     bool (* init)( const char *, const char *, enum ctune_LogLevel );
 
     /**
+     * Gets the log level at which the Logger is set at
+     * @return Minimum log level
+     */
+    ctune_LogLevel_e (* logLevel)( void );
+
+    /**
      * Terminate logger and closes output file
      */
     void (* close)();

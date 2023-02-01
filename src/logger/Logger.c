@@ -93,6 +93,14 @@ static bool ctune_Logger_init( const char * log_filepath, const char * file_mode
 }
 
 /**
+ * Gets the log level at which the Logger is set at
+ * @return Minimum log level
+ */
+static ctune_LogLevel_e ctune_Logger_logLevel( void ) {
+    return logger.level;
+}
+
+/**
  * Terminate logger and closes output file
  */
 static void ctune_Logger_close() {
@@ -251,8 +259,9 @@ void ctune_Logger_logDBG( enum ctune_LogLevel lvl, char * filename, int line_num
  * Namespace constructor
  */
 const struct ctune_Logger_Singleton ctune_Logger = {
-    .init   = &ctune_Logger_init,
-    .close  = &ctune_Logger_close,
-    .log    = &ctune_Logger_log,
-    .logDBG = &ctune_Logger_logDBG
+    .init     = &ctune_Logger_init,
+    .logLevel = &ctune_Logger_logLevel,
+    .close    = &ctune_Logger_close,
+    .log      = &ctune_Logger_log,
+    .logDBG   = &ctune_Logger_logDBG
 };
