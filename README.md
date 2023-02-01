@@ -6,6 +6,11 @@ Aside from playing a radio stream you can search and browse stations as well as 
 
 It uses the RadioBrowser API to search and get radio stream information.
 
+<video width="800" height="500" controls>
+  <source src="docs/showcase/v1_2_0.mp4" type="video/mp4">
+  <p>Your browser does not support the video tag. Click [here](docs/showcase/v1_2_0.mp4) to download.</p>
+</video>
+
 ## Features
 
 - Play/search/browse radio stations using the RadioBrowser API
@@ -14,6 +19,8 @@ It uses the RadioBrowser API to search and get radio stream information.
 - Sort favourites based on name/country/bitrate/codec/source/etc...
 - Context-based help for key bindings (F1 key).
 - Plugin system for playback (demuxing/resampling) and sound output (PCM)
+- UI Themes
+- Mouse support
 
 ### CLI
 
@@ -29,10 +36,7 @@ It uses the RadioBrowser API to search and get radio stream information.
 
 ### nCurses
 
-Click on picture to view a small "in-action" video (~6Mb).
-
-[![video](docs/showcase/v1_0_0.png "Video preview")](docs/showcase/v1_0_0.mp4)
-
+![screenshot](docs/showcase/v1_2_0.png)
 
 ## Application files
 
@@ -197,6 +201,18 @@ As a baseline v1.1.5 works on ArchLinux with:
 Q. **What are the key bindings?**
 
 A. Press `F1` to get a contextual list of key bindings in the UI.
+
+Q. **How do I use the mouse?**
+
+A. Check out this [guide](docs/guide/mouse_navigation.md).
+
+Q. **I'm getting weird symbols where the icons are supposed to be. What's going on?**
+
+A. Your terminal font does not support the unicode characters used. Either change the font or switch back to ASCII icons from the Options menu.
+
+Q. **Can I change the look?**
+
+A. Yes. There are internal preset themes available in the Options menu and, if these don't strike your fancy, a custom theme can be specified inside ctune's configuration file.
 
 ## Bug reporting & Support
 
