@@ -6,10 +6,10 @@ Aside from playing a radio stream you can search and browse stations as well as 
 
 It uses the RadioBrowser API to search and get radio stream information.
 
-<video width="800" height="500" controls>
-  <source src="docs/showcase/v1_2_0.mp4" type="video/mp4">
-  <p>Your browser does not support the video tag. Click [here](docs/showcase/v1_2_0.mp4) to download.</p>
-</video>
+
+## Showcase video
+
+https://www.eadavison.com/source/2023/ctune/Release%201.2/video/showcase.mp4
 
 ## Features
 
@@ -33,10 +33,6 @@ It uses the RadioBrowser API to search and get radio stream information.
     -r  --resume         resumes station playback of the last session
         --show-cursor    always visible cursor
     -v  --version        prints version information and exits
-
-### nCurses
-
-![screenshot](docs/showcase/v1_2_0.png)
 
 ## Application files
 
