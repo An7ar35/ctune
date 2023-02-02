@@ -6,35 +6,22 @@
 
 #include "../../dto/RadioBrowserFilter.h"
 #include "../enum/FormExit.h"
-#include "../enum/TextID.h"
-#include "../datastructure/WindowProperty.h"
-#include "../widget/Dialog.h"
-
-#define CTUNE_UI_DIALOG_RSFIND_FIELD_COUNT 32
+#include "../widget/Form.h"
 
 /**
  * RSFind object
- * @param initialised    Init flag
- * @param margins        Margins to use around the content
- * @param screen_size    Parent window sizes
- * @param form_dimension Dimensions of the form
- * @param dialog         Underlining Dialog widget
- * @param form           Pointer to ncurses form
- * @param cache          Reusable computed variable cache
- * @param cb             Callback methods
+ * @param initialised Init flag
+ * @param form        Form widget
+ * @param cache       Reusable computed variable cache
+ * @param cb          Callback methods
  */
 typedef struct ctune_UI_Dialog_RSFind {
     bool                     initialised;
-    WindowMargin_t           margins;
-    const WindowProperty_t * screen_size;
-    WindowProperty_t         form_dimension;
-    ctune_UI_Dialog_t        dialog;
-    FORM                   * form;
+    ctune_UI_Form_t          form;
 
     struct {
         ctune_RadioBrowserFilter_t filter;
         size_t                     max_label_width;
-        FIELD                    * fields     [CTUNE_UI_DIALOG_RSFIND_FIELD_COUNT];
         const char               * order_items[STATION_ATTR_COUNT];
         size_t                     order_width;
         size_t                     order_selection;
@@ -62,10 +49,11 @@ extern const struct ctune_UI_RSFind_Namespace {
 
     /**
      * Initialises RSFind (mostly checks base values are OK)
-     * @param rsfind Pointer to a ctune_UI_RSFind_t object
+     * @param rsfind     Pointer to a ctune_UI_RSFind_t object
+     * @param mouse_ctrl Flag to turn init mouse controls
      * @return Success
      */
-    bool (* init)( ctune_UI_RSFind_t * rsfind );
+    bool (* init)( ctune_UI_RSFind_t * rsfind, bool mouse_ctrl );
 
     /**
      * Get the initialised state of the instance
@@ -75,17 +63,18 @@ extern const struct ctune_UI_RSFind_Namespace {
     bool (* isInitialised)( ctune_UI_RSFind_t * rsfind );
 
     /**
+     * Switch mouse control UI on/off
+     * @param rsfind          Pointer to ctune_UI_RSFind_t object
+     * @param mouse_ctrl_flag Flag to turn feature on/off
+     */
+    void (* setMouseCtrl)( ctune_UI_RSFind_t * rsfind, bool mouse_ctrl_flag );
+
+    /**
      * Create and show a populated window with the find form
      * @param rsfind Pointer to a ctune_UI_RSFind_t object
      * @return Success
      */
     bool (* show)( ctune_UI_RSFind_t * rsfind );
-
-    /**
-     * Redraws the dialog
-     * @param rsfind Pointer to a ctune_UI_RSFind_t object
-     */
-    void (* resize)( void * rsfind );
 
     /**
      * Pass keyboard input to the form

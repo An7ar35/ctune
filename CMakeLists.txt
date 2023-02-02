@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 project(ctune
         LANGUAGES    C
-        VERSION      1.1.5
+        VERSION      1.2.0
         DESCRIPTION  "Curses based Internet radio tuner"
         HOMEPAGE_URL "eadavison.com")
 
@@ -14,8 +14,8 @@ set(CMAKE_C_FLAGS "-Wextra")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
 
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
-endif()
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
 
 include(ExternalProject)
 include(GNUInstallDirs)
@@ -198,6 +198,8 @@ set(SOURCE_FILES
         src/ui/datastructure/WindowMargin.h
         src/ui/datastructure/KeyBind.h
         src/ui/datastructure/KeyInfo.h
+        src/ui/definitions/Icons.c
+        src/ui/definitions/Icons.h
         src/ui/definitions/KeyBinding.c
         src/ui/definitions/KeyBinding.h
         src/ui/definitions/KeyDescription.c
@@ -209,10 +211,15 @@ set(SOURCE_FILES
         src/ui/enum/ActionID.h
         src/ui/enum/ContextID.h
         src/ui/enum/FormExit.h
+        src/ui/enum/IconID.h
         src/ui/enum/PanelID.h
         src/ui/enum/PanelID.c
         src/ui/enum/TextID.h
-        src/ui/enum/KeyboardKeyID.h
+        src/ui/enum/InputKeyID.h
+        src/ui/types/WinCtrlMask.h
+        src/ui/types/WinCtrlMask.c
+        src/ui/types/ScrollMask.c
+        src/ui/types/ScrollMask.h
         src/ui/dialog/ContextHelp.c
         src/ui/dialog/ContextHelp.h
         src/ui/dialog/RSInfo.c
@@ -229,6 +236,8 @@ set(SOURCE_FILES
         src/ui/window/BrowserWin.h
         src/ui/widget/Dialog.h
         src/ui/widget/Dialog.c
+        src/ui/widget/Form.c
+        src/ui/widget/Form.h
         src/ui/widget/ScrollWin.c
         src/ui/widget/ScrollWin.h
         src/ui/widget/SlideMenu.c

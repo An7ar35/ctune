@@ -11,8 +11,6 @@
 #include "ContextHelp.h"
 #include "../Resizer.h"
 
-#define KEY_ESC 27
-
 typedef enum { //Note: don't forget to change the value of `CTUNE_UI_DIALOG_RSINFO_FIELD_COUNT` if modifying the enums
     RSI_LABEL_STATION_NAME = 0,
     RSI_LABEL_CHANGE_UUID,
@@ -569,6 +567,7 @@ static void ctune_UI_RSInfo_printScroll( ctune_UI_RSInfo_t * rsinfo, const ctune
 static ctune_UI_RSInfo_t ctune_UI_RSInfo_create( const WindowProperty_t * parent, const char * (* getDisplayText)( ctune_UI_TextID_e ), const char * col_sep ) {
     return (ctune_UI_RSInfo_t) {
         .initialised       = false,
+        .mouse_ctrl        = false,
         .screen_size       = parent,
         .margins           = { 0, 1, 1, 1 },
         .dialog            = ctune_UI_Dialog.init(),
@@ -580,10 +579,11 @@ static ctune_UI_RSInfo_t ctune_UI_RSInfo_create( const WindowProperty_t * parent
 
 /**
  * Initialises a ctune_UI_RSInfo_t object
- * @param rsinfo Un-initialised ctune_UI_RSInfo_t object
+ * @param rsinfo     Un-initialised ctune_UI_RSInfo_t object
+ * @param mouse_ctrl Flag to turn init mouse controls
  * @return Success
  */
-static bool ctune_UI_RSInfo_init( ctune_UI_RSInfo_t * rsinfo ) {
+static bool ctune_UI_RSInfo_init( ctune_UI_RSInfo_t * rsinfo, bool mouse_ctrl ) {
     if( rsinfo->initialised ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_RSInfo_init( %p )] RSInfo has already been initialised!", rsinfo );
         return false; //EARLY RETURN
@@ -594,7 +594,7 @@ static bool ctune_UI_RSInfo_init( ctune_UI_RSInfo_t * rsinfo ) {
         return false; //EARLY RETURN
     }
 
-    rsinfo->cache.max_label_width  = 0;
+    rsinfo->cache.max_label_width = 0;
 
     rsinfo->label_txt[ RSI_LABEL_STATION_NAME           ] = rsinfo->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_STATION_NAME );
     rsinfo->label_txt[ RSI_LABEL_CHANGE_UUID            ] = rsinfo->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_CHANGE_UUID );
@@ -638,6 +638,8 @@ static bool ctune_UI_RSInfo_init( ctune_UI_RSInfo_t * rsinfo ) {
         }
     }
 
+    ctune_UI_RSInfo.setMouseCtrl( rsinfo, mouse_ctrl );
+
     return ( rsinfo->initialised = true );
 }
 
@@ -648,6 +650,15 @@ static bool ctune_UI_RSInfo_init( ctune_UI_RSInfo_t * rsinfo ) {
  */
 static bool ctune_UI_RSInfo_isInitialised( const ctune_UI_RSInfo_t * rsinfo ) {
     return rsinfo->initialised;
+}
+
+/**
+ * Switch mouse control UI on/off
+ * @param rsinfo          Pointer to ctune_UI_RSInfo_t object
+ * @param mouse_ctrl_flag Flag to turn feature on/off
+ */
+static void ctune_UI_RSInfo_setMouseCtrl( ctune_UI_RSInfo_t * rsinfo, bool mouse_ctrl_flag ) {
+    rsinfo->mouse_ctrl = mouse_ctrl_flag;
 }
 
 /**
@@ -683,7 +694,7 @@ static bool ctune_UI_RSInfo_show( ctune_UI_RSInfo_t * rsinfo, const char * title
 
     String.set( &rsinfo->cache.win_title, title ); //cache title in case of a repaint event
 
-    ctune_UI_Dialog.createBorderWin( &rsinfo->dialog, rsinfo->screen_size, title, &rsinfo->margins );
+    ctune_UI_Dialog.createBorderWin( &rsinfo->dialog, rsinfo->screen_size, title, &rsinfo->margins, rsinfo->mouse_ctrl );
     ctune_UI_Dialog.show( &rsinfo->dialog );
 
     ctune_UI_Resizer.push( ctune_UI_RSInfo.resize, rsinfo );
@@ -712,9 +723,44 @@ static void ctune_UI_RSInfo_resize( void * rsinfo ) {
         return; //EARLY RETURN - no init done
     }
 
-    ctune_UI_Dialog.scrollHome( &rsi_dialog->dialog );
-    ctune_UI_Dialog.createBorderWin( &rsi_dialog->dialog, rsi_dialog->screen_size, rsi_dialog->cache.win_title._raw, &rsi_dialog->margins );
+    ctune_UI_Dialog.edgeScroll( &rsi_dialog->dialog, CTUNE_UI_SCROLL_TO_HOME );
+    ctune_UI_Dialog.createBorderWin( &rsi_dialog->dialog, rsi_dialog->screen_size, rsi_dialog->cache.win_title._raw, &rsi_dialog->margins, rsi_dialog->mouse_ctrl );
     ctune_UI_Dialog.show( &rsi_dialog->dialog );
+}
+
+/**
+ * [PRIVATE] Handle a mouse event
+ * @param rsinfo Pointer to ctune_UI_RSInfo_t object
+ * @param event  Mouse event mask
+ * @return Exit state
+ */
+static bool ctune_UI_RSInfo_handleMouseEvent( ctune_UI_RSInfo_t * rsinfo, MEVENT * event ) {
+    const ctune_UI_WinCtrlMask_m win_ctrl = ctune_UI_Dialog.isWinControl( &rsinfo->dialog, event->y, event->x );
+    const ctune_UI_ScrollMask_m  scroll   = ctune_UI_WinCtrlMask.scrollMask( win_ctrl );
+
+    if( win_ctrl ) {
+        if( scroll ) {
+            if( event->bstate & BUTTON1_CLICKED ) {
+                ctune_UI_Dialog.incrementalScroll( &rsinfo->dialog, scroll );
+
+            } else if( event->bstate & BUTTON1_DOUBLE_CLICKED ) {
+                ctune_UI_Dialog.incrementalScroll( &rsinfo->dialog, ctune_UI_ScrollMask.setScrollFactor( scroll, 2 ) );
+
+            } else if( event->bstate & BUTTON1_TRIPLE_CLICKED ) {
+                ctune_UI_Dialog.incrementalScroll( &rsinfo->dialog, ctune_UI_ScrollMask.setScrollFactor( scroll, 3 ) );
+
+            } else if( event->bstate & BUTTON3_CLICKED ) {
+                ctune_UI_Dialog.edgeScroll( &rsinfo->dialog, scroll );
+            }
+
+        } else if( win_ctrl & CTUNE_UI_WINCTRLMASK_CLOSE ) {
+            if( event->bstate & BUTTON1_CLICKED ) {
+                return true; //EARLY RETURN
+            }
+        }
+    }
+
+    return false;
 }
 
 /**
@@ -724,8 +770,9 @@ static void ctune_UI_RSInfo_resize( void * rsinfo ) {
 static void ctune_UI_RSInfo_captureInput( ctune_UI_RSInfo_t * rsinfo ) {
     keypad( rsinfo->dialog.canvas.pad, TRUE );
     curs_set( 0 );
-    bool exit = false;
-    int  ch;
+    bool   exit = false;
+    int    ch;
+    MEVENT mouse_event;
 
     while( !exit ) {
         ch = wgetch( rsinfo->dialog.canvas.pad );
@@ -745,37 +792,43 @@ static void ctune_UI_RSInfo_captureInput( ctune_UI_RSInfo_t * rsinfo ) {
 
             case CTUNE_UI_ACTION_SCROLL_UP: {
                 if( ctune_UI_Dialog.isScrollableY( &rsinfo->dialog ) )
-                    ctune_UI_Dialog.scrollUp( &rsinfo->dialog );
+                    ctune_UI_Dialog.incrementalScroll( &rsinfo->dialog, CTUNE_UI_SCROLL_UP );
                 else
                     exit = true;
             } break;
 
             case CTUNE_UI_ACTION_SCROLL_DOWN: {
                 if( ctune_UI_Dialog.isScrollableY( &rsinfo->dialog ) )
-                    ctune_UI_Dialog.scrollDown( &rsinfo->dialog );
+                    ctune_UI_Dialog.incrementalScroll( &rsinfo->dialog, CTUNE_UI_SCROLL_DOWN );
                 else
                     exit = true;
             } break;
 
             case CTUNE_UI_ACTION_SCROLL_LEFT: {
                 if( ctune_UI_Dialog.isScrollableX( &rsinfo->dialog ) )
-                    ctune_UI_Dialog.scrollLeft( &rsinfo->dialog );
+                    ctune_UI_Dialog.incrementalScroll( &rsinfo->dialog, CTUNE_UI_SCROLL_LEFT );
                 else
                     exit = true;
             } break;
 
             case CTUNE_UI_ACTION_SCROLL_RIGHT: {
                 if( ctune_UI_Dialog.isScrollableX( &rsinfo->dialog ) )
-                    ctune_UI_Dialog.scrollRight( &rsinfo->dialog );
+                    ctune_UI_Dialog.incrementalScroll( &rsinfo->dialog, CTUNE_UI_SCROLL_RIGHT );
                 else
                     exit = true;
             } break;
 
             case CTUNE_UI_ACTION_SCROLL_HOME: {
                 if( ctune_UI_Dialog.isScrollableY( &rsinfo->dialog ) || ctune_UI_Dialog.isScrollableX( &rsinfo->dialog ) )
-                    ctune_UI_Dialog.scrollHome( &rsinfo->dialog );
+                    ctune_UI_Dialog.edgeScroll( &rsinfo->dialog, CTUNE_UI_SCROLL_TO_HOME );
                 else
                     exit = true;
+            } break;
+
+            case CTUNE_UI_ACTION_MOUSE_EVENT: {
+                if( getmouse( &mouse_event ) == OK ) {
+                    exit = ctune_UI_RSInfo_handleMouseEvent( rsinfo, &mouse_event );
+                }
             } break;
 
             default:
@@ -813,6 +866,7 @@ const struct ctune_UI_Dialog_RSInfo_Namespace ctune_UI_RSInfo = {
     .create        = &ctune_UI_RSInfo_create,
     .init          = &ctune_UI_RSInfo_init,
     .isInitialised = &ctune_UI_RSInfo_isInitialised,
+    .setMouseCtrl  = &ctune_UI_RSInfo_setMouseCtrl,
     .show          = &ctune_UI_RSInfo_show,
     .resize        = &ctune_UI_RSInfo_resize,
     .captureInput  = &ctune_UI_RSInfo_captureInput,

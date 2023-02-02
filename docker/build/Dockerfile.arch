@@ -18,6 +18,9 @@ RUN mkdir cmake-build-docker \
  && cmake --build . \
  && cmake --install .
 
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
+
 # Cleanup
 RUN cd / \
  && rm -rf /ctune \

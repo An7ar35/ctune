@@ -33,8 +33,7 @@ static bool String_set( struct String * self, const char * str ) {
     if( self == NULL || str == NULL )
         return false;
 
-    if( self->_raw != NULL )
-        free( self->_raw );
+    free( self->_raw );
 
     size_t size = strlen( str );
 
@@ -68,12 +67,9 @@ static bool String_copy( struct String * self, const struct String * str ) {
  */
 static void String_free( void * self ) {
     if( self != NULL ) {
-        if( ( ( String_t * ) self )->_raw != NULL ) {
-            free( ( ( String_t * ) self )->_raw );
-            ( ( String_t * ) self )->_raw = NULL;
-        }
-
-        ( ( String_t * ) self )->_length = 0;
+        free( ( ( String_t * ) self )->_raw );
+        ( (String_t *) self )->_raw    = NULL;
+        ( (String_t *) self )->_length = 0;
     }
 }
 

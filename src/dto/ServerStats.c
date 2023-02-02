@@ -27,20 +27,14 @@ static void ctune_ServerStats_freeContent( struct ctune_ServerStats * stats ) {
     if( stats == NULL )
         return; //EARLY RETURN
 
-    if( stats->supported_version ) {
-        free( stats->supported_version );
-        stats->supported_version = NULL;
-    }
+    free( stats->supported_version );
+    stats->supported_version = NULL;
 
-    if( stats->software_version ) {
-        free( stats->software_version );
-        stats->software_version = NULL;
-    }
+    free( stats->software_version );
+    stats->software_version = NULL;
 
-    if( stats->status ) {
-        free( stats->status );
-        stats->status = NULL;
-    }
+    free( stats->status );
+    stats->status = NULL;
 }
 
 /**

@@ -25,6 +25,31 @@ static struct {
 };
 
 /**
+ * [PRIVATE] Set the equivalent SLD format from a ctune output format
+ * @param fmt ctune output format
+ * @param sign Signed flag
+ * @param le   Little endian flag
+ * @param bits Bitrate
+ */
+static void ctune_audio_translateToSndioFormat( ctune_OutputFmt_e fmt, unsigned * sign, unsigned * le, unsigned * bits ) {
+    switch( fmt ) {
+        case CTUNE_AUDIO_OUTPUT_FMT_S16: {
+            (*sign) =  1;
+            (*le)   =  1;
+            (*bits) = 16;
+        } break;
+
+        case CTUNE_AUDIO_OUTPUT_FMT_S32: //fallthrough
+        default: { //S32
+            (*sign) =  1;
+            (*le)   =  1;
+            (*bits) = 32;
+        } break;
+    }
+}
+
+
+/**
  * Sets a value to the output volume
  * @param vol Volume (0-100)
  */
@@ -115,11 +140,13 @@ static int ctune_audio_initAudioOut( ctune_OutputFmt_e fmt, int sample_rate, uin
 
     sio_initpar( &sndio_audio_server.param );
 
+    ctune_audio_translateToSndioFormat( fmt,
+                                        &sndio_audio_server.param.sig,
+                                        &sndio_audio_server.param.le,
+                                        &sndio_audio_server.param.bits );
+
     sndio_audio_server.param.pchan    = channels;
     sndio_audio_server.param.rate     = sample_rate;
-    sndio_audio_server.param.sig      = 1; //signed
-    sndio_audio_server.param.le       = 1; //little endian
-    sndio_audio_server.param.bits     = fmt;
     sndio_audio_server.param.appbufsz = ( sndio_audio_server.param.rate * 300 / 1000 );
 
     struct sio_par param_cp = sndio_audio_server.param;

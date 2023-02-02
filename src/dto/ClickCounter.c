@@ -24,30 +24,20 @@ static void ctune_StationClickCounter_freeContent( void * clk_counter ) {
 
     ctune_ClickCounter_t * cc = (struct ctune_ClickCounter *) clk_counter;
 
-    if( cc->ok ) {
-        free( cc->ok );
-        cc->ok = NULL;
-    }
+    free( cc->ok );
+    cc->ok = NULL;
 
-    if( cc->message ) {
-        free( cc->message );
-        cc->message = NULL;
-    }
+    free( cc->message );
+    cc->message = NULL;
 
-    if( cc->stationuuid ) {
-        free( cc->stationuuid );
-        cc->stationuuid = NULL;
-    }
+    free( cc->stationuuid );
+    cc->stationuuid = NULL;
 
-    if( cc->name ) {
-        free( cc->name );
-        cc->name = NULL;
-    }
+    free( cc->name );
+    cc->name = NULL;
 
-    if( cc->url ) {
-        free( cc->url );
-        cc->url = NULL;
-    }
+    free( cc->url );
+    cc->url = NULL;
 }
 
 /**

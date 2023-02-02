@@ -102,7 +102,7 @@ static void ctune_RadioBrowserFilter_parameteriseFields( const ctune_RadioBrowse
         String.free( &encoded );
 
         if( filter->nameExact )
-            String.append_back( &query, "&nameExact=true" );
+            String.append_back( &query, "&nameexact=true" );
     }
 
     if( filter->country ) {
@@ -118,7 +118,7 @@ static void ctune_RadioBrowserFilter_parameteriseFields( const ctune_RadioBrowse
         String.free( &encoded );
 
         if( filter->countryExact )
-            String.append_back( &query, "&countryExact=true" );
+            String.append_back( &query, "&countryexact=true" );
     }
 
     if( filter->countrycode[0] != ' ' && filter->countrycode[1] != ' ' ) {
@@ -142,7 +142,7 @@ static void ctune_RadioBrowserFilter_parameteriseFields( const ctune_RadioBrowse
         String.free( &encoded );
 
         if( filter->stateExact )
-            String.append_back( &query, filter->state );
+            String.append_back( &query, "&exactstate=true" );
     }
 
     if( filter->language ) {
@@ -158,7 +158,7 @@ static void ctune_RadioBrowserFilter_parameteriseFields( const ctune_RadioBrowse
         String.free( &encoded );
 
         if( filter->languageExact )
-            String.append_back( &query, "&languageExact=true" );
+            String.append_back( &query, "&languageexact=true" );
     }
 
     if( filter->tag ) {
@@ -174,7 +174,7 @@ static void ctune_RadioBrowserFilter_parameteriseFields( const ctune_RadioBrowse
         String.free( &encoded );
 
         if( filter->tagExact )
-            String.append_back( &query, "&tagExact=true" );
+            String.append_back( &query, "&tagexact=true" );
     }
 
     if( !StrList.empty( &filter->tagList ) ) {
@@ -286,38 +286,26 @@ static void ctune_RadioBrowserFilter_freeContent( ctune_RadioBrowserFilter_t * f
     if( filter == NULL )
         return; //EARLY RETURN
 
-    if( filter->name ) {
-        free( filter->name );
-        filter->name = NULL;
-    }
+    free( filter->name );
+    filter->name = NULL;
 
-    if( filter->country ) {
-        free( filter->country );
-        filter->country = NULL;
-    }
+    free( filter->country );
+    filter->country = NULL;
 
-    if( filter->state ) {
-        free( filter->state );
-        filter->state = NULL;
-    }
+    free( filter->state );
+    filter->state = NULL;
 
-    if( filter->language ) {
-        free( filter->language );
-        filter->language = NULL;
-    }
+    free( filter->language );
+    filter->language = NULL;
 
-    if( filter->tag ) {
-        free( filter->tag );
-        filter->tag = NULL;
-    }
+    free( filter->tag );
+    filter->tag = NULL;
 
     if( !StrList.empty( &filter->tagList ) )
         StrList.free_strlist( &filter->tagList );
 
-    if( filter->codec ) {
-        free( filter->codec );
-        filter->codec = NULL;
-    }
+    free( filter->codec );
+    filter->codec = NULL;
 }
 
 static void ctune_RadioBrowserFilter_set_name( ctune_RadioBrowserFilter_t * filter, char * str_ptr ) {

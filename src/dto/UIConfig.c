@@ -8,6 +8,8 @@
  */
 static ctune_UIConfig_t ctune_UIConfig_create( void ) {
     return (ctune_UIConfig_t) {
+        .mouse         = false,
+        .unicode_icons = false,
         .fav_tab = {
             .large_rows       = true,
             .theme_favourites = true,
@@ -38,6 +40,8 @@ static bool ctune_UIConfig_copy( const ctune_UIConfig_t * from, ctune_UIConfig_t
         return false;
     }
 
+    to->mouse               = from->mouse;
+    to->unicode_icons       = from->unicode_icons;
     to->fav_tab             = from->fav_tab;
     to->search_tab          = from->search_tab;
     to->browse_tab          = from->browse_tab;
@@ -49,7 +53,44 @@ static bool ctune_UIConfig_copy( const ctune_UIConfig_t * from, ctune_UIConfig_t
 }
 
 /**
+ * Set/Gets the mouse flag
+ * @param cfg  Pointer to ctune_UIConfig_t object
+ * @param flag Flag action
+ * @return Property value after operation
+ */
+bool ctune_UIConfig_mouse( ctune_UIConfig_t * cfg, ctune_Flag_e flag ) {
+    if( cfg ) {
+        switch( flag ) {
+            case FLAG_SET_OFF: return ( cfg->mouse = false );
+            case FLAG_SET_ON : return ( cfg->mouse = true );
+            default          : return cfg->mouse;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Gets the unicode icon flag property
+ * @param cfg  Pointer to ctune_UIConfig_t object
+ * @param flag Flag action
+ * @return Flag state
+ */
+bool ctune_UIConfig_unicodeIcons( ctune_UIConfig_t * cfg, ctune_Flag_e flag ) {
+    if( cfg ) {
+        switch( flag ) {
+            case FLAG_SET_OFF: return ( cfg->unicode_icons = false );
+            case FLAG_SET_ON : return ( cfg->unicode_icons = true );
+            default          : return cfg->unicode_icons;
+        }
+    }
+
+    return false;
+}
+
+/**
  * Gets the current preset
+ * @param cfg Pointer to ctune_UIConfig_t object
  * @return Theme preset
  */
 ctune_UIPreset_e ctune_UIConfig_theming_currentPreset( ctune_UIConfig_t * cfg ) {
@@ -209,8 +250,10 @@ static bool ctune_UIConfig_BrowseTab_largeRowSize( ctune_UIConfig_t * cfg, ctune
  * Namespace constructor
  */
 const struct ctune_UIConfig_Namespace ctune_UIConfig = {
-    .create = &ctune_UIConfig_create,
-    .copy   = &ctune_UIConfig_copy,
+    .create       = &ctune_UIConfig_create,
+    .copy         = &ctune_UIConfig_copy,
+    .mouse        = &ctune_UIConfig_mouse,
+    .unicodeIcons = &ctune_UIConfig_unicodeIcons,
 
     .theming = {
         .currentPreset         = &ctune_UIConfig_theming_currentPreset,

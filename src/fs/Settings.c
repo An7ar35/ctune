@@ -22,6 +22,8 @@
 #define CFG_KEY_OVERWRITE_PLAYLOG               "IO::OverwritePlayLog"
 #define CFG_KEY_STREAM_TIMEOUT                  "IO::StreamTimeout"
 #define CFG_KEY_NETWORK_TIMEOUT                 "IO::NetworkTimeout"
+#define CFG_KEY_UI_MOUSE                        "UI::Mouse"
+#define CFG_KEY_UI_UNICODE_ICONS                "UI::UnicodeIcons"
 #define CFG_KEY_UI_FAVTAB_SHOW_THEMING          "UI::Favourites::ShowTheme"
 #define CFG_KEY_UI_FAVTAB_USE_CUSTOM_THEMING    "UI::Favourites::UseCustomTheme"
 #define CFG_KEY_UI_FAVTAB_LRG                   "UI::Favourites::UseLargeRows"
@@ -106,21 +108,6 @@ static struct ctune_Settings_Fav {
 
     ctune_RadioStationInfo_SortBy_e sort_id;
 } favourites;
-
-/**
- * [PRIVATE] Checks if there are no favourites
- * @return Empty state for all types of favourites
- */
-static bool ctune_Settings_noFavourites( void ) {
-    bool no_favs = true;
-
-    for( int i = 0; i < CTUNE_STATIONSRC_COUNT; ++i ) {
-        if( !HashMap.empty( &favourites.favs[i] ) )
-            no_favs = false;
-    }
-
-    return no_favs;
-}
 
 /**
  * [PRIVATE] Gets the total number of favourites stations in the collections
@@ -381,6 +368,12 @@ static bool ctune_Settings_loadCfg() {
             } else if( strcmp( CFG_KEY_STREAM_TIMEOUT, key._raw ) == 0 ) { //int
                 error = !ctune_Parser_KVPairs.validateInteger( &val, &config.timeout_stream_val );
 
+            } else if( strcmp( CFG_KEY_UI_MOUSE, key._raw ) == 0 ) { //bool
+                error = !ctune_Parser_KVPairs.validateBoolean( &val, &config.ui.mouse );
+
+            } else if( strcmp( CFG_KEY_UI_UNICODE_ICONS, key._raw ) == 0 ) { //bool
+                error = !ctune_Parser_KVPairs.validateBoolean( &val, &config.ui.unicode_icons );
+
             } else if( strcmp( CFG_KEY_UI_FAVTAB_SHOW_THEMING, key._raw ) == 0 ) { //bool
                 error = !ctune_Parser_KVPairs.validateBoolean( &val, &config.ui.fav_tab.theme_favourites );
 
@@ -503,7 +496,7 @@ static bool ctune_Settings_writeCfg() {
         goto end;
     }
 
-    int ret[28];
+    int ret[30];
 
     ret[ 0] = fprintf( file, "%s=%s\n", CFG_KEY_LAST_STATION_PLAYED_UUID, config.last_station.uuid._raw );
     ret[ 1] = fprintf( file, "%s=%i\n", CFG_KEY_LAST_STATION_PLAYED_SRC, config.last_station.src );
@@ -514,30 +507,32 @@ static bool ctune_Settings_writeCfg() {
     ret[ 6] = fprintf( file, "%s=%d\n", CFG_KEY_STREAM_TIMEOUT, config.timeout_stream_val );
     ret[ 7] = fprintf( file, "%s=%d\n", CFG_KEY_NETWORK_TIMEOUT, config.timeout_network_val );
 
-    ret[ 8] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_SHOW_THEMING, ( config.ui.fav_tab.theme_favourites ? "true" : "false" ) );
-    ret[ 9] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_USE_CUSTOM_THEMING, ( config.ui.fav_tab.custom_theming ? "true" : "false" ) );
-    ret[10] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_LRG, ( config.ui.fav_tab.large_rows ? "true" : "false" ) );
-    ret[11] = fprintf( file, "%s=%i\n", CFG_KEY_UI_FAVTAB_SORTBY, favourites.sort_id );
-    ret[12] = fprintf( file, "%s=%s\n", CFG_KEY_UI_SEARCHTAB_LRG, ( config.ui.search_tab.large_rows ? "true" : "false" ) );
-    ret[13] = fprintf( file, "%s=%s\n", CFG_KEY_UI_BROWSERTAB_LRG, ( config.ui.browse_tab.large_rows ? "true" : "false" ) );
+    ret[ 8] = fprintf( file, "%s=%s\n", CFG_KEY_UI_MOUSE, ( config.ui.mouse ? "true" : "false" ) );
+    ret[ 9] = fprintf( file, "%s=%s\n", CFG_KEY_UI_UNICODE_ICONS, ( config.ui.unicode_icons ? "true" : "false" ) );
+    ret[10] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_SHOW_THEMING, ( config.ui.fav_tab.theme_favourites ? "true" : "false" ) );
+    ret[11] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_USE_CUSTOM_THEMING, ( config.ui.fav_tab.custom_theming ? "true" : "false" ) );
+    ret[12] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_LRG, ( config.ui.fav_tab.large_rows ? "true" : "false" ) );
+    ret[13] = fprintf( file, "%s=%i\n", CFG_KEY_UI_FAVTAB_SORTBY, favourites.sort_id );
+    ret[14] = fprintf( file, "%s=%s\n", CFG_KEY_UI_SEARCHTAB_LRG, ( config.ui.search_tab.large_rows ? "true" : "false" ) );
+    ret[15] = fprintf( file, "%s=%s\n", CFG_KEY_UI_BROWSERTAB_LRG, ( config.ui.browse_tab.large_rows ? "true" : "false" ) );
 
-    ret[14] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_PRESET, ctune_UIPreset.str( config.ui.theme.preset ) );
-    ret[15] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME, ctune_ColourTheme.str( config.ui.theme.custom_pallet.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.background, true ) );
-    ret[16] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.background, true ) );
-    ret[17] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW_SELECTED_FOCUSED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_focused_fg, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_focused_bg, true ) );
-    ret[18] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW_SELECTED_UNFOCUSED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_unfocused_fg, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_unfocused_bg, true ) );
-    ret[19] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ROW_FAVOURITE_LOCAL, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.favourite_local_fg, true ) );
-    ret[20] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ROW_FAVOURITE_REMOTE, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.favourite_remote_fg, true ) );
+    ret[16] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_PRESET, ctune_UIPreset.str( config.ui.theme.preset ) );
+    ret[17] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME, ctune_ColourTheme.str( config.ui.theme.custom_pallet.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.background, true ) );
+    ret[18] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.background, true ) );
+    ret[19] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW_SELECTED_FOCUSED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_focused_fg, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_focused_bg, true ) );
+    ret[20] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW_SELECTED_UNFOCUSED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_unfocused_fg, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_unfocused_bg, true ) );
+    ret[21] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ROW_FAVOURITE_LOCAL, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.favourite_local_fg, true ) );
+    ret[22] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ROW_FAVOURITE_REMOTE, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.favourite_remote_fg, true ) );
 
-    ret[21] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_PLAYBACK_ON, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.playback_on, true ) );
-    ret[22] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_PLAYBACK_OFF, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.playback_off, true ) );
-    ret[23] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_QUEUED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.queued_station, true ) );
+    ret[23] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_PLAYBACK_ON, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.playback_on, true ) );
+    ret[24] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_PLAYBACK_OFF, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.playback_off, true ) );
+    ret[25] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_QUEUED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.queued_station, true ) );
 
-    ret[24] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_FIELD_INVALID, ctune_ColourTheme.str( config.ui.theme.custom_pallet.field.invalid_fg, true ) );
+    ret[26] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_FIELD_INVALID, ctune_ColourTheme.str( config.ui.theme.custom_pallet.field.invalid_fg, true ) );
 
-    ret[25] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_BUTTON, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.background, true ) );
-    ret[26] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_BUTTON_INVALID, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.invalid_fg, true ) );
-    ret[27] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_BUTTON_VALIDATED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.validated_fg, true ) );
+    ret[27] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_BUTTON, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.background, true ) );
+    ret[28] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_BUTTON_INVALID, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.invalid_fg, true ) );
+    ret[29] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_BUTTON_VALIDATED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.validated_fg, true ) );
 
     for( size_t item_no = 0; item_no < 16; ++item_no ) {
         if( ret[item_no] < 0 ) {
@@ -624,11 +619,38 @@ static int ctune_Settings_getStreamTimeoutVal( void ) {
 }
 
 /**
+ * Sets teh timeout value in seconds for connecting to and playing a stream
+ * @param val Timeout value in seconds (1-10 inclusive)
+ * @return Success
+ */
+static bool ctune_Settings_setStreamTimeoutVal( int val ) {
+    if( 0 < val && val <= 10) {
+        CTUNE_LOG( CTUNE_LOG_DEBUG,
+                   "[ctune_Settings_setStreamTimeoutVal( %i )] Stream timeout value set: %i -> %i",
+                   val, config.timeout_stream_val, val
+        );
+
+        config.timeout_stream_val = val;
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Gets the timout value in seconds for querying a network service
  * @return Timeout value in seconds
  */
 static int ctune_Settings_getNetworkTimeoutVal( void ) {
     return config.timeout_network_val;
+}
+
+/**
+ * Gets the mouse support requirement
+ * @return "Enable mouse" state
+ */
+static bool ctune_Settings_enableMouse( void ) {
+    return config.ui.mouse;
 }
 
 /**
@@ -786,9 +808,6 @@ static bool ctune_Settings_loadFavourites() {
  * @return Success
  */
 static bool ctune_Settings_saveFavourites() {
-    if( ctune_Settings_noFavourites() )
-        return true; //EARLY RETURN - nothing to export
-
     CTUNE_LOG( CTUNE_LOG_MSG,
                "[ctune_Settings_saveFavourites()] Saving %lu favourite station(s) to file \"%s\".",
                ctune_Settings_favouriteCount(), favourites.file_name
@@ -798,7 +817,7 @@ static bool ctune_Settings_saveFavourites() {
     String_t file_path    = String.init();
     FILE *   file         = NULL;
     String_t json         = String.init();
-    Vector_t station_list  = Vector.init( sizeof( ctune_RadioStationInfo_t ), ctune_RadioStationInfo.freeContent );
+    Vector_t station_list = Vector.init( sizeof( ctune_RadioStationInfo_t ), ctune_RadioStationInfo.freeContent );
 
     ctune_XDG.resolveCfgFilePath( favourites.file_name, &file_path );
 
@@ -810,8 +829,9 @@ static bool ctune_Settings_saveFavourites() {
         goto end;
     }
 
-    for( int i = 0; i < CTUNE_STATIONSRC_COUNT; ++i )
-        HashMap.export( &favourites.favs[i], &station_list, ctune_RadioStationInfo.init, ctune_RadioStationInfo.copy );
+    for( int i = 0; i < CTUNE_STATIONSRC_COUNT; ++i ) {
+        HashMap.export( &favourites.favs[ i ], &station_list, ctune_RadioStationInfo.init, ctune_RadioStationInfo.copy );
+    }
 
     if( !ctune_parser_JSON.parseRadioStationListToJSON( &station_list, &json ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Settings_saveFavourites()] Failed to parse stations to JSON format." );
@@ -1040,7 +1060,9 @@ const struct ctune_Settings_Instance ctune_Settings = {
         .setLastPlayedStation   = &ctune_Settings_setLastPlayedStation,
         .playbackLogOverwrite   = &ctune_Settings_playbackLogOverwrite,
         .getStreamTimeoutVal    = &ctune_Settings_getStreamTimeoutVal,
+        .setStreamTimeoutVal    = &ctune_Settings_setStreamTimeoutVal,
         .getNetworkTimeoutVal   = &ctune_Settings_getNetworkTimeoutVal,
+        .enableMouse            = &ctune_Settings_enableMouse,
         .getUIConfig            = &ctune_Settings_getUIConfig,
         .setUIConfig            = &ctune_Settings_setUIConfig,
     },

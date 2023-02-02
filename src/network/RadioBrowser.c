@@ -20,7 +20,7 @@
  * @return Success
  */
 static int ctune_RadioBrowser_randomizeServerList( ctune_ServerList_t * addr_list ) {
-    srand( time(NULL ) );
+    srand( time( NULL ) );
 
     size_t item_count = ctune_ServerList.size( addr_list );
 
@@ -31,9 +31,9 @@ static int ctune_RadioBrowser_randomizeServerList( ctune_ServerList_t * addr_lis
 
         if( node == NULL ) {
             CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[RadioInfo.randomize_server_list( ServerList * )] "
+                       "[ctune_RadioBrowser_randomizeServerList( %p )] "
                        "Randomised index pick returns NULL (i=%i, k=%i)",
-                       pick, k
+                       addr_list, pick, k
             );
 
             return false;
@@ -151,18 +151,18 @@ static bool ctune_RadioBrowser_downloadServerStats( ctune_ServerList_t * addr_li
     if( dwl_ok ) {
         if( !( parse_ok = ctune_parser_JSON.parseToServerStats( &rcv_buff, stats ) ) ) {
             CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[ctune_RadioBrowser_downloadServerStats( %p, %p )] Error downloading data (uri=\"%s\").",
-                       addr_list, stats, path
+                       "[ctune_RadioBrowser_downloadServerStats( %p, %i, %p )] Error downloading data (uri=\"%s\").",
+                       addr_list, timeout, stats, path
             );
             CTUNE_LOG( CTUNE_LOG_TRACE,
-                       "[ctune_RadioBrowser_downloadServerStats( %p, %p )] rcv_buff:\n%s",
-                       addr_list, stats, ( String.empty( &rcv_buff ) ? "\"\"" : rcv_buff._raw )
+                       "[ctune_RadioBrowser_downloadServerStats( %p, %i, %p )] rcv_buff:\n%s",
+                       addr_list, timeout, stats, ( String.empty( &rcv_buff ) ? "\"\"" : rcv_buff._raw )
             );
         }
     } else {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_RadioBrowser_downloadServerStats( %p, %p )] Error parsing data (uri=\"%s\").",
-                   addr_list, stats, path
+                   "[ctune_RadioBrowser_downloadServerStats( %p, %i, %p )] Error parsing data (uri=\"%s\").",
+                   addr_list, timeout, stats, path
         );
     }
 
@@ -188,19 +188,19 @@ static bool ctune_RadioBrowser_downloadServerConfig( ctune_ServerList_t * addr_l
     if( dwl_ok ) {
         if( !( parse_ok = ctune_parser_JSON.parseToServerConfig( &rcv_buff, srv_cfg ) ) ) {
             CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[ctune_RadioBrowser_downloadServerConfig( %p, %p )] Error parsing data (uri=\"%s\").",
-                       addr_list, srv_cfg, path
+                       "[ctune_RadioBrowser_downloadServerConfig( %p, %i, %p )] Error parsing data (uri=\"%s\").",
+                       addr_list, timeout, srv_cfg, path
             );
             CTUNE_LOG( CTUNE_LOG_TRACE,
-                       "[ctune_RadioBrowser_downloadServerConfig( %p, %p )] rcv_buff:\n%s",
-                       addr_list, srv_cfg, ( String.empty( &rcv_buff ) ? "\"\"" : rcv_buff._raw )
+                       "[ctune_RadioBrowser_downloadServerConfig( %p, %i, %p )] rcv_buff:\n%s",
+                       addr_list, timeout, srv_cfg, ( String.empty( &rcv_buff ) ? "\"\"" : rcv_buff._raw )
             );
         }
 
     } else {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_RadioBrowser_downloadServerConfig( %p, %p )] Error downloading data (uri=\"%s\").",
-                   addr_list, srv_cfg, path
+                   "[ctune_RadioBrowser_downloadServerConfig( %p, %i, %p )] Error downloading data (uri=\"%s\").",
+                   addr_list, timeout, srv_cfg, path
         );
     }
 
@@ -244,18 +244,18 @@ static bool ctune_RadioBrowser_downloadStations(
     if( dwl_ok ) {
         if( !( parse_ok = ctune_parser_JSON.parseToRadioStationListFrom( &rcv_buff, CTUNE_STATIONSRC_RADIOBROWSER, radio_stations ) ) ) {
             CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[ctune_RadioBrowser_downloadStations( %p, %p, %p )] Error downloading data (uri=\"%s\").",
-                       addr_list, filter, radio_stations, final_uri._raw
+                       "[ctune_RadioBrowser_downloadStations( %p, %i, %p, %p )] Error downloading data (uri=\"%s\").",
+                       addr_list, timeout, filter, radio_stations, final_uri._raw
             );
             CTUNE_LOG( CTUNE_LOG_TRACE,
-                       "[ctune_RadioBrowser_downloadStations( %p, %p, %p )] rcv_buff:\n%s",
-                       addr_list, filter, radio_stations, ( String.empty( &rcv_buff ) ? "\"\"" : rcv_buff._raw )
+                       "[ctune_RadioBrowser_downloadStations( %p, %i, %p, %p )] rcv_buff:\n%s",
+                       addr_list, timeout, filter, radio_stations, ( String.empty( &rcv_buff ) ? "\"\"" : rcv_buff._raw )
             );
         }
     } else {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_RadioBrowser_downloadStations( %p, %p, %p )] Error parsing data (uri=\"%s\").",
-                   addr_list, filter, radio_stations, final_uri._raw
+                   "[ctune_RadioBrowser_downloadStations( %p, %i, %p, %p )] Error parsing data (uri=\"%s\").",
+                   addr_list, timeout, filter, radio_stations, final_uri._raw
         );
     }
 
@@ -286,15 +286,14 @@ static bool ctune_RadioBrowser_downloadCategoryItems(
     struct String       final_uri = String.init();
     struct String       rcv_buff  = String.init();
 
-    {
+    String.append_back( &final_uri, base_path );
+    String.append_back( &final_uri, ctune_ListCategory.str( category ) );
+
+    if( filter ) {
         struct String filter_str = String.init();
 
         ctune_RadioBrowserFilter.parameteriseFields( filter, &filter_str );
-
-        String.append_back( &final_uri, base_path );
-        String.append_back( &final_uri, ctune_ListCategory.str( category ) );
         String.append_back( &final_uri, filter_str._raw );
-
         String.free( &filter_str );
     }
 
@@ -304,18 +303,18 @@ static bool ctune_RadioBrowser_downloadCategoryItems(
     if( dwl_ok ) {
         if( !( parse_ok = ctune_parser_JSON.parseToCategoryItemList( &rcv_buff, category_items ) ) ) {
             CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[ctune_RadioBrowser_downloadCategoryies( %p, %i, %p, %p )] Error parsing data (uri=\"%s\").",
-                       addr_list, category, filter, category_items, final_uri._raw
+                       "[ctune_RadioBrowser_downloadCategoryies( %p, %i, %i, %p, %p )] Error parsing data (uri=\"%s\").",
+                       addr_list, timeout, category, filter, category_items, final_uri._raw
             );
             CTUNE_LOG( CTUNE_LOG_TRACE,
-                       "[ctune_RadioBrowser_downloadCategoryies( %p, %i, %p, %p )] rcv_buff:\n%s",
-                       addr_list, category, filter, category_items, ( String.empty( &rcv_buff ) ? "\"\"" : rcv_buff._raw )
+                       "[ctune_RadioBrowser_downloadCategoryies( %p, %i, %i, %p, %p )] rcv_buff:\n%s",
+                       addr_list, timeout, category, filter, category_items, ( String.empty( &rcv_buff ) ? "\"\"" : rcv_buff._raw )
             );
         }
     } else {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_RadioBrowser_downloadCategoryies( %p, %i, %p, %p )] Error downloading data (uri=\"%s\").",
-                   addr_list, category, filter, category_items, final_uri._raw
+                   "[ctune_RadioBrowser_downloadCategoryies( %p, %i, %i, %p, %p )] Error downloading data (uri=\"%s\").",
+                   addr_list, timeout, category, filter, category_items, final_uri._raw
         );
     }
 
@@ -347,18 +346,18 @@ static bool ctune_RadioBrowser_increaseClickCounter( ctune_ServerList_t * addr_l
     if( dwl_ok ) {
         if( !( parse_ok = ctune_parser_JSON.parseToClickCounter( &rcv_buff, click_counter ) ) ) {
             CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[ctune_RadioBrowser_increaseClickCounter( %p, \"%s\", %p )] Error parsing data (uri=\"%s\").",
-                       addr_list, station_uuid, click_counter, final_uri._raw
+                       "[ctune_RadioBrowser_increaseClickCounter( %p, %i, \"%s\", %p )] Error parsing data (uri=\"%s\").",
+                       addr_list, timeout, station_uuid, click_counter, final_uri._raw
             );
             CTUNE_LOG( CTUNE_LOG_TRACE,
-                       "[ctune_RadioBrowser_increaseClickCounter( %p, \"%s\", %p )] rcv_buff:\n%s",
-                       addr_list, station_uuid, click_counter, ( String.empty( &rcv_buff ) ? "\"\"" : rcv_buff._raw )
+                       "[ctune_RadioBrowser_increaseClickCounter( %p, %i, \"%s\", %p )] rcv_buff:\n%s",
+                       addr_list, timeout, station_uuid, click_counter, ( String.empty( &rcv_buff ) ? "\"\"" : rcv_buff._raw )
             );
         }
     } else {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_RadioBrowser_increaseClickCounter( %p, \"%s\", %p )] Error downloading data (uri=\"%s\").",
-                   addr_list, station_uuid, click_counter, final_uri._raw
+                   "[ctune_RadioBrowser_increaseClickCounter( %p, %i, \"%s\", %p )] Error downloading data (uri=\"%s\").",
+                   addr_list, timeout, station_uuid, click_counter, final_uri._raw
         );
     }
 
@@ -449,18 +448,18 @@ static bool ctune_RadioBrowser_voteForStation( ctune_ServerList_t * addr_list, i
     if( dwl_ok ) {
         if( !( parse_ok = ctune_parser_JSON.parseToRadioStationVote( &rcv_buff, vote_state ) ) ) {
             CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[ctune_RadioBrowser_voteForStation( %p, \"%s\", %p )] Error parsing data (uri=\"%s\").",
-                       addr_list, station_uuid, vote_state, final_uri._raw
+                       "[ctune_RadioBrowser_voteForStation( %p, %i, \"%s\", %p )] Error parsing data (uri=\"%s\").",
+                       addr_list, timeout, station_uuid, vote_state, final_uri._raw
             );
             CTUNE_LOG( CTUNE_LOG_TRACE,
-                       "[ctune_RadioBrowser_voteForStation( %p, \"%s\", %p )] rcv_buff:\n%s",
-                       addr_list, station_uuid, vote_state, ( String.empty( &rcv_buff ) ? "\"\"" : rcv_buff._raw )
+                       "[ctune_RadioBrowser_voteForStation( %p, %i, \"%s\", %p )] rcv_buff:\n%s",
+                       addr_list, timeout, station_uuid, vote_state, ( String.empty( &rcv_buff ) ? "\"\"" : rcv_buff._raw )
             );
         }
     } else {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_RadioBrowser_voteForStation( %p, \"%s\", %p )] Error downloading data (uri=\"%s\").",
-                   addr_list, station_uuid, vote_state, final_uri._raw
+                   "[ctune_RadioBrowser_voteForStation( %p, %i, \"%s\", %p )] Error downloading data (uri=\"%s\").",
+                   addr_list, timeout, station_uuid, vote_state, final_uri._raw
         );
     }
 
@@ -498,18 +497,18 @@ static bool ctune_RadioBrowser_addNewStation( ctune_ServerList_t * addr_list, in
 
     if( dwl_ok ) {
         if( !( parse_ok = ctune_parser_JSON.parseToNewRadioStationRcv( &rcv_buff, new_station ) ) ) {
-            CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_RadioBrowser_addNewStation( %p, %p )] Error parsing data (uri=\"%s\").",
-                       addr_list, new_station, final_uri._raw
+            CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_RadioBrowser_addNewStation( %p, %i, %p )] Error parsing data (uri=\"%s\").",
+                       addr_list, timeout, new_station, final_uri._raw
             );
             CTUNE_LOG( CTUNE_LOG_TRACE,
-                       "[ctune_RadioBrowser_addNewStation( %p, %p )] rcv_buff:\n%s",
-                       addr_list, new_station, rcv_buff._raw
+                       "[ctune_RadioBrowser_addNewStation( %p, %i, %p )] rcv_buff:\n%s",
+                       addr_list, timeout, new_station, rcv_buff._raw
             );
         }
     } else {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_RadioBrowser_addNewStation( %p, %p )] Error downloading data (uri=\"%s\").",
-                   addr_list, new_station, final_uri._raw
+                   "[ctune_RadioBrowser_addNewStation( %p, %i, %p )] Error downloading data (uri=\"%s\").",
+                   addr_list, timeout, new_station, final_uri._raw
         );
     }
 

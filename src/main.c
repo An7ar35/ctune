@@ -17,7 +17,6 @@
 //TODO [medium functionality] Playlog viewer tab with stations played by descending order on the left and tracks played on the right inc timestamp
 //                            + must auto refresh on view
 //                            + ability to view station info (cache it?)
-//TODO [medium functionality] Settings viewer dialog
 
 /* setup/teardown and system */
 static bool ctune_init( const ctune_ArgOptions_t * options );
@@ -184,7 +183,7 @@ static bool ctune_init( const ctune_ArgOptions_t * options ) {
     ctune_Controller.setResizeUIEventCallback( ctune_UI_Resizer.resize );
 
     /* UI */
-    if( !ctune_UI.setup( options->ui.show_cursor ) ) {
+    if( !ctune_UI.setup( options->ui.show_cursor, ctune_Settings.cfg.enableMouse() ) ) {
         CTUNE_LOG( CTUNE_LOG_FATAL, "[INIT] Failed to setup the UI." );
         error_state = true;
     }

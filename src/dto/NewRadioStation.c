@@ -31,62 +31,40 @@ static void ctune_NewRadioStation_freeContent( struct ctune_NewRadioStation * nr
     if( nrs == NULL )
         return; //EARLY RETURN
 
-    if( nrs->send.name ) {
-        free( nrs->send.name );
-        nrs->send.name = NULL;
-    }
+    free( nrs->send.name );
+    nrs->send.name = NULL;
 
-    if( nrs->send.url ) {
-        free( nrs->send.url );
-        nrs->send.url = NULL;
-    }
+    free( nrs->send.url );
+    nrs->send.url = NULL;
 
-    if( nrs->send.homepage ) {
-        free( nrs->send.homepage );
-        nrs->send.homepage = NULL;
-    }
+    free( nrs->send.homepage );
+    nrs->send.homepage = NULL;
 
-    if( nrs->send.favicon ) {
-        free( nrs->send.favicon );
-        nrs->send.favicon = NULL;
-    }
+    free( nrs->send.favicon );
+    nrs->send.favicon = NULL;
 
-    if( nrs->send.country ) {
-        free( nrs->send.country );
-        nrs->send.country = NULL;
-    }
+    free( nrs->send.country );
+    nrs->send.country = NULL;
 
-    if( nrs->send.countrycode ) {
-        free( nrs->send.countrycode );
-        nrs->send.countrycode = NULL;
-    }
+    free( nrs->send.countrycode );
+    nrs->send.countrycode = NULL;
 
-    if( nrs->send.state ) {
-        free( nrs->send.state );
-        nrs->send.state = NULL;
-    }
+    free( nrs->send.state );
+    nrs->send.state = NULL;
 
-    if( nrs->send.language ) {
-        free( nrs->send.language );
-        nrs->send.language = NULL;
-    }
+    free( nrs->send.language );
+    nrs->send.language = NULL;
 
     StrList.free_strlist( &nrs->send.tags );
 
-    if( nrs->received.ok ) {
-        free( nrs->received.ok );
-        nrs->received.ok = NULL;
-    }
+    free( nrs->received.ok );
+    nrs->received.ok = NULL;
 
-    if( nrs->received.message ) {
-        free( nrs->received.message );
-        nrs->received.message = NULL;
-    }
+    free( nrs->received.message );
+    nrs->received.message = NULL;
 
-    if( nrs->received.uuid ) {
-        free( nrs->received.uuid );
-        nrs->received.uuid = NULL;
-    }
+    free( nrs->received.uuid );
+    nrs->received.uuid = NULL;
 }
 
 /**

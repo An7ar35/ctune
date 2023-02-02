@@ -156,16 +156,29 @@ extern const struct ctune_Settings_Instance {
         bool (* playbackLogOverwrite)( void );
 
         /**
-         * Gets the timout value in seconds for connecting to and playing a stream
+         * Gets the timeout value in seconds for connecting to and playing a stream
          * @return Timeout value in seconds
          */
         int (* getStreamTimeoutVal)( void );
+
+        /**
+         * Sets the timeout value in seconds for connecting to and playing a stream
+         * @param val Timeout value in seconds (1-10 inclusive)
+         * @return Success
+         */
+        bool (* setStreamTimeoutVal)( int val );
 
         /**
          * Gets the timout value in seconds for querying a network service
          * @return Timeout value in seconds
          */
         int (* getNetworkTimeoutVal)( void );
+
+        /**
+         * Gets the mouse support requirement
+         * @return "Enable mouse" state
+         */
+        bool (* enableMouse)( void );
 
         /**
          * Gets the UI configuration

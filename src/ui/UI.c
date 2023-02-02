@@ -14,6 +14,7 @@
 #include "Resizer.h"
 #include "definitions/KeyBinding.h"
 #include "definitions/Theme.h"
+#include "definitions/Icons.h"
 #include "dialog/ContextHelp.h"
 #include "dialog/RSFind.h"
 #include "dialog/RSInfo.h"
@@ -52,6 +53,7 @@ static struct ctune_UI {
     WINDOW             * panel_windows[CTUNE_UI_PANEL_COUNT];
     PANEL              * panels       [CTUNE_UI_PANEL_COUNT];
     int                  old_cursor;
+    MEVENT               mouse_event;
     ctune_UI_Context_e   curr_ctx;
 
     struct ctune_UI_WinSizes {
@@ -65,10 +67,14 @@ static struct ctune_UI {
         WindowProperty_t tab_canvas;
         WindowProperty_t browser_left;
         WindowProperty_t browser_right;
+        WindowProperty_t browser_line;
 
     } size;
 
     struct {
+        WindowProperty_t      favourites_tab_selector;
+        WindowProperty_t      search_tab_selector;
+        WindowProperty_t      browser_tab_selector;
         ctune_UI_RSListWin_t  favourites;
         ctune_UI_RSListWin_t  search;
         ctune_UI_BrowserWin_t browser;
@@ -86,17 +92,17 @@ static struct ctune_UI {
     } cb;
 
     struct {
-        ctune_UI_PanelID_e           prev_panel;
-        ctune_UI_PanelID_e           curr_panel;
+        ctune_UI_PanelID_e         prev_panel;
+        ctune_UI_PanelID_e         curr_panel;
 
-        ctune_RadioStationInfo_t   * curr_radio_station;
-        uint64_t                     curr_radio_station_hash;
-        Vector_t                     favourites;
+        ctune_RadioStationInfo_t * curr_radio_station;
+        uint64_t                   curr_radio_station_hash;
+        Vector_t                   favourites;
 
         //vars for painting back previous state post-resizing
-        String_t                     curr_song;
-        int                          curr_vol;
-        bool                         playback_state;
+        String_t                   curr_song;
+        int                        curr_vol;
+        bool                       playback_state;
 
     } cache;
 
@@ -190,6 +196,13 @@ static void ctune_UI_calculateWinSizes( struct ctune_UI_WinSizes * sizes ) {
                                                 sizes->tab_canvas.pos_y,
                                                 ( sizes->browser_left.cols + sep_width + 1 ) };
 
+    sizes->browser_line  = (WindowProperty_t) { sizes->tab_canvas.rows,
+                                                1,
+                                                sizes->tab_canvas.pos_y,
+                                                ( sizes->browser_left.cols + 1 ) };
+
+    const int pos_x = ( ui.size.browser_left.cols + 1 );
+
     CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_calculateWinSizes( %p )] Screen         = { %i, %i, %i, %i }", sizes, sizes->screen.rows, sizes->screen.cols, sizes->screen.pos_y, sizes->screen.pos_x );
     CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_calculateWinSizes( %p )] Title          = { %i, %i, %i, %i }", sizes, sizes->title_bar.rows, sizes->title_bar.cols, sizes->title_bar.pos_y, sizes->title_bar.pos_x );
     CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_calculateWinSizes( %p )] Status bar #1  = { %i, %i, %i, %i }", sizes, sizes->status_bar1.rows, sizes->status_bar1.cols, sizes->status_bar1.pos_y, sizes->status_bar1.pos_x );
@@ -200,6 +213,7 @@ static void ctune_UI_calculateWinSizes( struct ctune_UI_WinSizes * sizes ) {
     CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_calculateWinSizes( %p )] Tab canvas     = { %i, %i, %i, %i }", sizes, sizes->tab_canvas.rows, sizes->tab_canvas.cols, sizes->tab_canvas.pos_y, sizes->tab_canvas.pos_x );
     CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_calculateWinSizes( %p )] Browser::left  = { %i, %i, %i, %i }", sizes, sizes->browser_left.rows, sizes->browser_left.cols, sizes->browser_left.pos_y, sizes->browser_left.pos_x );
     CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_calculateWinSizes( %p )] Browser::right = { %i, %i, %i, %i }", sizes, sizes->browser_right.rows, sizes->browser_right.cols, sizes->browser_right.pos_y, sizes->browser_right.pos_x );
+    CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_calculateWinSizes( %p )] Browser::line  = { %i, %i, %i, %i }", sizes, sizes->browser_line.rows, sizes->browser_line.cols, sizes->browser_line.pos_y, sizes->browser_line.pos_x );
 
     CTUNE_LOG( CTUNE_LOG_MSG,
                "[ctune_UI_calculateWinSizes( %p )] "
@@ -354,6 +368,22 @@ static void ctune_UI_playSelectedStation( ctune_UI_PanelID_e tab ) {
     } else if( tab == CTUNE_UI_PANEL_BROWSER ) {
         ctune_UI_BrowserWin.setRedraw( &ui.tabs.browser, false );
         ctune_UI_BrowserWin.show( &ui.tabs.browser );
+    }
+}
+
+/**
+ * [PRIVATE] Start playback of currently queued radio station
+ */
+static void ctune_UI_startQueuedStationPlayback() {
+    if( ui.cache.curr_radio_station != NULL ) {
+        CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_runKeyInterfaceLoop()] initiating queued RSI playback..." );
+
+        if( !ctune_Controller.playback.start( ui.cache.curr_radio_station ) ) {
+            CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_runKeyInterfaceLoop()] Failed playback init." );
+        }
+
+    } else {
+        ctune_UI.printStatusMsg( ctune_UI_Language.text( CTUNE_UI_TEXT_MSG_EMPTY_QUEUE ) );
     }
 }
 
@@ -566,6 +596,63 @@ static void ctune_UI_getUIThemes( Vector_t * list ) {
 }
 
 /**
+ * [PRIVATE] Sets the mouse support
+ * @param tab           PanelID of the current tab
+ * @param action_flag_e Action to take (get/set)
+ * @return State of the mouse support
+ */
+static int ctune_UI_setMouseSupport( ctune_UI_PanelID_e tab, int action_flag_e ) {
+    ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
+
+    ctune_UIConfig_t * ui_config = ctune_Controller.cfg.getUIConfig();
+
+    const bool old_state = ctune_UIConfig.mouse( ui_config, FLAG_GET_VALUE );
+
+    if( action_flag_e != FLAG_GET_VALUE ) {
+        const bool new_state = ctune_UIConfig.mouse( ui_config, action_flag_e );
+
+        if( old_state != new_state ) {
+            if( new_state ) { //Turn ON
+                if( mousemask( ALL_MOUSE_EVENTS, NULL ) != 0 ) {
+                    CTUNE_LOG( CTUNE_LOG_MSG,
+                               "[ctune_UI_setMouseSupport( '%s', '%s' )] Mouse navigation enabled.",
+                               ctune_UI_PanelID.str( tab ), ctune_Flag.str( action_flag_e ) );
+
+                    ctune_UI_Resizer.resize();
+
+                } else {
+                    ctune_err.set( CTUNE_ERR_IO_MOUSE_ENABLE_FAIL );
+                    goto fail;
+                }
+
+            } else { //Turn OFF
+                if( mousemask( 0, NULL ) == 0 ) {
+                    CTUNE_LOG( CTUNE_LOG_MSG,
+                               "[ctune_UI_setMouseSupport( '%s', '%s' )] Mouse navigation disabled.",
+                               ctune_UI_PanelID.str( tab ), ctune_Flag.str( action_flag_e ) );
+
+                    ctune_UI_Resizer.resize();
+
+                } else {
+                    ctune_err.set( CTUNE_ERR_IO_MOUSE_DISABLE_FAIL );
+                    goto fail;
+                }
+            }
+        }
+
+        ctune_UI_ContextHelp.setMouseCtrl( new_state );
+        ctune_UI_RSInfo.setMouseCtrl( &ui.dialogs.rsinfo, new_state );
+        ctune_UI_RSEdit.setMouseCtrl( &ui.dialogs.rsedit, new_state );
+        ctune_UI_RSFind.setMouseCtrl( &ui.dialogs.rsfind, new_state );
+
+        return new_state;
+    }
+
+    fail:
+        return old_state;
+}
+
+/**
  * [PRIVATE] Sets the current colour pallet theme for the UI
  * @param tab            PanelID of the current tab
  * @param ui_preset_enum ctune_UIPreset_e value to set
@@ -597,6 +684,44 @@ static int ctune_UI_setUITheme( ctune_UI_PanelID_e tab, int ui_preset_enum ) {
 }
 
 /**
+ * [PRIVATE] Sets the unicode icon state
+ * @param tab PanelID of the current tab
+ * @param action_flag_e Action to take (get/set)
+ * @return State of the unicode icon usage
+ */
+static int ctune_UI_setUnicodeIcons( ctune_UI_PanelID_e tab, int action_flag_e ) {
+    ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
+
+    ctune_UIConfig_t * ui_config = ctune_Controller.cfg.getUIConfig();
+    const bool         state     = ctune_UIConfig.unicodeIcons( ui_config, action_flag_e );
+
+    if( action_flag_e != FLAG_GET_VALUE ) {
+        ctune_UI_Icons.setUnicode( state );
+        ctune_UI_Resizer.resize();
+    }
+
+    return state;
+}
+
+/**
+ * [PRIVATE] Sets the stream timeout value
+ * @param tab   PanelID of the current tab
+ * @param value Value in seconds (<0 will just return the current value without setting anything)
+ * @return Current value
+ */
+static int ctune_UI_setStreamTimeOut( ctune_UI_PanelID_e tab, int value ) {
+    ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
+
+    const int curr = ctune_Controller.cfg.getStreamTimeout();
+
+    if( value >= 0 && ctune_Controller.cfg.setStreamTimeout( value ) ) {
+        return value;
+    }
+
+    return curr;
+}
+
+/**
  * [PRIVATE] Toggles the favourite state of a selected station in any of the tabs
  * @param tab PanelID of the current tab
  * @param arg (unused)
@@ -615,10 +740,11 @@ static int ctune_UI_toggleFavourite( ctune_UI_PanelID_e tab, int arg /*unused*/ 
         if( ctune_Controller.cfg.isFavourite( rsi, ctune_RadioStationInfo.get.stationSource( rsi ) ) ) {
             ctune_UI_writeToMsgLine( ctune_UI_Language.text( CTUNE_UI_TEXT_MSG_CONFIRM_UNFAV ) );
 
-            if( ( ch = getch() ) == 'y' )
+            if( ( ch = getch() ) == 'y' ) {
                 ctune_UI_RSListWin.toggleFav( &ui.tabs.favourites );
-            else
+            } else {
                 refresh = false;
+            }
 
         } else {
             ctune_UI_RSListWin.toggleFav( &ui.tabs.favourites );
@@ -636,10 +762,11 @@ static int ctune_UI_toggleFavourite( ctune_UI_PanelID_e tab, int arg /*unused*/ 
         if( ctune_Controller.cfg.isFavourite( rsi, ctune_RadioStationInfo.get.stationSource( rsi ) ) ) {
             ctune_UI_writeToMsgLine( ctune_UI_Language.text( CTUNE_UI_TEXT_MSG_CONFIRM_UNFAV ) );
 
-            if( ( ch = getch() ) == 'y' )
+            if( ( ch = getch() ) == 'y' ) {
                 ctune_UI_RSListWin.toggleFav( &ui.tabs.search );
-            else
+            } else {
                 refresh = false;
+            }
 
         } else {
             ctune_UI_RSListWin.toggleFav( &ui.tabs.search );
@@ -654,10 +781,11 @@ static int ctune_UI_toggleFavourite( ctune_UI_PanelID_e tab, int arg /*unused*/ 
         if( ctune_Controller.cfg.isFavourite( rsi, ctune_RadioStationInfo.get.stationSource( rsi ) ) ) {
             ctune_UI_writeToMsgLine( ctune_UI_Language.text( CTUNE_UI_TEXT_MSG_CONFIRM_UNFAV ) );
 
-            if( ( ch = getch() ) == 'y' )
+            if( ( ch = getch() ) == 'y' ) {
                 ctune_UI_BrowserWin.toggleFav( &ui.tabs.browser );
-            else
+            } else {
                 refresh = false;
+            }
 
         } else {
             ctune_UI_BrowserWin.toggleFav( &ui.tabs.browser );
@@ -837,6 +965,8 @@ static int ctune_UI_openEditSelectedStationDialog( ctune_UI_PanelID_e tab, int a
 static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
     ctune_UI_clearMsgLine();
 
+    ctune_UIConfig_t * ui_config = ctune_Controller.cfg.getUIConfig();
+
     switch( tab ) {
         case CTUNE_UI_PANEL_FAVOURITES: {
             ctune_UI_OptionsMenu.free( &ui.dialogs.optmenu );
@@ -852,8 +982,11 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_OptionsMenu.cb.setGetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_getUIThemes );
             ctune_UI_OptionsMenu.cb.setSetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_setUITheme );
             ctune_UI_OptionsMenu.cb.setFavTabCustomThemingCallback( &ui.dialogs.optmenu, ctune_UI_favouriteTabCustomTheming );
+            ctune_UI_OptionsMenu.cb.setMouseSupportCallback( &ui.dialogs.optmenu, ctune_UI_setMouseSupport );
+            ctune_UI_OptionsMenu.cb.setUnicodeIconsCallback( &ui.dialogs.optmenu, ctune_UI_setUnicodeIcons );
+            ctune_UI_OptionsMenu.cb.setStreamTimeoutValueCallback( &ui.dialogs.optmenu, ctune_UI_setStreamTimeOut );
 
-            if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu ) ) {
+            if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu, ctune_UIConfig.mouse( ui_config, FLAG_GET_VALUE ) ) ) {
                 ctune_UI_OptionsMenu.show( &ui.dialogs.optmenu );
                 ctune_UI_OptionsMenu.captureInput( &ui.dialogs.optmenu );
 
@@ -875,8 +1008,11 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_OptionsMenu.cb.setListRowSizeLargeCallback( &ui.dialogs.optmenu, ctune_UI_setCurrListRowSize );
             ctune_UI_OptionsMenu.cb.setGetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_getUIThemes );
             ctune_UI_OptionsMenu.cb.setSetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_setUITheme );
+            ctune_UI_OptionsMenu.cb.setMouseSupportCallback( &ui.dialogs.optmenu, ctune_UI_setMouseSupport );
+            ctune_UI_OptionsMenu.cb.setUnicodeIconsCallback( &ui.dialogs.optmenu, ctune_UI_setUnicodeIcons );
+            ctune_UI_OptionsMenu.cb.setStreamTimeoutValueCallback( &ui.dialogs.optmenu, ctune_UI_setStreamTimeOut );
 
-            if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu ) ) {
+            if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu, ctune_UIConfig.mouse( ui_config, FLAG_GET_VALUE ) ) ) {
                 ctune_UI_OptionsMenu.show( &ui.dialogs.optmenu );
                 ctune_UI_OptionsMenu.captureInput( &ui.dialogs.optmenu );
 
@@ -1092,30 +1228,39 @@ static void ctune_UI_navSwitchFocus( ctune_UI_PanelID_e tab ) {
  * @param end_col    Var pointer for storing col width of the tab menu (optional)
  */
 static void ctune_UI_printTabMenu( ctune_UI_PanelID_e curr_panel, int * end_col ) {
-    const int    tabs[3]   = {
-        [0] = CTUNE_UI_PANEL_FAVOURITES,
-        [1] = CTUNE_UI_PANEL_SEARCH,
-        [2] = CTUNE_UI_PANEL_BROWSER
+    struct Tabs {
+        ctune_UI_PanelID_e id;
+        const char       * title;
+        WindowProperty_t * selector_properties;
     };
-    const char * titles[3] = {
-        [0] = ctune_UI_Language.text( CTUNE_UI_TEXT_WIN_TITLE_FAV ),
-        [1] = ctune_UI_Language.text( CTUNE_UI_TEXT_WIN_TITLE_SEARCH ),
-        [2] = ctune_UI_Language.text( CTUNE_UI_TEXT_WIN_TITLE_BROWSE )
+
+    const struct Tabs tabs[3] = {
+        { CTUNE_UI_PANEL_FAVOURITES, ctune_UI_Language.text( CTUNE_UI_TEXT_WIN_TITLE_FAV ),    &ui.tabs.favourites_tab_selector },
+        { CTUNE_UI_PANEL_SEARCH,     ctune_UI_Language.text( CTUNE_UI_TEXT_WIN_TITLE_SEARCH ), &ui.tabs.search_tab_selector },
+        { CTUNE_UI_PANEL_BROWSER,    ctune_UI_Language.text( CTUNE_UI_TEXT_WIN_TITLE_BROWSE ), &ui.tabs.browser_tab_selector },
     };
+
     const int row = 0; //menu location
     int       col = 1; //starting column
 
     mvwprintw( ui.panel_windows[curr_panel], 0, (col++), "|" );
 
-    for( int i = 0; i < 3; ++i ) {
-        size_t width = strlen( titles[i] ) + 2;;
+    for( size_t i = 0; i < 3; ++i ) {
+        const size_t width = strlen( tabs[i].title ) + 2;
 
-        if( (int) curr_panel == tabs[i] ) {
+        *tabs[i].selector_properties = (WindowProperty_t) {
+            .rows  = 1,
+            .cols  = (int) width,
+            .pos_y = ui.size.tab_border.pos_y,
+            .pos_x = ui.size.tab_border.pos_x + col,
+        };
+
+        if( curr_panel == tabs[i].id ) {
             wattron( ui.panel_windows[curr_panel], ctune_UI_Theme.color( CTUNE_UI_ITEM_TAB_CURR ) );
-            mvwprintw( ui.panel_windows[curr_panel], row, col, " %s ", titles[i] );
+            mvwprintw( ui.panel_windows[curr_panel], row, col, " %s ", tabs[i].title );
             wattroff( ui.panel_windows[curr_panel], ctune_UI_Theme.color( CTUNE_UI_ITEM_TAB_CURR ) );
         } else {
-            mvwprintw( ui.panel_windows[curr_panel], row, col, " %s ", titles[i] );
+            mvwprintw( ui.panel_windows[curr_panel], row, col, " %s ", tabs[i].title );
         }
 
         col += ( (int) width );
@@ -1143,7 +1288,7 @@ static void ctune_UI_createPanels( void ) {
                                               ui.size.title_bar.pos_y,
                                               ui.size.title_bar.pos_x );
                 wbkgd( ui.panel_windows[i], ctune_UI_Theme.color( CTUNE_UI_ITEM_TITLE ) );
-                mvwprintw( ui.panel_windows[i], 0, 1, ctune_UI_Language.text( CTUNE_UI_TEXT_WIN_TITLE_MAIN ) );
+                mvwprintw( ui.panel_windows[i], 0, 1, "%s", ctune_UI_Language.text( CTUNE_UI_TEXT_WIN_TITLE_MAIN ) );
             } break;
 
             case CTUNE_UI_PANEL_STATUS_1: {
@@ -1201,13 +1346,12 @@ static void ctune_UI_createPanels( void ) {
                 ctune_UI_printTabMenu( i, &tab_menu_end_col );
 
                 { //panel separator line
-                    const int pos_x = ( ui.size.browser_left.cols + 1 );
+                    if( ui.size.browser_line.pos_x >= tab_menu_end_col ) { //i.e.: avoid top 'T' of the separator bar if it clashes with the tab menu
+                        mvwaddch( ui.panel_windows[ i ], 0, ui.size.browser_line.pos_x, ACS_TTEE );
+                    }
 
-                    if( pos_x >= tab_menu_end_col ) //i.e.: avoid top 'T' of the separator bar if it clashes with the tab menu
-                        mvwaddch( ui.panel_windows[i], 0, pos_x, ACS_TTEE );
-
-                    mvwvline( ui.panel_windows[i], 1, pos_x, ACS_VLINE, ( ui.size.tab_canvas.rows ) );
-                    mvwaddch( ui.panel_windows[i], ( ui.size.tab_border.rows - 1 ), pos_x, ACS_BTEE );
+                    mvwvline( ui.panel_windows[i], 1, ui.size.browser_line.pos_x, ACS_VLINE, ( ui.size.browser_line.rows ) );
+                    mvwaddch( ui.panel_windows[i], ( ui.size.tab_border.rows - 1 ), ui.size.browser_line.pos_x, ACS_BTEE );
                 }
             } break;
 
@@ -1238,6 +1382,214 @@ static void ctune_UI_destroyPanels( void ) {
     }
 
     CTUNE_LOG( CTUNE_LOG_TRACE, "[ctune_UI_destroyPanels()] Main UI panels freed." );
+}
+
+/**
+ * [PRIVATE] Handles a mouse event
+ * @param event Pointer to mouse event
+ */
+static void ctune_UI_handleMouseEvent( MEVENT * event ) {
+    ctune_UI_PanelID_e panel = CTUNE_UI_PANEL_COUNT;
+
+    if( wenclose( ui.panel_windows[CTUNE_UI_PANEL_TITLE], event->y, event->y ) ) {
+        panel = CTUNE_UI_PANEL_TITLE;
+
+    } else if( event->y == ui.size.tab_border.pos_y ) { //i.e.: on the tab menu line
+        if( event->x >= ui.tabs.favourites_tab_selector.pos_x &&
+            event->x <= ( ui.tabs.favourites_tab_selector.pos_x + ui.tabs.favourites_tab_selector.cols ) )
+        {
+            if( event->bstate & BUTTON1_CLICKED || event->bstate & BUTTON1_DOUBLE_CLICKED ) {
+                ctune_UI_clearMsgLine();
+                ctune_UI.show( CTUNE_UI_PANEL_FAVOURITES );
+            }
+
+        } else if( event->x >= ui.tabs.search_tab_selector.pos_x &&
+                   event->x <= ( ui.tabs.search_tab_selector.pos_x + ui.tabs.search_tab_selector.cols ) )
+        {
+            if( event->bstate & BUTTON1_CLICKED || event->bstate & BUTTON1_DOUBLE_CLICKED ) {
+                ctune_UI_clearMsgLine();
+                ctune_UI.show( CTUNE_UI_PANEL_SEARCH );
+            }
+
+        } else if( event->x >= ui.tabs.browser_tab_selector.pos_x &&
+                   event->x <= ( ui.tabs.browser_tab_selector.pos_x + ui.tabs.browser_tab_selector.cols ) )
+        {
+            if( event->bstate & BUTTON1_CLICKED || event->bstate & BUTTON1_DOUBLE_CLICKED ) {
+                ctune_UI_clearMsgLine();
+                ctune_UI.show( CTUNE_UI_PANEL_BROWSER );
+            }
+        }
+
+    } else if( wenclose( ui.panel_windows[ ui.cache.curr_panel ], event->y, event->x ) ) {
+        panel = ui.cache.curr_panel;
+
+    } else if( event->y == ui.size.status_bar1.pos_y ) { //i.e. on the status bar line
+        if( event->x >= ui.size.status_bar1.pos_x && event->x <= ( ui.size.status_bar1.pos_x + ui.size.status_bar1.cols ) ) {
+            panel = CTUNE_UI_PANEL_STATUS_1;
+
+        } else if( event->x >= ui.size.status_bar2.pos_x && event->x <= ( ui.size.status_bar2.pos_x + ui.size.status_bar2.cols ) ) {
+            panel = CTUNE_UI_PANEL_STATUS_2;
+
+        } else if( event->x >= ui.size.status_bar3.pos_x && event->x <= ( ui.size.status_bar3.pos_x + ui.size.status_bar3.cols ) ) {
+            panel = CTUNE_UI_PANEL_STATUS_3;
+        }
+    }
+
+    //=============== Trigger the appropriate event ===============
+
+    switch( panel ) {
+        case CTUNE_UI_PANEL_TITLE: {
+            if( event->bstate & BUTTON2_CLICKED ) {
+                ctune_UI_openOptionsMenuDialog( ui.cache.curr_panel );
+            }
+        } break;
+
+        case CTUNE_UI_PANEL_STATUS_1: { //Play/Stop icon for currently queued radio station
+            if( ( event->bstate & BUTTON1_CLICKED || event->bstate & BUTTON1_DOUBLE_CLICKED ) && ui.cache.curr_radio_station != NULL ) {
+                ctune_UI_clearMsgLine();
+
+                if( ctune_Controller.playback.getPlaybackState() ) {
+                    ctune_Controller.playback.stop();
+                } else {
+                    ctune_UI_startQueuedStationPlayback();
+                }
+            }
+        } break;
+
+        case CTUNE_UI_PANEL_STATUS_2: { //Currently queued radio station
+            if( event->bstate & BUTTON1_CLICKED || event->bstate & BUTTON3_CLICKED ) {
+                ctune_UI_clearMsgLine();
+
+                if( ui.cache.curr_radio_station != NULL ) {
+                    ctune_UI_RSInfo.show( &ui.dialogs.rsinfo, ctune_UI_Language.text( CTUNE_UI_TEXT_WIN_TITLE_RSINFO_QUEUED ), ui.cache.curr_radio_station );
+                    ctune_UI_RSInfo.captureInput( &ui.dialogs.rsinfo );
+                }
+
+            } else if( event->bstate & BUTTON1_DOUBLE_CLICKED && ui.cache.curr_radio_station != NULL ) {
+                ctune_UI_clearMsgLine();
+
+                if( ctune_Controller.playback.getPlaybackState() ) {
+                    ctune_Controller.playback.stop();
+                } else {
+                    ctune_UI_startQueuedStationPlayback();
+                }
+            }
+        } break;
+
+        case CTUNE_UI_PANEL_STATUS_3: { //Volume
+            int delta = 0;
+
+            if( event->bstate & BUTTON1_CLICKED ) {
+                delta = 5;
+            } else if( event->bstate & BUTTON1_DOUBLE_CLICKED ) {
+                delta = 10;
+            } else if( event->bstate & BUTTON3_CLICKED ) {
+                delta = -5;
+            } else if( event->bstate & BUTTON3_DOUBLE_CLICKED ) {
+                delta = -10;
+            }
+
+            if( delta != 0 ) {
+                ctune_UI_clearMsgLine();
+
+                if( ctune_Controller.playback.getPlaybackState() == true ) {
+                    ctune_Controller.playback.modifyVolume( delta );
+                } else {
+                    ctune_UI.printVolume( ui.cb.quietVolChangeCallback( delta ) );
+                }
+            }
+        } break;
+
+        case CTUNE_UI_PANEL_MSG_LINE: break;
+
+        case CTUNE_UI_PANEL_FAVOURITES: //fallthrough
+        case CTUNE_UI_PANEL_SEARCH    : {
+            static const long      valid_buttons = ( BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED | BUTTON3_CLICKED );
+            ctune_UI_RSListWin_t * list_win      = ( panel == CTUNE_UI_PANEL_FAVOURITES ? &ui.tabs.favourites : &ui.tabs.search );
+
+            if( event->bstate & valid_buttons ) {
+                ctune_UI_clearMsgLine();
+
+                const ctune_UI_ScrollMask_m scroll = ctune_UI_RSListWin.isScrollButton( list_win, event->y, event->x );
+
+                if( event->bstate & BUTTON1_CLICKED ) {
+                    if( scroll & CTUNE_UI_SCROLL_UP ) {
+                        ctune_UI_RSListWin.selectPageUp( list_win );
+                    } else if( scroll & CTUNE_UI_SCROLL_DOWN ) {
+                        ctune_UI_RSListWin.selectPageDown( list_win );
+                    } else {
+                        ctune_UI_RSListWin.selectAt( list_win, event->y, event->x );
+                    }
+
+                    ctune_UI_RSListWin.show( list_win );
+
+                } else if( event->bstate & BUTTON1_DOUBLE_CLICKED && scroll == 0 ) {
+                    ctune_UI_RSListWin.selectAt( list_win, event->y, event->x );
+                    ctune_UI_RSListWin.show( list_win );
+                    ctune_UI_playSelectedStation( ui.cache.curr_panel );
+
+                } else if( event->bstate & BUTTON3_CLICKED ) {
+                    if( scroll & CTUNE_UI_SCROLL_UP ) {
+                        ctune_UI_RSListWin.selectFirst( list_win );
+                        ctune_UI_RSListWin.show( list_win );
+
+                    } else if( scroll & CTUNE_UI_SCROLL_DOWN ) {
+                        ctune_UI_RSListWin.selectLast( list_win );
+                        ctune_UI_RSListWin.show( list_win );
+
+                    } else {
+                        ctune_UI_RSListWin.selectAt( list_win, event->y, event->x );
+                        ctune_UI_RSListWin.show( list_win );
+                        ctune_UI_openSelectedStationInformation( ui.cache.curr_panel );
+                    }
+                }
+            }
+        } break;
+
+        case CTUNE_UI_PANEL_BROWSER: {
+            static const long valid_buttons = ( BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED | BUTTON3_CLICKED );
+
+            if( event->bstate & valid_buttons ) {
+                ctune_UI_clearMsgLine();
+
+                const ctune_UI_ScrollMask_m scroll = ctune_UI_BrowserWin.isScrollButton( &ui.tabs.browser, event->y, event->x );
+
+                if( event->bstate & BUTTON1_CLICKED ) {
+                    if( scroll & CTUNE_UI_SCROLL_UP ) {
+                        ctune_UI_BrowserWin.navKeyPageUp( &ui.tabs.browser );
+                    } else if( scroll & CTUNE_UI_SCROLL_DOWN ) {
+                        ctune_UI_BrowserWin.navKeyPageDown( &ui.tabs.browser );
+                    } else {
+                        ctune_UI_BrowserWin.selectAt( &ui.tabs.browser, event->y, event->x );
+                    }
+
+                    ctune_UI_BrowserWin.show( &ui.tabs.browser );
+
+                } else if( event->bstate & BUTTON1_DOUBLE_CLICKED && scroll == 0 ) {
+                    ctune_UI_BrowserWin.selectAt( &ui.tabs.browser, event->y, event->x );
+                    ctune_UI_BrowserWin.show( &ui.tabs.browser );
+                    ctune_UI_navEnter( panel );
+
+                } else if( event->bstate & BUTTON3_CLICKED ) {
+                    if( scroll & CTUNE_UI_SCROLL_UP ) {
+                        ctune_UI_BrowserWin.navKeyHome( &ui.tabs.browser );
+                        ctune_UI_BrowserWin.show( &ui.tabs.browser );
+
+                    } else if( scroll & CTUNE_UI_SCROLL_DOWN ) {
+                        ctune_UI_BrowserWin.navKeyEnd( &ui.tabs.browser );
+                        ctune_UI_BrowserWin.show( &ui.tabs.browser );
+
+                    } else {
+                        ctune_UI_BrowserWin.selectAt( &ui.tabs.browser, event->y, event->x );
+                        ctune_UI_BrowserWin.show( &ui.tabs.browser );
+                        ctune_UI_navSelectRight( panel );
+                    }
+                }
+            }
+        } break;
+
+        default: break;
+    }
 }
 
 /**
@@ -1311,14 +1663,7 @@ static void ctune_UI_runKeyInterfaceLoop() {
 
             case CTUNE_UI_ACTION_RESUME: { //play currently queued up station in ui.current_radio_station
                 ctune_UI_clearMsgLine();
-                if( ui.cache.curr_radio_station != NULL ) {
-                    CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_runKeyInterfaceLoop()] initiating queued RSI playback..." );
-                    if( !ctune_Controller.playback.start( ui.cache.curr_radio_station ) ) {
-                        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_runKeyInterfaceLoop()] Failed playback init." );
-                    }
-                } else {
-                    ctune_UI.printStatusMsg( ctune_UI_Language.text( CTUNE_UI_TEXT_MSG_EMPTY_QUEUE ) );
-                }
+                ctune_UI_startQueuedStationPlayback();
             } break;
 
             case CTUNE_UI_ACTION_QUIT: {
@@ -1358,6 +1703,12 @@ static void ctune_UI_runKeyInterfaceLoop() {
                 ctune_UI_toggleFavourite( ui.cache.curr_panel, 0 );
             } break;
 
+            case CTUNE_UI_ACTION_MOUSE_EVENT: {
+                if( getmouse( &ui.mouse_event ) == OK ) {
+                    ctune_UI_handleMouseEvent( &ui.mouse_event );
+                }
+            } break;
+
             default:
                 break;
         }
@@ -1372,15 +1723,16 @@ static void ctune_UI_runKeyInterfaceLoop() {
 /**
  * Initialises the UI and its internal variables
  * @param show_cursor Flag to show the UI cursor
+ * @param mouse_nav   Flag to enable mouse navigation
  * @return Success
  */
-static bool ctune_UI_setup( bool show_cursor ) {
-    CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_init( %i )] Initialising the UI.", show_cursor );
+static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
+    CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_setup( %i, %i )] Initialising the UI.", show_cursor, mouse_nav );
 
     ui.old_cursor = curs_set( 0 );
 
     if( !ctune_UI_KeyBinding.init() ) {
-        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i )] Failed key binding init.", show_cursor );
+        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i, %i )] Failed key binding init.", show_cursor, mouse_nav );
         ctune_err.set( CTUNE_ERR_UI );
         return false; //EARLY RETURN
 
@@ -1388,8 +1740,10 @@ static bool ctune_UI_setup( bool show_cursor ) {
         ui.init_stages[CTUNE_UI_INITSTAGE_KEYBINDS] = true;
     }
 
+    ctune_UI_Icons.setUnicode( ctune_UIConfig.unicodeIcons( ctune_Controller.cfg.getUIConfig(), FLAG_GET_VALUE ) );
+
     if( ( stdscr = initscr() ) == NULL ) {
-        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i )] Failed `initscr()`.", show_cursor );
+        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i, %i )] Failed `initscr()`.", show_cursor, mouse_nav );
         ctune_err.set( CTUNE_ERR_UI );
         return false; //EARLY RETURN
 
@@ -1405,7 +1759,7 @@ static bool ctune_UI_setup( bool show_cursor ) {
     }
 
     if( has_colors() == false ) {
-        CTUNE_LOG( CTUNE_LOG_WARNING, "[ctune_UI_init( %i )] Terminal does not support colours.", show_cursor );
+        CTUNE_LOG( CTUNE_LOG_WARNING, "[ctune_UI_setup( %i, %i )] Terminal does not support colours.", show_cursor, mouse_nav );
         ctune_err.set( CTUNE_ERR_UI );
         return false; //EARLY RETURN
 
@@ -1418,20 +1772,35 @@ static bool ctune_UI_setup( bool show_cursor ) {
     noecho();
     keypad( stdscr, TRUE );
 
+    ctune_UIConfig_t * ui_config = ctune_Controller.cfg.getUIConfig();
+
+    // MOUSE NAVIGATION
+    if( mouse_nav ) {
+        if( mousemask( ALL_MOUSE_EVENTS, NULL ) != 0 ) {
+            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_setup( %i, %i )] Mouse navigation enabled.", show_cursor, mouse_nav );
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_setup( %i, %i )] Failed to enable mouse navigation.", show_cursor, mouse_nav );
+            ctune_err.set( CTUNE_ERR_IO_MOUSE_ENABLE_FAIL );
+            ctune_UIConfig.mouse( ui_config, FLAG_SET_OFF );
+            mouse_nav = false;
+        }
+    }
+
     // CONTEXTUAL HELP POPUP DIALOG
     if( !ctune_UI_ContextHelp.init( &ui.size.screen, ctune_UI_Language.text ) ) {
         ctune_err.set( CTUNE_ERR_UI );
-        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_init( %i )] Could not init contextual help.", show_cursor );
+        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i, %i )] Could not init contextual help.", show_cursor, mouse_nav );
         return false; //EARLY RETURN
 
     } else {
+        ctune_UI_ContextHelp.setMouseCtrl( mouse_nav );
         ui.init_stages[CTUNE_UI_INITSTAGE_CTXHELP] = true;
     }
 
     // FIND RADIO STATION FORM
     ui.dialogs.rsfind = ctune_UI_RSFind.create( &ui.size.screen, ctune_UI_Language.text );
-    if( !ctune_UI_RSFind.init( &ui.dialogs.rsfind ) ) {
-        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_init( %i )] Could not init RSFind dialog.", show_cursor );
+    if( !ctune_UI_RSFind.init( &ui.dialogs.rsfind, mouse_nav ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i, %i )] Could not init RSFind dialog.", show_cursor, mouse_nav );
         ctune_err.set( CTUNE_ERR_UI );
         return false; //EARLY RETURN
 
@@ -1445,8 +1814,8 @@ static bool ctune_UI_setup( bool show_cursor ) {
                                                 ctune_UI_generateLocalUUID,
                                                 ctune_Controller.playback.testStream,
                                                 ctune_Controller.playback.validateURL );
-    if( !ctune_UI_RSEdit.init( &ui.dialogs.rsedit ) ) {
-        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_init( %i )] Could not init RSEdit dialog.", show_cursor );
+    if( !ctune_UI_RSEdit.init( &ui.dialogs.rsedit, mouse_nav ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i, %i )] Could not init RSEdit dialog.", show_cursor, mouse_nav );
         ctune_err.set( CTUNE_ERR_UI );
         return false; //EARLY RETURN
 
@@ -1456,8 +1825,8 @@ static bool ctune_UI_setup( bool show_cursor ) {
 
     // RADIO STATION INFO DIALOG
     ui.dialogs.rsinfo = ctune_UI_RSInfo.create( &ui.size.screen, ctune_UI_Language.text, ": " );
-    if( !ctune_UI_RSInfo.init( &ui.dialogs.rsinfo ) ) {
-        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_init( %i )] Could not init RSInfo_t dialog.", show_cursor );
+    if( !ctune_UI_RSInfo.init( &ui.dialogs.rsinfo, mouse_nav ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i, %i )] Could not init RSInfo_t dialog.", show_cursor, mouse_nav );
         ctune_err.set( CTUNE_ERR_UI );
         return false; //EARLY RETURN
 
@@ -1468,8 +1837,8 @@ static bool ctune_UI_setup( bool show_cursor ) {
     // OPTIONS MENU DIALOG (test build)
     ui.dialogs.optmenu = ctune_UI_OptionsMenu.create( &ui.size.screen, ui.cache.curr_panel, ctune_UI_Language.text );
 
-    if( !ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu ) ) {
-        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_init( %i )] Could not init OptionsMenu_t dialog.", show_cursor );
+    if( !ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu, mouse_nav ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i, %i )] Could not init OptionsMenu_t dialog.", show_cursor, mouse_nav );
         ctune_err.set( CTUNE_ERR_UI );
         return false; //EARLY RETURN
 
@@ -1479,8 +1848,6 @@ static bool ctune_UI_setup( bool show_cursor ) {
 
     ctune_UI_createPanels();
 
-    ctune_UIConfig_t * ui_config = ctune_Controller.cfg.getUIConfig();
-
     { //TAB:FAVOURITE
         ui.tabs.favourites = ctune_UI_RSListWin.init( &ui.size.tab_canvas,
                                                       ctune_UI_Language.text,
@@ -1488,6 +1855,7 @@ static bool ctune_UI_setup( bool show_cursor ) {
                                                       ctune_Controller.cfg.toggleFavourite,
                                                       ctune_UI_getStationState );
 
+        ctune_UI_RSListWin.setMouseCtrl( &ui.tabs.favourites, ctune_UIConfig.mouse( ui_config, FLAG_GET_VALUE ) );
         ctune_UI_RSListWin.showCtrlRow( &ui.tabs.favourites, false );
         ctune_UI_RSListWin.setLargeRow( &ui.tabs.favourites, ctune_UIConfig.fav_tab.largeRowSize( ui_config, FLAG_GET_VALUE ) );
         ctune_UI_RSListWin.themeFavourites( &ui.tabs.favourites, ctune_UIConfig.fav_tab.theming( ui_config, FLAG_GET_VALUE ) );
@@ -1502,6 +1870,7 @@ static bool ctune_UI_setup( bool show_cursor ) {
                                                   ctune_Controller.cfg.toggleFavourite,
                                                   ctune_UI_getStationState );
 
+        ctune_UI_RSListWin.setMouseCtrl( &ui.tabs.search, ctune_UIConfig.mouse( ui_config, FLAG_GET_VALUE ) );
         ctune_UI_RSListWin.showCtrlRow( &ui.tabs.search, true );
         ctune_UI_RSListWin.setLargeRow( &ui.tabs.search, ctune_UIConfig.search_tab.largeRowSize( ui_config, FLAG_GET_VALUE ) );
         ctune_UI_RSListWin.themeFavourites( &ui.tabs.search, true );
@@ -1517,6 +1886,7 @@ static bool ctune_UI_setup( bool show_cursor ) {
                                                     ctune_Controller.cfg.toggleFavourite,
                                                     ctune_UI_getStationState );
 
+        ctune_UI_BrowserWin.setMouseCtrl( &ui.tabs.browser, ctune_UIConfig.mouse( ui_config, FLAG_GET_VALUE ) );
         ctune_UI_BrowserWin.showCtrlRow( &ui.tabs.browser, true );
         ctune_UI_BrowserWin.setLargeRow( &ui.tabs.browser, ctune_UIConfig.browse_tab.largeRowSize( ui_config, FLAG_GET_VALUE ) );
         ctune_UI_BrowserWin.themeFavourites( &ui.tabs.browser, true );
@@ -1534,8 +1904,8 @@ static bool ctune_UI_setup( bool show_cursor ) {
 //    nonl();
 
     CTUNE_LOG( CTUNE_LOG_DEBUG,
-               "[ctune_UI_init( %i )] Init = [%i][%i][%i][%i][%i][%i][%i][%i][%i][%i]",
-               show_cursor,
+               "[ctune_UI_setup( %i, %i )] Init = [%i][%i][%i][%i][%i][%i][%i][%i][%i][%i]",
+               show_cursor, mouse_nav,
                ui.init_stages[CTUNE_UI_INITSTAGE_KEYBINDS],
                ui.init_stages[CTUNE_UI_INITSTAGE_STDSCR],
                ui.init_stages[CTUNE_UI_INITSTAGE_THEME],
@@ -1548,7 +1918,7 @@ static bool ctune_UI_setup( bool show_cursor ) {
                ui.init_stages[CTUNE_UI_INITSTAGE_COMPLETE]
     );
 
-    CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_init( %i )] UI Initialised successfully.", show_cursor );
+    CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_setup( %i, %i )] UI Initialised successfully.", show_cursor, mouse_nav );
 
     refresh();
     return true;
@@ -1655,6 +2025,12 @@ static void ctune_UI_resize() {
     endwin();
     ctune_UI_destroyPanels();
     ctune_UI_calculateWinSizes( &ui.size );
+
+    const bool mouse_enabled = ctune_UIConfig.mouse( ctune_Controller.cfg.getUIConfig(), FLAG_GET_VALUE );
+
+    ctune_UI_RSListWin.setMouseCtrl( &ui.tabs.favourites, mouse_enabled );
+    ctune_UI_RSListWin.setMouseCtrl( &ui.tabs.search, mouse_enabled );
+    ctune_UI_BrowserWin.setMouseCtrl( &ui.tabs.browser, mouse_enabled );
 
     switch( ui.cache.curr_panel ) {
         case CTUNE_UI_PANEL_FAVOURITES: {
@@ -1841,7 +2217,11 @@ static void ctune_UI_printVolume( const int vol ) {
         return; //EARLY RETURN
 
     ui.cache.curr_vol = vol;
-    mvwprintw( ui.panel_windows[CTUNE_UI_PANEL_STATUS_3], 0, 0, "Vol: %3d%%", vol );
+
+    mvwprintw( ui.panel_windows[ CTUNE_UI_PANEL_STATUS_3 ], 0, 0,
+               "%s %3d%%",
+               ctune_UI_Icons.icon( CTUNE_UI_ICON_VOLUME ), vol );
+
     update_panels();
     refresh();
     doupdate();
@@ -1864,7 +2244,11 @@ static void ctune_UI_printPlaybackState( const bool state ) {
            )
     );
 
-    mvwprintw( ui.panel_windows[CTUNE_UI_PANEL_STATUS_1], 0, 1, "%c", ( state ? '>' : '.' ) );
+    const char * icon = ( state
+                          ? ctune_UI_Icons.icon( CTUNE_UI_ICON_PLAYING )
+                          : ctune_UI_Icons.icon( CTUNE_UI_ICON_STOPPED ) );
+
+    mvwprintw( ui.panel_windows[CTUNE_UI_PANEL_STATUS_1], 0, 1, "%s", icon );
     update_panels();
     refresh();
     doupdate();

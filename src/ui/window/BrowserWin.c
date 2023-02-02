@@ -2,8 +2,6 @@
 
 #include "../../logger/Logger.h"
 #include "../../datastructure/String.h"
-#include "../../enum/ListCategory.h"
-#include "../../dto/CategoryItem.h"
 
 //==================================[ PRIVATE METHODS/STRUCTS ]=====================================
 
@@ -242,6 +240,16 @@ static ctune_UI_BrowserWin_t ctune_UI_BrowserWin_init( const WindowProperty_t * 
             .getStationsBy  = getStationsBy,
         },
     };
+}
+
+/**
+ * Switch mouse control UI on/off
+ * @param win             ctune_UI_BrowserWin_t object
+ * @param mouse_ctrl_flag Flag to turn feature on/off
+ */
+static void ctune_UI_BrowserWin_setMouseCtrl( ctune_UI_BrowserWin_t * win, bool mouse_ctrl_flag ) {
+    ctune_UI_SlideMenu.setMouseCtrl( &win->left_pane, mouse_ctrl_flag );
+    ctune_UI_RSListWin.setMouseCtrl( &win->right_pane, mouse_ctrl_flag );
 }
 
 /**
@@ -519,8 +527,45 @@ static void ctune_UI_BrowserWin_toggleFav( ctune_UI_BrowserWin_t * win ) {
 }
 
 /**
+ * Select at given coordinates
+ * @param win   ctune_UI_BrowserWin_t object
+ * @param y     Row location on screen
+ * @param x     Column location on screen
+ */
+static void ctune_UI_BrowserWin_selectAt( ctune_UI_BrowserWin_t * win, int y, int x ) {
+    if( wenclose( win->left_pane.canvas_win, y, x ) ) {
+        ctune_UI_BrowserWin_setFocus( win, FOCUS_PANE_LEFT );
+        ctune_UI_SlideMenu.selectAt( &win->left_pane, y, x );
+
+    } else if( wenclose( win->right_pane.canvas_win, y, x ) ) {
+        ctune_UI_BrowserWin_setFocus( win, FOCUS_PANE_RIGHT );
+        ctune_UI_RSListWin.selectAt( &win->right_pane, y, x );
+    }
+}
+
+/**
+ * Checks if area at coordinate is a scroll button
+ * @param win ctune_UI_BrowserWin_t object
+ * @param y   Row location on screen
+ * @param x   Column location on screen
+ * @return Scroll mask
+ */
+static ctune_UI_ScrollMask_m ctune_UI_BrowserWin_isScrollButton( ctune_UI_BrowserWin_t * win, int y, int x ) {
+    if( wenclose( win->left_pane.canvas_win, y, x ) ) {
+        ctune_UI_BrowserWin_setFocus( win, FOCUS_PANE_LEFT );
+        return ctune_UI_SlideMenu.isScrollButton( &win->left_pane, y, x );
+
+    } else if( wenclose( win->right_pane.indicator_win, y, x ) ) {
+        ctune_UI_BrowserWin_setFocus( win, FOCUS_PANE_RIGHT );
+        return ctune_UI_RSListWin.isScrollButton( &win->right_pane, y, x );
+    }
+
+    return 0;
+}
+
+/**
  * Gets a RSI pointer to the currently selected item in the right pane or if ctrl row then trigger callback
- * @param ctune_UI_BrowserWin_t object
+ * @param win ctune_UI_BrowserWin_t object
  * @return RadioStationInfo_t object pointer or NULL if out of range of the collection/is ctrl row
  */
 static const ctune_RadioStationInfo_t * ctune_UI_BrowserWin_getSelectedStation( ctune_UI_BrowserWin_t * win ) {
@@ -565,6 +610,7 @@ static void ctune_UI_BrowserWin_free( ctune_UI_BrowserWin_t * win ) {
  */
 const struct ctune_UI_BrowserWin_Namespace ctune_UI_BrowserWin = {
     .init               = &ctune_UI_BrowserWin_init,
+    .setMouseCtrl       = &ctune_UI_BrowserWin_setMouseCtrl,
     .setLargeRow        = &ctune_UI_BrowserWin_setLargeRow,
     .themeFavourites    = &ctune_UI_BrowserWin_themeFavourites,
     .showCtrlRow        = &ctune_UI_BrowserWin_showCtrlRow,
@@ -584,6 +630,8 @@ const struct ctune_UI_BrowserWin_Namespace ctune_UI_BrowserWin = {
     .navKeyPageDown     = &ctune_UI_BrowserWin_navKeyPageDown,
     .navKeyHome         = &ctune_UI_BrowserWin_navKeyFirst,
     .navKeyEnd          = &ctune_UI_BrowserWin_navKeyLast,
+    .selectAt           = &ctune_UI_BrowserWin_selectAt,
+    .isScrollButton     = &ctune_UI_BrowserWin_isScrollButton,
     .toggleFav          = &ctune_UI_BrowserWin_toggleFav,
     .getSelectedStation = &ctune_UI_BrowserWin_getSelectedStation,
     .isCtrlRowSelected  = &ctune_UI_BrowserWin_isCtrlRowSelected,

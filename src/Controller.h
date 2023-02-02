@@ -185,6 +185,19 @@ extern const struct ctune_Controller_Instance {
          */
         void (* saveUIConfig)( void );
 
+        /**
+         * Gets the timeout value in seconds for connecting to and playing a stream
+         * @return Timeout value in seconds
+         */
+        int (* getStreamTimeout)( void );
+
+        /**
+         * Sets the timeout value in seconds for connecting to and playing a stream
+         * @param val Timeout value in seconds (1-10 inclusive)
+         * @return Success
+         */
+        bool (* setStreamTimeout)( int seconds );
+
     } cfg;
 
     /**

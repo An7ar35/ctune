@@ -5,13 +5,13 @@
 
 #include "../datastructure/KeyBind.h"
 #include "../datastructure/KeyInfo.h"
-#include "../enum/KeyboardKeyID.h"
+#include "../enum/InputKeyID.h"
 
 typedef enum ctune_UI_KeyBinding_KeyEntryType {
     CTUNE_UI_KEYBINDING_TYPE_NORMAL,  //standard key-binding entry
     CTUNE_UI_KEYBINDING_TYPE_HIDDEN,  //for display formatting: hidden entry
     CTUNE_UI_KEYBINDING_TYPE_HEADING, //for display formatting: heading entry
-    CTUNE_UI_KEYBINDING_TYPE_EMPTY    //for for display formatting: empty line
+    CTUNE_UI_KEYBINDING_TYPE_EMPTY    //for display formatting: empty line
 } ctune_UI_KeyEntryType_e;
 
 /**
@@ -25,7 +25,7 @@ typedef struct ctune_UI_KeyBinding {
     ctune_UI_KeyEntryType_e entry_type;
     ctune_UI_ActionID_e     action;
     ctune_UI_TextID_e       description;
-    ctune_UI_KeyboardKey_e  key;
+    ctune_UI_InputKey_e     key;
 
 } ctune_UI_KeyBinding_t;
 
@@ -49,10 +49,10 @@ extern const struct ctune_UI_KeyBinding_Instance {
 
     /**
      * Get a key's display text
-     * @param keyID ctune_UI_KeyboardKey_e enum type
+     * @param keyID ctune_UI_InputKey_e enum type
      * @return Pointer to key's description string (NULL if error)
      */
-    const char * (* getKeyText)( ctune_UI_KeyboardKey_e keyID );
+    const char * (* getKeyText)( ctune_UI_InputKey_e keyID );
 
     /**
      * Iterates through the binding entries for a context calling the callback method for each

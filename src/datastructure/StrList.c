@@ -336,7 +336,7 @@ size_t ctune_StrList_copy( const struct StrList * from, struct StrList * to, siz
  * @param n      Number of nodes to move
  * @return Number of successfully moved nodes
  */
-size_t ctune_StrList_move( struct StrList * from, struct StrList * to, size_t offset, size_t n ) { //TODO
+size_t ctune_StrList_move( struct StrList * from, struct StrList * to, size_t offset, size_t n ) {
     if( from == NULL || to == NULL || offset >= StrList.size( to ) || n == 0 ) {
         return 0; //EARLY RETURN
     }

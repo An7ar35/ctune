@@ -7,7 +7,6 @@
 
 #include "../../logger/Logger.h"
 #include "../definitions/Theme.h"
-#include "../../utils/utilities.h"
 
 /**
  * [PRIVATE] Scroll content by a specified amount
@@ -18,60 +17,22 @@
 static void ctune_UI_Dialog_scrollBy( ctune_UI_Dialog_t * dialog, int y, int x ) {
     ctune_UI_ScrollWin.scrollPad( &dialog->canvas, y, x );
 
-    if( y != 0 ) {
-        int max = 0;
+    if( y > 0 ) { //i.e. scroll down
+        ctune_UI_ScrollBar.incrementPosition( &dialog->scrollbar.y, y );
+        ctune_UI_ScrollBar.show( &dialog->scrollbar.y );
 
-        if( !ctune_utoi( ctune_UI_ScrollBar.getTotalIncrements( &dialog->scrollbar.y ), &max ) ) {
-            CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[ctune_UI_Dialog_scrollBy( %p, %i, %i )] Failed to cast vertical scrollbar's total increment (%lu) - aborting...",
-                       dialog, y, x, ctune_UI_ScrollBar.getTotalIncrements( &dialog->scrollbar.y )
-            );
-
-            return; //EARLY RETURN
-        }
-
-        int    shift = ( abs( y ) < max ? y : ( y < 0 ? -max : max ) );
-        size_t pos   = 0;
-
-        if( y > 0 ) { //i.e. scroll down
-            pos = ( max - shift > dialog->scrollbar.scroll_pos_y ? ( shift + dialog->scrollbar.scroll_pos_y ) : max );
-
-        } else if( y < 0 ) { //i.e.: scroll up
-            pos = ( abs( y ) < dialog->scrollbar.scroll_pos_y ? ( dialog->scrollbar.scroll_pos_y + shift ) : 0 );
-        }
-
-        if( ctune_UI_ScrollBar.setPosition( &dialog->scrollbar.y, pos ) ) {
-            dialog->scrollbar.scroll_pos_y = pos;
-            ctune_UI_ScrollBar.show( &dialog->scrollbar.y );
-        }
+    } else if( y < 0 ) { //i.e.: scroll up
+        ctune_UI_ScrollBar.decrementPosition( &dialog->scrollbar.y, abs( y ) );
+        ctune_UI_ScrollBar.show( &dialog->scrollbar.y );
     }
 
-    if( x != 0 ) {
-        int max = 0;
+    if( x > 0 ) { //i.e.: scroll right
+        ctune_UI_ScrollBar.incrementPosition( &dialog->scrollbar.x, x );
+        ctune_UI_ScrollBar.show( &dialog->scrollbar.x );
 
-        if( !ctune_utoi( ctune_UI_ScrollBar.getTotalIncrements( &dialog->scrollbar.x ), &max ) ) {
-            CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[ctune_UI_Dialog_scrollBy( %p, %i, %i )] Failed to cast horizontal scrollbar's total increment (%lu) - aborting...",
-                       dialog, y, x, ctune_UI_ScrollBar.getTotalIncrements( &dialog->scrollbar.y )
-            );
-
-            return; //EARLY RETURN
-        }
-
-        int    shift = ( abs( x ) < max ? x : ( x < 0 ? -max : max ) );
-        size_t pos   = 0;
-
-        if( x > 0 ) { //i.e.: scroll right
-            pos = ( max - shift > dialog->scrollbar.scroll_pos_x ? ( shift + dialog->scrollbar.scroll_pos_x ) : max );
-
-        } else if( x < 0 ) { //i.e.: scroll left
-            pos = ( abs( x ) < dialog->scrollbar.scroll_pos_x ? ( dialog->scrollbar.scroll_pos_x + shift ) : 0 );
-        }
-
-        if( ctune_UI_ScrollBar.setPosition( &dialog->scrollbar.x, pos ) ) {
-            dialog->scrollbar.scroll_pos_x = pos;
-            ctune_UI_ScrollBar.show( &dialog->scrollbar.x );
-        }
+    } else if( x < 0 ) { //i.e.: scroll left
+        ctune_UI_ScrollBar.decrementPosition( &dialog->scrollbar.x, abs( x ) );
+        ctune_UI_ScrollBar.show( &dialog->scrollbar.x );
     }
 }
 
@@ -81,10 +42,10 @@ static void ctune_UI_Dialog_scrollBy( ctune_UI_Dialog_t * dialog, int y, int x )
  */
 static ctune_UI_Dialog_t ctune_UI_Dialog_init( void ) {
     return (ctune_UI_Dialog_t) {
-        .border_win       = ctune_UI_BorderWin.create( ctune_UI_Theme.color( CTUNE_UI_ITEM_DIALOG_WIN ) ),
-        .scrollbar.y_init = false,
-        .scrollbar.x_init = false,
-        .autoscroll       = { 0, 0 },
+        .border_win           = ctune_UI_BorderWin.create( ctune_UI_Theme.color( CTUNE_UI_ITEM_DIALOG_WIN ) ),
+        .scrollbar.y_init     = false,
+        .scrollbar.x_init     = false,
+        .autoscroll           = { 0, 0 },
     };
 }
 
@@ -105,12 +66,13 @@ static void ctune_UI_Dialog_createScrollWin( ctune_UI_Dialog_t * dialog, int row
 
 /**
  * Create a border window (a scroll windows must have been created first!)
- * @param dialog   UI_Dialog_t object
- * @param parent   Parent window dimensions (to fit border into)
- * @param title    Title to print on the window border
- * @param margins  Window margin values
+ * @param dialog     UI_Dialog_t object
+ * @param parent     Parent window dimensions (to fit border into)
+ * @param title      Title to print on the window border
+ * @param margins    Window margin values
+ * @param mouse_ctrl Flag for mouse control on the scrollbars
  */
-static void ctune_UI_Dialog_createBorderWin( ctune_UI_Dialog_t * dialog, const WindowProperty_t * parent, const char * title, const WindowMargin_t * margins ) {
+static void ctune_UI_Dialog_createBorderWin( ctune_UI_Dialog_t * dialog, const WindowProperty_t * parent, const char * title, const WindowMargin_t * margins, bool mouse_ctrl ) {
     if( dialog->canvas.pad == NULL ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_UI_Dialog_createBorderWin( %p, %p, \"%s\", %p )] Error: ScrollWin not created prior (pad=%p) - aborting...",
@@ -177,7 +139,7 @@ static void ctune_UI_Dialog_createBorderWin( ctune_UI_Dialog_t * dialog, const W
                auto_margin.top, auto_margin.right, auto_margin.bottom, auto_margin.left
     );
 
-    if( !ctune_UI_BorderWin.init( &dialog->border_win, &dialog->property, title ) ) {
+    if( !ctune_UI_BorderWin.init( &dialog->border_win, &dialog->property, title, mouse_ctrl ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_UI_Dialog_createBorderWin( %p, %p, \"%s\", { %i, %i, %i, %i } )] Failed to create the border window.",
                    dialog, parent, title, margins->top, margins->right, margins->bottom, margins->left
@@ -196,8 +158,6 @@ static void ctune_UI_Dialog_createBorderWin( ctune_UI_Dialog_t * dialog, const W
     //calculate absolute position and dimension of vertical scrollbar
     dialog->scrollbar.y_property   = (WindowProperty_t) { viewbox_dimension_y, 1, viewbox_pos_y, ( viewbox_pos_x + viewbox_dimension_x ) }; //far right
     dialog->scrollbar.x_property   = (WindowProperty_t) { 1, viewbox_dimension_x, ( viewbox_pos_y + viewbox_dimension_y ), viewbox_pos_x }; //bottom
-    dialog->scrollbar.scroll_pos_y = 0;
-    dialog->scrollbar.scroll_pos_x = 0;
 
     if( dialog->scrollbar.y_init ) {
         ctune_UI_ScrollBar.free( &dialog->scrollbar.y );
@@ -209,7 +169,7 @@ static void ctune_UI_Dialog_createBorderWin( ctune_UI_Dialog_t * dialog, const W
         dialog->scrollbar.x_init = false;
     }
 
-    if( ctune_UI_ScrollWin.isScrollableX( &dialog->canvas ) && ctune_UI_ScrollWin.isScrollableY( &dialog->canvas ) ) {
+    if( ctune_UI_ScrollWin.isScrollableX( &dialog->canvas ) || ctune_UI_ScrollWin.isScrollableY( &dialog->canvas ) ) {
         mvwaddstr( dialog->border_win.window, dialog->property.rows - 2, dialog->property.cols - 2, "·" );
     }
 
@@ -217,6 +177,7 @@ static void ctune_UI_Dialog_createBorderWin( ctune_UI_Dialog_t * dialog, const W
         dialog->scrollbar.x      = ctune_UI_ScrollBar.init( &dialog->scrollbar.x_property, BOTTOM, true );
         dialog->scrollbar.x_init = true;
         ctune_UI_ScrollBar.initCanvas( &dialog->scrollbar.x );
+        ctune_UI_ScrollBar.setShowControls( &dialog->scrollbar.x, mouse_ctrl );
         ctune_UI_ScrollBar.setScrollLength( &dialog->scrollbar.x, dialog->canvas.cols );
     }
 
@@ -224,6 +185,7 @@ static void ctune_UI_Dialog_createBorderWin( ctune_UI_Dialog_t * dialog, const W
         dialog->scrollbar.y      = ctune_UI_ScrollBar.init( &dialog->scrollbar.y_property, RIGHT, true );
         dialog->scrollbar.y_init = true;
         ctune_UI_ScrollBar.initCanvas( &dialog->scrollbar.y );
+        ctune_UI_ScrollBar.setShowControls( &dialog->scrollbar.y, mouse_ctrl );
         ctune_UI_ScrollBar.setScrollLength( &dialog->scrollbar.y, dialog->canvas.rows );
     }
 }
@@ -258,156 +220,85 @@ static void ctune_UI_Dialog_setAutoScrollOffset( ctune_UI_Dialog_t * dialog, int
 }
 
 /**
- * Scroll content up
+ * Incrementally scroll the window
  * @param dialog UI_Dialog_t object
+ * @param mask   Scroll mask
  */
-static void ctune_UI_Dialog_scrollUp( ctune_UI_Dialog_t * dialog ) {
-    if( ctune_UI_ScrollWin.isScrollableY( &dialog->canvas ) ) {
-        ctune_UI_ScrollWin.scrollPad( &dialog->canvas, -1, 0 );
+static void ctune_UI_Dialog_incrementalScroll( ctune_UI_Dialog_t * dialog, ctune_UI_ScrollMask_m mask ) {
+    const int v_scroll = ctune_UI_ScrollMask.verticalScrollFactor( mask );
+    const int h_scroll = ctune_UI_ScrollMask.horizontalScrollFactor( mask );
 
-        const size_t new_pos = ( dialog->scrollbar.scroll_pos_y > 0 ? ( dialog->scrollbar.scroll_pos_y - 1 ) : 0 );
+    CTUNE_LOG( CTUNE_LOG_TRACE, "[ctune_UI_Dialog_incrementalScroll( %p, %u )] v: %i, h: %i", dialog, mask, v_scroll, h_scroll );
 
-        if( ctune_UI_ScrollBar.setPosition( &dialog->scrollbar.y, new_pos ) ) {
-            dialog->scrollbar.scroll_pos_y = new_pos;
+    if( v_scroll < 0 ) { //UP
+        if( ctune_UI_ScrollWin.isScrollableY( &dialog->canvas ) ) {
+            ctune_UI_ScrollWin.scrollPad( &dialog->canvas, v_scroll, 0 );
+            ctune_UI_ScrollBar.decrementPosition( &dialog->scrollbar.y, abs( v_scroll ) );
             ctune_UI_ScrollBar.show( &dialog->scrollbar.y );
         }
     }
-}
 
-/**
- * Scroll content right
- * @param dialog UI_Dialog_t object
- */
-static void ctune_UI_Dialog_scrollRight( ctune_UI_Dialog_t * dialog ) {
-    if( ctune_UI_ScrollWin.isScrollableX( &dialog->canvas ) ) {
-        ctune_UI_ScrollWin.scrollPad( &dialog->canvas, 0, +1 );
+    if( v_scroll > 0 ) { //DOWN
+        if( ctune_UI_ScrollWin.isScrollableY( &dialog->canvas ) ) {
+            ctune_UI_ScrollWin.scrollPad( &dialog->canvas, v_scroll, 0 );
+            ctune_UI_ScrollBar.incrementPosition( &dialog->scrollbar.y, v_scroll );
+            ctune_UI_ScrollBar.show( &dialog->scrollbar.y );
+        }
+    }
 
-        const size_t new_pos = ( dialog->scrollbar.scroll_pos_x < INT_MAX ? ( dialog->scrollbar.scroll_pos_x + 1 ) : INT_MAX );
+    if( h_scroll < 0 ) { //LEFT
+        if( ctune_UI_ScrollWin.isScrollableX( &dialog->canvas ) ) {
+            ctune_UI_ScrollWin.scrollPad( &dialog->canvas, 0, h_scroll );
+            ctune_UI_ScrollBar.decrementPosition( &dialog->scrollbar.x, abs( h_scroll ) );
+            ctune_UI_ScrollBar.show( &dialog->scrollbar.x );
+        }
+    }
 
-        if( ctune_UI_ScrollBar.setPosition( &dialog->scrollbar.x, new_pos ) ) {
-            dialog->scrollbar.scroll_pos_x = new_pos;
+    if( h_scroll > 0 ) { //RIGHT
+        if( ctune_UI_ScrollWin.isScrollableX( &dialog->canvas ) ) {
+            ctune_UI_ScrollWin.scrollPad( &dialog->canvas, 0, h_scroll );
+            ctune_UI_ScrollBar.incrementPosition( &dialog->scrollbar.x, h_scroll );
             ctune_UI_ScrollBar.show( &dialog->scrollbar.x );
         }
     }
 }
 
 /**
- * Scroll content down
+ * Scroll to the edge
  * @param dialog UI_Dialog_t object
+ * @param mask   Scroll mask
  */
-static void ctune_UI_Dialog_scrollDown( ctune_UI_Dialog_t * dialog ) {
-    if( ctune_UI_ScrollWin.isScrollableY( &dialog->canvas ) ) {
-        ctune_UI_ScrollWin.scrollPad( &dialog->canvas, +1, 0 );
-
-        const size_t new_pos = ( dialog->scrollbar.scroll_pos_y < INT_MAX ? ( dialog->scrollbar.scroll_pos_y + 1 ) : INT_MAX );
-
-        if( ctune_UI_ScrollBar.setPosition( &dialog->scrollbar.y, new_pos ) ) {
-            dialog->scrollbar.scroll_pos_y = new_pos;
+static void ctune_UI_Dialog_edgeScroll( ctune_UI_Dialog_t * dialog, ctune_UI_ScrollMask_m mask ) {
+    if( mask & CTUNE_UI_SCROLL_UP ) {
+        if( ctune_UI_ScrollWin.isScrollableY( &dialog->canvas ) ) {
+            ctune_UI_ScrollWin.scrollPad( &dialog->canvas, -dialog->canvas.rows, 0 );
+            ctune_UI_ScrollBar.setPosition( &dialog->scrollbar.y, 0 );
             ctune_UI_ScrollBar.show( &dialog->scrollbar.y );
         }
     }
-}
 
-/**
- * Scroll content left
- * @param dialog UI_Dialog_t object
- */
-static void ctune_UI_Dialog_scrollLeft( ctune_UI_Dialog_t * dialog ) {
-    if( ctune_UI_ScrollWin.isScrollableX( &dialog->canvas ) ) {
-        ctune_UI_ScrollWin.scrollPad( &dialog->canvas, 0, -1 );
+    if( mask & CTUNE_UI_SCROLL_DOWN ) {
+        if( ctune_UI_ScrollWin.isScrollableY( &dialog->canvas ) ) {
+            ctune_UI_ScrollWin.scrollPad( &dialog->canvas, dialog->canvas.rows, 0 );
+            const size_t end = ctune_UI_ScrollBar.getTotalIncrements( &dialog->scrollbar.y );
+            ctune_UI_ScrollBar.setPosition( &dialog->scrollbar.y, end );
+            ctune_UI_ScrollBar.show( &dialog->scrollbar.y );
+        }
+    }
 
-        const size_t new_pos = ( dialog->scrollbar.scroll_pos_x > 0 ? ( dialog->scrollbar.scroll_pos_x - 1 ) : 0 );
-
-        if( ctune_UI_ScrollBar.setPosition( &dialog->scrollbar.x, new_pos ) ) {
-            dialog->scrollbar.scroll_pos_x = new_pos;
+    if( mask & CTUNE_UI_SCROLL_LEFT ) {
+        if( ctune_UI_ScrollWin.isScrollableX( &dialog->canvas ) ) {
+            ctune_UI_ScrollWin.scrollPad( &dialog->canvas, 0, -dialog->canvas.cols );
+            ctune_UI_ScrollBar.setPosition( &dialog->scrollbar.x, 0 );
             ctune_UI_ScrollBar.show( &dialog->scrollbar.x );
         }
     }
-}
 
-/**
- * Scroll back to the top
- * @param dialog UI_Dialog_t object
- */
-static void ctune_UI_Dialog_scrollHome( ctune_UI_Dialog_t * dialog ) {
-    if( ctune_UI_ScrollWin.isScrollableY( &dialog->canvas ) ) {
-        ctune_UI_ScrollWin.scrollPad( &dialog->canvas, -dialog->canvas.rows, 0 );
-
-        if( ctune_UI_ScrollBar.setPosition( &dialog->scrollbar.y, 0 ) ) {
-            dialog->scrollbar.scroll_pos_y = 0;
-            ctune_UI_ScrollBar.show( &dialog->scrollbar.y );
-        }
-    }
-
-    if( ctune_UI_ScrollWin.isScrollableX( &dialog->canvas ) ) {
-        ctune_UI_ScrollWin.scrollPad( &dialog->canvas, 0, -dialog->canvas.cols );
-
-        if( ctune_UI_ScrollBar.setPosition( &dialog->scrollbar.x, 0 ) ) {
-            dialog->scrollbar.scroll_pos_x = 0;
-            ctune_UI_ScrollBar.show( &dialog->scrollbar.x );
-        }
-    }
-}
-
-/**
- * Scroll back to the top (horizontal scroll untouched)
- * @param dialog UI_Dialog_t object
- */
-static void ctune_UI_Dialog_scrollTop( ctune_UI_Dialog_t * dialog ) {
-    if( ctune_UI_ScrollWin.isScrollableY( &dialog->canvas ) ) {
-        ctune_UI_ScrollWin.scrollPad( &dialog->canvas, -dialog->canvas.rows, 0 );
-
-        if( ctune_UI_ScrollBar.setPosition( &dialog->scrollbar.y, 0 ) ) {
-            dialog->scrollbar.scroll_pos_y = 0;
-            ctune_UI_ScrollBar.show( &dialog->scrollbar.y );
-        }
-    }
-}
-
-/**
- * Scroll down to the bottom (horizontal scroll untouched)
- * @param dialog UI_Dialog_t object
- */
-static void ctune_UI_Dialog_scrollBottom( ctune_UI_Dialog_t * dialog ) {
-    if( ctune_UI_ScrollWin.isScrollableY( &dialog->canvas ) ) {
-        ctune_UI_ScrollWin.scrollPad( &dialog->canvas, dialog->canvas.rows, 0 );
-
-        const size_t end = ctune_UI_ScrollBar.getTotalIncrements( &dialog->scrollbar.y );
-
-        if( ctune_UI_ScrollBar.setPosition( &dialog->scrollbar.y, end ) ) {
-            dialog->scrollbar.scroll_pos_y = end;
-            ctune_UI_ScrollBar.show( &dialog->scrollbar.y );
-        }
-    }
-}
-
-/**
- * Scroll to the far left (vertical scroll untouched)
- * @param dialog UI_Dialog_t object
- */
-static void ctune_UI_Dialog_scrollLeftEdge( ctune_UI_Dialog_t * dialog ) {
-    if( ctune_UI_ScrollWin.isScrollableX( &dialog->canvas ) ) {
-        ctune_UI_ScrollWin.scrollPad( &dialog->canvas, 0, -dialog->canvas.cols );
-
-        if( ctune_UI_ScrollBar.setPosition( &dialog->scrollbar.x, 0 ) ) {
-            dialog->scrollbar.scroll_pos_x = 0;
-            ctune_UI_ScrollBar.show( &dialog->scrollbar.x );
-        }
-    }
-}
-
-/**
- * Scroll to the far right (vertical scroll untouched)
- * @param dialog UI_Dialog_t object
- */
-static void ctune_UI_Dialog_scrollRightEdge( ctune_UI_Dialog_t * dialog ) {
-    if( ctune_UI_ScrollWin.isScrollableX( &dialog->canvas ) ) {
-        ctune_UI_ScrollWin.scrollPad( &dialog->canvas, 0, dialog->canvas.cols );
-
-        const size_t end = ctune_UI_ScrollBar.getTotalIncrements( &dialog->scrollbar.x );
-
-        if( ctune_UI_ScrollBar.setPosition( &dialog->scrollbar.x, end ) ) {
-            dialog->scrollbar.scroll_pos_x = end;
+    if( mask & CTUNE_UI_SCROLL_RIGHT ) {
+        if( ctune_UI_ScrollWin.isScrollableX( &dialog->canvas ) ) {
+            ctune_UI_ScrollWin.scrollPad( &dialog->canvas, 0, dialog->canvas.cols );
+            const size_t end = ctune_UI_ScrollBar.getTotalIncrements( &dialog->scrollbar.x );
+            ctune_UI_ScrollBar.setPosition( &dialog->scrollbar.x, end );
             ctune_UI_ScrollBar.show( &dialog->scrollbar.x );
         }
     }
@@ -465,17 +356,43 @@ static void ctune_UI_Dialog_autoScroll( ctune_UI_Dialog_t * dialog, int y, int x
 }
 
 /**
+ * Checks if area at coordinate is a window control
+ * @param dialog UI_Dialog_t object
+ * @param y      Row location on screen
+ * @param x      Column location on screen
+ * @return Window control mask (includes scrolling)
+ */
+static ctune_UI_WinCtrlMask_m ctune_UI_Dialog_isWinControl( ctune_UI_Dialog_t * dialog, int y, int x ) {
+    const ctune_UI_ScrollMask_m  scroll   = ctune_UI_ScrollBar.isScrollButton( &dialog->scrollbar.y, y, x )
+                                          | ctune_UI_ScrollBar.isScrollButton( &dialog->scrollbar.x, y, x );
+    const ctune_UI_WinCtrlMask_m win_ctrl = ctune_UI_BorderWin.isCtrlButton( &dialog->border_win, y, x );
+
+    return ctune_UI_WinCtrlMask.combine( win_ctrl, scroll );
+}
+
+/**
+ * Gets the current properties of the displayed/viewable ScrollWin pad section
+ * @param dialog UI_Dialog_t object
+ * @return Properties (top-left corner pos on pad and view-box size)
+ */
+static WindowProperty_t ctune_UI_Dialog_getViewProperty( ctune_UI_Dialog_t * dialog ) {
+    return ctune_UI_ScrollWin.getViewProperty( &dialog->canvas );
+}
+
+/**
  * Moves the dialog panel to the top and un-hides it
  * @param dialog UI_Dialog_t object
  */
 static void ctune_UI_Dialog_show( ctune_UI_Dialog_t * dialog ) {
     ctune_UI_BorderWin.show( &dialog->border_win );
 
-    if( ctune_UI_ScrollWin.isScrollableY( &dialog->canvas ) )
+    if( ctune_UI_ScrollWin.isScrollableY( &dialog->canvas ) ) {
         ctune_UI_ScrollBar.show( &dialog->scrollbar.y );
+    }
 
-    if( ctune_UI_ScrollWin.isScrollableX( &dialog->canvas ) )
+    if( ctune_UI_ScrollWin.isScrollableX( &dialog->canvas ) ) {
         ctune_UI_ScrollBar.show( &dialog->scrollbar.x );
+    }
 
     update_panels();
     ctune_UI_ScrollWin.refreshView( &dialog->canvas );
@@ -486,11 +403,13 @@ static void ctune_UI_Dialog_show( ctune_UI_Dialog_t * dialog ) {
  * @param dialog UI_Dialog_t object
  */
 static void ctune_UI_Dialog_refreshView( ctune_UI_Dialog_t * dialog ) {
-    if( ctune_UI_ScrollWin.isScrollableY( &dialog->canvas ) )
+    if( ctune_UI_ScrollWin.isScrollableY( &dialog->canvas ) ) {
         ctune_UI_ScrollBar.show( &dialog->scrollbar.y );
+    }
 
-    if( ctune_UI_ScrollWin.isScrollableX( &dialog->canvas ) )
+    if( ctune_UI_ScrollWin.isScrollableX( &dialog->canvas ) ) {
         ctune_UI_ScrollBar.show( &dialog->scrollbar.x );
+    }
 
     ctune_UI_ScrollWin.refreshView( &dialog->canvas );
 }
@@ -502,11 +421,13 @@ static void ctune_UI_Dialog_refreshView( ctune_UI_Dialog_t * dialog ) {
 static void ctune_UI_Dialog_hide( ctune_UI_Dialog_t * dialog ) {
     ctune_UI_BorderWin.hide( &dialog->border_win );
 
-    if( ctune_UI_ScrollWin.isScrollableY( &dialog->canvas ) )
+    if( ctune_UI_ScrollWin.isScrollableY( &dialog->canvas ) ) {
         ctune_UI_ScrollBar.hide( &dialog->scrollbar.y );
+    }
 
-    if( ctune_UI_ScrollWin.isScrollableX( &dialog->canvas ) )
+    if( ctune_UI_ScrollWin.isScrollableX( &dialog->canvas ) ) {
         ctune_UI_ScrollBar.hide( &dialog->scrollbar.x );
+    }
 
     update_panels();
 }
@@ -543,16 +464,11 @@ const struct ctune_UI_Widget_Dialog_Namespace ctune_UI_Dialog = {
     .isScrollableY       = &ctune_UI_Dialog_isScrollableY,
     .isScrollableX       = &ctune_UI_Dialog_isScrollableX,
     .setAutoScrollOffset = &ctune_UI_Dialog_setAutoScrollOffset,
-    .scrollUp            = &ctune_UI_Dialog_scrollUp,
-    .scrollRight         = &ctune_UI_Dialog_scrollRight,
-    .scrollDown          = &ctune_UI_Dialog_scrollDown,
-    .scrollLeft          = &ctune_UI_Dialog_scrollLeft,
-    .scrollHome          = &ctune_UI_Dialog_scrollHome,
-    .scrollTop           = &ctune_UI_Dialog_scrollTop,
-    .scrollBottom        = &ctune_UI_Dialog_scrollBottom,
-    .scrollLeftEdge      = &ctune_UI_Dialog_scrollLeftEdge,
-    .scrollRightEdge     = &ctune_UI_Dialog_scrollRightEdge,
+    .incrementalScroll   = &ctune_UI_Dialog_incrementalScroll,
+    .edgeScroll          = &ctune_UI_Dialog_edgeScroll,
     .autoScroll          = &ctune_UI_Dialog_autoScroll,
+    .isWinControl        = &ctune_UI_Dialog_isWinControl,
+    .getViewProperty     = &ctune_UI_Dialog_getViewProperty,
     .show                = &ctune_UI_Dialog_show,
     .refreshView         = &ctune_UI_Dialog_refreshView,
     .hide                = &ctune_UI_Dialog_hide,

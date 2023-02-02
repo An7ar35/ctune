@@ -66,6 +66,7 @@ typedef struct ctune_UI_Widget_SlideMenu_Item {
  * SlideMenu
  * @param redraw           Display redraw flag
  * @param in_focus         Flag to indicate if the SlideMenu is in focus (for UI theming purposes)
+ * @param mouse_ctrl       Flag to show mouse controls
  * @param root             Root level menu container
  * @param canvas_property  Pointer to canvas properties to abide to
  * @param canvas_panel     Canvas panel
@@ -77,6 +78,7 @@ typedef struct ctune_UI_Widget_SlideMenu_Item {
 typedef struct {
     bool                      redraw;
     bool                      in_focus;
+    bool                      mouse_ctrl;
     ctune_UI_SlideMenu_Menu_t root;
     const WindowProperty_t  * canvas_property;
     PANEL                   * canvas_panel;
@@ -101,23 +103,24 @@ typedef struct {
 extern const struct ctune_UI_Widget_SlideMenu_Namespace {
     /**
      * Creates a slide menu without a known canvas (use `setCanvasProperties(..)` to set one prior to usage)
-     * @return ctune_UI_SlideMenu_t object
+     * @return Pointer to a ctune_UI_SlideMenu_t object
      */
     ctune_UI_SlideMenu_t (* create)( void );
 
     /**
      * Creates a slide menu with a known canvas
      * @param canvas_property Pointer to canvas sizes to abide to
-     * @return ctune_UI_SlideMenu_t object
+     * @return Pointer to a ctune_UI_SlideMenu_t object
      */
     ctune_UI_SlideMenu_t (* init)( const WindowProperty_t * canvas_property );
 
     /**
      * Sets a canvas for the slide menu
-     * @param menu ctune_UI_SlideMenu_t object
+     * @param menu            Pointer to a ctune_UI_SlideMenu_t object
      * @param canvas_property Pointer to canvas sizes to abide to
+     * @param mouse_ctrl      Flag for mouse control on the scrollbars
      */
-    void (* setCanvasProperties)( ctune_UI_SlideMenu_t * menu, const WindowProperty_t * canvas_property );
+    void (* setCanvasProperties)( ctune_UI_SlideMenu_t * menu, const WindowProperty_t * canvas_property, bool mouse_ctrl );
 
     /**
      * Create/allocates a sub-menu
@@ -140,100 +143,131 @@ extern const struct ctune_UI_Widget_SlideMenu_Namespace {
     ctune_UI_SlideMenu_Item_t * (* createMenuItem)( ctune_UI_SlideMenu_Menu_t * menu, ctune_UI_SlideMenu_ItemType_e type, const char * text, void * data, bool (* ctrl_fn)( ctune_UI_SlideMenu_Item_t * ) );
 
     /**
+     * Switch mouse control UI on/off
+     * @param menu            Pointer to a ctune_UI_SlideMenu_t object
+     * @param mouse_ctrl_flag Flag to turn feature on/off
+     */
+    void (* setMouseCtrl)( ctune_UI_SlideMenu_t * menu, bool mouse_ctrl_flag );
+    
+    /**
+     * Gets the mouse control status
+     * @param menu Pointer to a ctune_UI_SlideMenu_t object
+     * @return Mouse control state
+     */
+    bool (* mouseCtrl)( ctune_UI_SlideMenu_t * menu );
+
+    /**
      * Sets the redraw flag on
-     * @param menu ctune_UI_SlideMenu_t object
+     * @param menu Pointer to a ctune_UI_SlideMenu_t object
      */
     void (* setRedraw)( ctune_UI_SlideMenu_t * menu );
 
     /**
      * Sets the 'in focus' flag
-     * @param win   ctune_UI_SlideMenu_t object
+     * @param win   Pointer to a ctune_UI_SlideMenu_t object
      * @param focus Flag value
      */
     void (* setFocus)( ctune_UI_SlideMenu_t * menu, bool focus );
 
     /**
      * Activate control function on the current menu and/or move to its submenu
-     * @param menu ctune_UI_SlideMenu_t object
+     * @param menu Pointer to a ctune_UI_SlideMenu_t object
      */
     void (* navKeyEnter)( ctune_UI_SlideMenu_t * menu );
 
     /**
      * Change selected row to previous entry
-     * @param menu ctune_UI_SlideMenu_t object
+     * @param menu Pointer to a ctune_UI_SlideMenu_t object
      */
     void (* navKeyUp)( ctune_UI_SlideMenu_t * menu );
 
     /**
      * Change selected row to next entry
-     * @param menu ctune_UI_SlideMenu_t object
+     * @param menu Pointer to a ctune_UI_SlideMenu_t object
      */
     void (* navKeyDown)( ctune_UI_SlideMenu_t * menu );
 
     /**
      * Change to the submenu/activate ctrl function of currently selected row
-     * @param menu ctune_UI_SlideMenu_t object
+     * @param menu Pointer to a ctune_UI_SlideMenu_t object
      */
     void (* navKeyRight)( ctune_UI_SlideMenu_t * menu );
 
     /**
      * Change to the parent menu/item of currently selected row
-     * @param menu ctune_UI_SlideMenu_t object
+     * @param menu Pointer to a ctune_UI_SlideMenu_t object
      */
     void (* navKeyLeft)( ctune_UI_SlideMenu_t * menu );
 
     /**
      * Change selected row to entry a page length away
-     * @param menu ctune_UI_SlideMenu_t object
+     * @param menu Pointer to a ctune_UI_SlideMenu_t object
      */
     void (* navKeyPageUp)( ctune_UI_SlideMenu_t * menu );
 
     /**
      * Change selected row to entry a page length away
-     * @param menu ctune_UI_SlideMenu_t object
+     * @param menu Pointer to a ctune_UI_SlideMenu_t object
      */
     void (* navKeyPageDown)( ctune_UI_SlideMenu_t * menu );
 
     /**
      * Change selection to the first item in the list
-     * @param menu ctune_UI_SlideMenu_t object
+     * @param menu Pointer to a ctune_UI_SlideMenu_t object
      */
     void (* navKeyFirst)( ctune_UI_SlideMenu_t * menu );
 
     /**
      * Change selection to the last item in the list
-     * @param menu ctune_UI_SlideMenu_t object
+     * @param menu Pointer to a ctune_UI_SlideMenu_t object
      */
     void (* navKeyLast)( ctune_UI_SlideMenu_t * menu );
 
     /**
+     * Select at given coordinates
+     * @param menu RSListWin_t object
+     * @param y    Row location on screen
+     * @param x    Column location on screen
+     */
+    void (* selectAt)( ctune_UI_SlideMenu_t * menu, int y, int x );
+
+    /**
+     * Checks if area at coordinate is a scroll button
+     * @param menu Pointer to a ctune_UI_SlideMenu_t object
+     * @param y    Row location on screen
+     * @param x    Column location on screen
+     * @return Scroll mask
+     */
+    ctune_UI_ScrollMask_m (* isScrollButton)( ctune_UI_SlideMenu_t * menu, int y, int x );
+
+    /**
      * Resets selected position to the first item in the root menu
-     * @param menu ctune_UI_SlideMenu_t object
+     * @param menu Pointer to a ctune_UI_SlideMenu_t object
      */
     void (* reset)( ctune_UI_SlideMenu_t * menu );
 
     /**
      * Resizes the menu
-     * @param menu Pointer to ctune_UI_SlideMenu_t object
+     * @param menu Pointer to Pointer to a ctune_UI_SlideMenu_t object
      */
     void (* resize)( ctune_UI_SlideMenu_t * menu );
 
     /**
      * Show updated window
-     * @param menu ctune_UI_SlideMenu_t object
+     * @param menu Pointer to a ctune_UI_SlideMenu_t object
      * @return Success
      */
     bool (* show)( ctune_UI_SlideMenu_t * menu );
 
     /**
      * Hides the SlideMenu (no refresh done)
-     * @param menu ctune_UI_SlideMenu_t object
+     * @param menu Pointer to a ctune_UI_SlideMenu_t object
      */
     void (* hide)( ctune_UI_SlideMenu_t * menu );
 
     /**
      * De-allocates a slide menu's content
-     * @param menu ctune_UI_SlideMenu_t object
+     * @param menu Pointer to a ctune_UI_SlideMenu_t object
      */
     void (* free)( ctune_UI_SlideMenu_t * menu );
 

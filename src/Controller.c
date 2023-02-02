@@ -579,6 +579,23 @@ static void ctune_Controller_saveUIConfig( void ) {
 }
 
 /**
+ * Gets the timeout value in seconds for connecting to and playing a stream
+ * @return Timeout value in seconds
+ */
+static int ctune_Controller_getStreamTimeout( void ) {
+    return ctune_Settings.cfg.getStreamTimeoutVal();
+}
+
+/**
+ * Sets the timeout value in seconds for connecting to and playing a stream
+ * @param val Timeout value in seconds (1-10 inclusive)
+ * @return Success
+ */
+static bool ctune_Controller_setStreamTimeout( int seconds ) {
+    return ctune_Settings.cfg.setStreamTimeoutVal( seconds );
+}
+
+/**
  * Sets a callback for resize events
  * @param cb Callback method
  */
@@ -663,6 +680,8 @@ const struct ctune_Controller_Instance ctune_Controller = {
         .getUiTheme             = &ctune_Controller_getUiTheme,
         .getUIConfig            = &ctune_Controller_getUIConfig,
         .saveUIConfig           = &ctune_Controller_saveUIConfig,
+        .getStreamTimeout       = &ctune_Controller_getStreamTimeout,
+        .setStreamTimeout       = &ctune_Controller_setStreamTimeout,
     },
 
     .setResizeUIEventCallback            = &ctune_Controller_setResizeUIEventCallback,
