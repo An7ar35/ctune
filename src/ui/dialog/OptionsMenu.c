@@ -169,7 +169,7 @@ static bool ctune_UI_Dialog_OptionsMenu_populateUIThemeMenu( ctune_UI_OptionsMen
     size_t max_text_width = om->cache.slide_menu_property.cols;
 
     { //"Go back" entry
-        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_UI_THEME );
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_CONFIGURATION );
         ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_PARENT, text, NULL, NULL );
 
         if( menu_item ) {
@@ -213,6 +213,188 @@ static bool ctune_UI_Dialog_OptionsMenu_populateUIThemeMenu( ctune_UI_OptionsMen
     if( !ctune_utoi( max_text_width, &om->cache.slide_menu_property.cols ) ) {
         CTUNE_LOG( CTUNE_LOG_FATAL,
                    "[ctune_UI_Dialog_OptionsMenu_populateUIThemeMenu( %p, %p )] Failed to cast to integer (%lu).",
+                   om, root, max_text_width
+        );
+        error_state = true;
+    }
+
+    end:
+        return !( error_state );
+}
+
+/**
+ * [PRIVATE] Populates the Mouse's "Click interval" sub-menu
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @param root Pointer to SlideMenu item from which to spawn the menu from
+ * @return Success
+ */
+static bool ctune_UI_Dialog_OptionsMenu_populateMouseIntervalResolutionMenu( ctune_UI_OptionsMenu_t * om, ctune_UI_SlideMenu_Item_t * root ) {
+    bool error_state = false;
+
+    if( ctune_UI_SlideMenu.createMenu( &root->sub_menu, root->parent_menu, root->index ) == NULL ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_UI_Dialog_OptionsMenu_populateMouseIntervalResolutionMenu( %p, %p )] "
+                   "Failed to create sub menu for item ('%s').",
+                   om, root, root->text._raw
+        );
+
+        error_state = true;
+        goto end;
+    }
+
+    size_t max_text_width = om->cache.slide_menu_property.cols;
+
+    { //"Go back" entry
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_MOUSE );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_PARENT, text, NULL, NULL );
+
+        if( menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateMouseIntervalResolutionMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
+            );
+
+            error_state = true;
+            goto end;
+        }
+    }
+
+    { //Mouse click interval resolutions
+        ctune_UIConfig_t          * ui_config   = om->cb.getUIConfig();
+        const ctune_MouseInterval_e curr_preset = ctune_UIConfig.mouse.clickIntervalPreset( ui_config );
+
+        for( ctune_MouseInterval_e id = 0; id < CTUNE_MOUSEINTERVAL_COUNT; ++id ) {
+            const int resolution = ctune_MouseInterval.value( id );
+
+            String_t text = String.init();
+
+            ctune_ltos( resolution, &text );
+            String.append_back( &text, "ms" );
+
+            if( id == CTUNE_MOUSEINTERVAL_DEFAULT ) {
+                String.append_back( &text, " (" );
+                String.append_back( &text, om->cb.getDisplayText( CTUNE_UI_TEXT_DEFAULT ) );
+                String.append_back( &text, ")" );
+            }
+
+            if( id == curr_preset ) {
+                String.append_back( &text, " *" );
+            }
+
+            CbPayload_t               * payload   = createCbPayload( om, &om->cache.payloads, om->cb.setMouseResolution, id );
+            ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, text._raw, payload, ctrlMenuFunctionCb );
+
+            if( payload && menu_item ) {
+                max_text_width = ctune_max_ul( max_text_width, String.length( &text ) );
+
+            } else {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[ctune_UI_Dialog_OptionsMenu_populateMouseIntervalResolutionMenu( %p )] Failed creation of menu item '%s'.",
+                           om, text._raw
+                );
+                error_state = true;
+            }
+
+            String.free( &text );
+        }
+    }
+
+    if( !ctune_utoi( max_text_width, &om->cache.slide_menu_property.cols ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL,
+                   "[ctune_UI_Dialog_OptionsMenu_populateMouseIntervalResolutionMenu( %p, %p )] Failed to cast to integer (%lu).",
+                   om, root, max_text_width
+        );
+        error_state = true;
+    }
+
+    end:
+        return !( error_state );
+}
+
+/**
+ * [PRIVATE] Populates the "Mouse" sub-menu
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @param root Pointer to SlideMenu item from which to spawn the menu from
+ * @return Success
+ */
+static bool ctune_UI_Dialog_OptionsMenu_populateMouseMenu( ctune_UI_OptionsMenu_t * om, ctune_UI_SlideMenu_Item_t * root ) {
+    bool error_state = false;
+
+    if( ctune_UI_SlideMenu.createMenu( &root->sub_menu, root->parent_menu, root->index ) == NULL ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_UI_Dialog_OptionsMenu_populateMouseMenu( %p, %p )] "
+                   "Failed to create sub menu for item ('%s').",
+                   om, root, root->text._raw
+        );
+
+        error_state = true;
+        goto end;
+    }
+
+    size_t max_text_width = om->cache.slide_menu_property.cols;
+
+    { //"Go back" entry
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_CONFIGURATION );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_PARENT, text, NULL, NULL );
+
+        if( menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateMouseMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
+            );
+
+            error_state = true;
+            goto end;
+        }
+    }
+
+    const bool curr_state = om->cb.mouseSupport( om->cache.curr_panel_id, FLAG_GET_VALUE );
+
+    { //"Enable/Disable mouse support" entry
+        const ctune_Flag_e action     = ( curr_state ? FLAG_SET_OFF : FLAG_SET_ON );
+        const char *       text       = om->cb.getDisplayText( ( curr_state ? CTUNE_UI_TEXT_MOUSE_DISABLE : CTUNE_UI_TEXT_MOUSE_ENABLE ) );
+
+        CbPayload_t               * payload   = createCbPayload( om, &om->cache.payloads, om->cb.mouseSupport, action );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, text, payload, ctrlMenuFunctionCb );
+
+        if( payload && menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateMouseMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
+            );
+            error_state = true;
+        }
+    }
+
+    if( curr_state == FLAG_SET_ON ) { //Mouse click resolution menu
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_MOUSE_CLICK_INTERVAL );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_MENU, text, NULL, NULL );
+
+        if( menu_item && ctune_UI_Dialog_OptionsMenu_populateMouseIntervalResolutionMenu( om, menu_item ) ) {
+            //max_text_width must be reloaded since it might have been changed in the "populate" call
+            max_text_width = ctune_max_ul( om->cache.slide_menu_property.cols, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateMouseMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
+            );
+            error_state = true;
+        }
+    }
+
+    if( !ctune_utoi( max_text_width, &om->cache.slide_menu_property.cols ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL,
+                   "[ctune_UI_Dialog_OptionsMenu_populateMouseMenu( %p, %p )] Failed to cast to integer (%lu).",
                    om, root, max_text_width
         );
         error_state = true;
@@ -331,7 +513,7 @@ static bool ctune_UI_Dialog_OptionsMenu_populateConfigMenu( ctune_UI_OptionsMenu
     size_t max_text_width = om->cache.slide_menu_property.cols;
 
     { //"Go back" entry
-        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_CONFIGURATION );
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_OPTIONS );
         ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_PARENT, text, NULL, NULL );
 
         if( menu_item ) {
@@ -451,16 +633,13 @@ static bool ctune_UI_Dialog_OptionsMenu_populateConfigMenu( ctune_UI_OptionsMenu
         }
     }
 
-    if( om->cb.mouseSupport != NULL ) { //"Enable/Disable mouse support" entry
-        const bool         curr_state = om->cb.mouseSupport( om->cache.curr_panel_id, FLAG_GET_VALUE );
-        const ctune_Flag_e action     = ( curr_state ? FLAG_SET_OFF : FLAG_SET_ON );
-        const char *       text       = om->cb.getDisplayText( ( curr_state ? CTUNE_UI_TEXT_MOUSE_DISABLE : CTUNE_UI_TEXT_MOUSE_ENABLE ) );
+    if( om->cb.getUIConfig != NULL && om->cb.mouseSupport != NULL ) { //Mouse menu
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_MOUSE );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_MENU, text, NULL, NULL );
 
-        CbPayload_t               * payload   = createCbPayload( om, &om->cache.payloads, om->cb.mouseSupport, action );
-        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, text, payload, ctrlMenuFunctionCb );
-
-        if( payload && menu_item ) {
-            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+        if( menu_item && ctune_UI_Dialog_OptionsMenu_populateMouseMenu( om, menu_item ) ) {
+            //max_text_width must be reloaded since it might have been changed in the "populate" call
+            max_text_width = ctune_max_ul( om->cache.slide_menu_property.cols, strlen( text ) );
 
         } else {
             CTUNE_LOG( CTUNE_LOG_ERROR,
@@ -517,7 +696,7 @@ static bool ctune_UI_Dialog_OptionsMenu_populateSortMenu( ctune_UI_OptionsMenu_t
     };
 
     const char * menu_text[SORT_ITEM_COUNT] = {
-        [SORT_ITEM_GO_BACK   ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS ),
+        [SORT_ITEM_GO_BACK   ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_OPTIONS ),
         [SORT_ITEM_NAME      ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_NAME ),
         [SORT_ITEM_NAME_R    ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_NAME_R ),
         [SORT_ITEM_TAGS      ] = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_SORT_STATIONS_TAGS ),
@@ -1150,6 +1329,17 @@ static void ctune_UI_Dialog_OptionsMenu_cb_setMouseSupportCallback( ctune_UI_Opt
 }
 
 /**
+ * Sets the callback method to set the mouse's click-interval resolution in the configuration
+ * @param om       Pointer to ctune_UI_OptionsMenu_t object
+ * @param callback Callback function
+ */
+static void ctune_UI_Dialog_OptionsMenu_cb_setMouseResolutionCallback( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback ) {
+    if( om != NULL ) {
+        om->cb.setMouseResolution = callback;
+    }
+}
+
+/**
  * Sets the callback method to set unicode icons on/off
  * @param om       Pointer to ctune_UI_OptionsMenu_t object
  * @param callback Callback function
@@ -1195,6 +1385,7 @@ const struct ctune_UI_Dialog_OptionsMenu_Namespace ctune_UI_OptionsMenu = {
         .setGetUIConfigCallback             = &ctune_UI_Dialog_OptionsMenu_cb_setGetUIConfigCallback,
         .setSetUIPresetCallback             = &ctune_UI_Dialog_OptionsMenu_cb_setSetUIPresetCallback,
         .setMouseSupportCallback            = &ctune_UI_Dialog_OptionsMenu_cb_setMouseSupportCallback,
+        .setMouseResolutionCallback         = &ctune_UI_Dialog_OptionsMenu_cb_setMouseResolutionCallback,
         .setUnicodeIconsCallback            = &ctune_UI_Dialog_OptionsMenu_cb_setUnicodeIconsCallback,
         .setStreamTimeoutValueCallback      = &ctune_UI_Dialog_OptionsMenu_cb_setStreamTimeoutValueCallback,
     },

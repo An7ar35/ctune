@@ -5,16 +5,15 @@
 
 #include "ColourTheme.h"
 #include "../enum/Flag.h"
-#include "../enum/MouseResolution.h"
+#include "../enum/MouseInterval.h"
 #include "../enum/StationSrc.h"
 
 typedef struct {
     bool unicode_icons;
 
     struct {
-        bool                    enabled;
-        int                     resolution;
-        ctune_MouseResolution_e preset;
+        bool                  enabled;
+        ctune_MouseInterval_e interval_preset;
     } mouse;
 
     struct {
@@ -77,22 +76,14 @@ extern const struct ctune_UIConfig_Namespace {
          * @param cfg Pointer to ctune_UIConfig_t object
          * @param Mouse Interval value in milliseconds between press and release to be recognised as a click
          */
-        int (* resolution)( ctune_UIConfig_t * cfg );
-
-        /**
-         * Sets the mouse resolution
-         * @param cfg Pointer to ctune_UIConfig_t object
-         * @param interval_ms Interval value in milliseconds between press and release to be recognised as a click
-         */
-        void (* setResolution)( ctune_UIConfig_t * cfg, int interval_ms );
-
+        int (* clickIntervalResolution)( ctune_UIConfig_t * cfg );
 
         /**
          * Gets the associated enum of the resolution value stored
          * @param cfg Pointer to ctune_UIConfig_t object
          * @return MouseResolution enum
          */
-        ctune_MouseResolution_e (* preset)( ctune_UIConfig_t * cfg );
+        ctune_MouseInterval_e (* clickIntervalPreset)( ctune_UIConfig_t * cfg );
 
         /**
          * Sets the mouse resolution preset
@@ -100,8 +91,7 @@ extern const struct ctune_UIConfig_Namespace {
          * @param res MouseResolution preset
          * @param Success
          */
-        bool (* setResolutionPreset)( ctune_UIConfig_t * cfg, ctune_MouseResolution_e res );
-
+        bool (* setResolutionPreset)( ctune_UIConfig_t * cfg, ctune_MouseInterval_e res );
     } mouse;
 
     struct {

@@ -626,6 +626,36 @@ static int ctune_UI_setMouseSupport( ctune_UI_PanelID_e tab, int action_flag_e )
 }
 
 /**
+ * [PRIVATE] Sets the current mouse interval resolution
+ * @param tab      PanelID of the current tab
+ * @param preset_e MouseResolution preset to apply
+ * @return Success
+ */
+static int ctune_UI_setMouseIntervalResolution( ctune_UI_PanelID_e tab, int preset_e ) {
+    ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
+
+    ctune_UIConfig_t * ui_config = ctune_Controller.cfg.getUIConfig();
+
+    if( !ctune_UIConfig.mouse.setResolutionPreset( ui_config, preset_e ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_UI_setMouseIntervalResolution( '%d', %d )] Failed to set the mouse click interval resolution ('%s').",
+                   ctune_UI_PanelID.str( tab ), preset_e, ctune_MouseInterval.str( preset_e )
+        );
+
+        return 0; //EARLY RETURN
+    }
+
+    mouseinterval( ctune_UIConfig.mouse.clickIntervalResolution( ui_config ) );
+
+    CTUNE_LOG( CTUNE_LOG_ERROR,
+               "[ctune_UI_setMouseIntervalResolution( '%d', %d )] Mouse click interval resolution preset '%s' set.",
+               ctune_UI_PanelID.str( tab ), preset_e, ctune_MouseInterval.str( preset_e )
+    );
+
+    return 1;
+}
+
+/**
  * [PRIVATE] Sets the current colour pallet theme for the UI
  * @param tab            PanelID of the current tab
  * @param ui_preset_enum ctune_UIPreset_e value to set
@@ -956,6 +986,7 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_OptionsMenu.cb.setSetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_setUITheme );
             ctune_UI_OptionsMenu.cb.setFavTabCustomThemingCallback( &ui.dialogs.optmenu, ctune_UI_favouriteTabCustomTheming );
             ctune_UI_OptionsMenu.cb.setMouseSupportCallback( &ui.dialogs.optmenu, ctune_UI_setMouseSupport );
+            ctune_UI_OptionsMenu.cb.setMouseResolutionCallback( &ui.dialogs.optmenu, ctune_UI_setMouseIntervalResolution );
             ctune_UI_OptionsMenu.cb.setUnicodeIconsCallback( &ui.dialogs.optmenu, ctune_UI_setUnicodeIcons );
             ctune_UI_OptionsMenu.cb.setStreamTimeoutValueCallback( &ui.dialogs.optmenu, ctune_UI_setStreamTimeOut );
 
@@ -982,6 +1013,7 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_OptionsMenu.cb.setGetUIConfigCallback( &ui.dialogs.optmenu, ctune_Controller.cfg.getUIConfig );
             ctune_UI_OptionsMenu.cb.setSetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_setUITheme );
             ctune_UI_OptionsMenu.cb.setMouseSupportCallback( &ui.dialogs.optmenu, ctune_UI_setMouseSupport );
+            ctune_UI_OptionsMenu.cb.setMouseResolutionCallback( &ui.dialogs.optmenu, ctune_UI_setMouseIntervalResolution );
             ctune_UI_OptionsMenu.cb.setUnicodeIconsCallback( &ui.dialogs.optmenu, ctune_UI_setUnicodeIcons );
             ctune_UI_OptionsMenu.cb.setStreamTimeoutValueCallback( &ui.dialogs.optmenu, ctune_UI_setStreamTimeOut );
 
@@ -1750,14 +1782,14 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
     // MOUSE NAVIGATION
     if( mouse_nav ) {
         if( mousemask( ALL_MOUSE_EVENTS, NULL ) != 0 ) {
-            const ctune_MouseResolution_e resolution_preset = ctune_UIConfig.mouse.preset( ui_config );
-            const int                     resolution        = ctune_UIConfig.mouse.resolution( ui_config );
+            const ctune_MouseInterval_e resolution_preset = ctune_UIConfig.mouse.clickIntervalPreset( ui_config );
+            const int                   resolution        = ctune_UIConfig.mouse.clickIntervalResolution( ui_config );
 
             mouseinterval( resolution );
 
             CTUNE_LOG( CTUNE_LOG_MSG,
                        "[ctune_UI_setup( %i, %i )] Mouse navigation enabled (resolution '%s': %ims).",
-                       show_cursor, mouse_nav, ctune_MouseResolution.str( resolution_preset ), resolution
+                       show_cursor, mouse_nav, ctune_MouseInterval.str( resolution_preset ), resolution
             );
 
         } else {

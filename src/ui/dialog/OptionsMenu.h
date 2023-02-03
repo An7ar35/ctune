@@ -54,9 +54,9 @@ typedef struct ctune_UI_Dialog_OptionsMenu {
         ctune_UIConfig_t * (* getUIConfig)( void );
         int                (* setUIPreset)( ctune_UI_PanelID_e tab, int preset_e );
         int                (* mouseSupport)( ctune_UI_PanelID_e tab, int action_flag_e );
+        int                (* setMouseResolution)( ctune_UI_PanelID_e tab, int value );
         int                (* unicodeIcons)( ctune_UI_PanelID_e tab, int action_flag_e );
         int                (* streamTimeout)( ctune_UI_PanelID_e tab, int value );
-
     } cb;
 
 } ctune_UI_OptionsMenu_t;
@@ -198,6 +198,13 @@ extern const struct ctune_UI_Dialog_OptionsMenu_Namespace {
         void (* setMouseSupportCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
 
         /**
+         * Sets the callback method to set the mouse's click-interval resolution in the configuration
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
+         */
+        void (* setMouseResolutionCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
+
+        /**
          * Sets the callback method to set unicode icons on/off
          * @param om       Pointer to ctune_UI_OptionsMenu_t object
          * @param callback Callback function
@@ -210,7 +217,6 @@ extern const struct ctune_UI_Dialog_OptionsMenu_Namespace {
          * @param callback Callback function
          */
         void (* setStreamTimeoutValueCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
-
     } cb;
 
 } ctune_UI_OptionsMenu;
