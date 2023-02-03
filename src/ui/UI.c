@@ -606,10 +606,10 @@ static int ctune_UI_setMouseSupport( ctune_UI_PanelID_e tab, int action_flag_e )
 
     ctune_UIConfig_t * ui_config = ctune_Controller.cfg.getUIConfig();
 
-    const bool old_state = ctune_UIConfig.mouse( ui_config, FLAG_GET_VALUE );
+    const bool old_state = ctune_UIConfig.mouse.enabled( ui_config, FLAG_GET_VALUE );
 
     if( action_flag_e != FLAG_GET_VALUE ) {
-        const bool new_state = ctune_UIConfig.mouse( ui_config, action_flag_e );
+        const bool new_state = ctune_UIConfig.mouse.enabled( ui_config, action_flag_e );
 
         if( old_state != new_state ) {
             if( new_state ) { //Turn ON
@@ -986,7 +986,7 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_OptionsMenu.cb.setUnicodeIconsCallback( &ui.dialogs.optmenu, ctune_UI_setUnicodeIcons );
             ctune_UI_OptionsMenu.cb.setStreamTimeoutValueCallback( &ui.dialogs.optmenu, ctune_UI_setStreamTimeOut );
 
-            if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu, ctune_UIConfig.mouse( ui_config, FLAG_GET_VALUE ) ) ) {
+            if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu, ctune_UIConfig.mouse.enabled( ui_config, FLAG_GET_VALUE ) ) ) {
                 ctune_UI_OptionsMenu.show( &ui.dialogs.optmenu );
                 ctune_UI_OptionsMenu.captureInput( &ui.dialogs.optmenu );
 
@@ -1012,7 +1012,7 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_OptionsMenu.cb.setUnicodeIconsCallback( &ui.dialogs.optmenu, ctune_UI_setUnicodeIcons );
             ctune_UI_OptionsMenu.cb.setStreamTimeoutValueCallback( &ui.dialogs.optmenu, ctune_UI_setStreamTimeOut );
 
-            if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu, ctune_UIConfig.mouse( ui_config, FLAG_GET_VALUE ) ) ) {
+            if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu, ctune_UIConfig.mouse.enabled( ui_config, FLAG_GET_VALUE ) ) ) {
                 ctune_UI_OptionsMenu.show( &ui.dialogs.optmenu );
                 ctune_UI_OptionsMenu.captureInput( &ui.dialogs.optmenu );
 
@@ -1777,11 +1777,29 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
     // MOUSE NAVIGATION
     if( mouse_nav ) {
         if( mousemask( ALL_MOUSE_EVENTS, NULL ) != 0 ) {
-            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_setup( %i, %i )] Mouse navigation enabled.", show_cursor, mouse_nav );
+            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_setup( %i, %i )] Mouse navigation enabled (interval=%i.", show_cursor, mouse_nav );
+
+            const int interval = ctune_UIConfig.mouse.resolution( ui_config );
+
+            if( interval > 0 ) {
+                mouseinterval( interval );
+                CTUNE_LOG( CTUNE_LOG_MSG,
+                           "[ctune_UI_setup( %i, %i )] Mouse interval: %i ms",
+                           show_cursor, mouse_nav, interval
+                );
+
+            } else if( interval < 0 ) {
+                ctune_UIConfig.mouse.setResolution( ui_config, mouseinterval( -1 ) );
+                CTUNE_LOG( CTUNE_LOG_WARNING,
+                           "[ctune_UI_setup( %i, %i )] Invalid mouse interval (%i) - default used.",
+                           show_cursor, mouse_nav, interval
+                );
+            }
+
         } else {
             CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_setup( %i, %i )] Failed to enable mouse navigation.", show_cursor, mouse_nav );
             ctune_err.set( CTUNE_ERR_IO_MOUSE_ENABLE_FAIL );
-            ctune_UIConfig.mouse( ui_config, FLAG_SET_OFF );
+            ctune_UIConfig.mouse.enabled( ui_config, FLAG_SET_OFF );
             mouse_nav = false;
         }
     }
@@ -1855,7 +1873,7 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
                                                       ctune_Controller.cfg.toggleFavourite,
                                                       ctune_UI_getStationState );
 
-        ctune_UI_RSListWin.setMouseCtrl( &ui.tabs.favourites, ctune_UIConfig.mouse( ui_config, FLAG_GET_VALUE ) );
+        ctune_UI_RSListWin.setMouseCtrl( &ui.tabs.favourites, ctune_UIConfig.mouse.enabled( ui_config, FLAG_GET_VALUE ) );
         ctune_UI_RSListWin.showCtrlRow( &ui.tabs.favourites, false );
         ctune_UI_RSListWin.setLargeRow( &ui.tabs.favourites, ctune_UIConfig.fav_tab.largeRowSize( ui_config, FLAG_GET_VALUE ) );
         ctune_UI_RSListWin.themeFavourites( &ui.tabs.favourites, ctune_UIConfig.fav_tab.theming( ui_config, FLAG_GET_VALUE ) );
@@ -1870,7 +1888,7 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
                                                   ctune_Controller.cfg.toggleFavourite,
                                                   ctune_UI_getStationState );
 
-        ctune_UI_RSListWin.setMouseCtrl( &ui.tabs.search, ctune_UIConfig.mouse( ui_config, FLAG_GET_VALUE ) );
+        ctune_UI_RSListWin.setMouseCtrl( &ui.tabs.search, ctune_UIConfig.mouse.enabled( ui_config, FLAG_GET_VALUE ) );
         ctune_UI_RSListWin.showCtrlRow( &ui.tabs.search, true );
         ctune_UI_RSListWin.setLargeRow( &ui.tabs.search, ctune_UIConfig.search_tab.largeRowSize( ui_config, FLAG_GET_VALUE ) );
         ctune_UI_RSListWin.themeFavourites( &ui.tabs.search, true );
@@ -1886,7 +1904,7 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
                                                     ctune_Controller.cfg.toggleFavourite,
                                                     ctune_UI_getStationState );
 
-        ctune_UI_BrowserWin.setMouseCtrl( &ui.tabs.browser, ctune_UIConfig.mouse( ui_config, FLAG_GET_VALUE ) );
+        ctune_UI_BrowserWin.setMouseCtrl( &ui.tabs.browser, ctune_UIConfig.mouse.enabled( ui_config, FLAG_GET_VALUE ) );
         ctune_UI_BrowserWin.showCtrlRow( &ui.tabs.browser, true );
         ctune_UI_BrowserWin.setLargeRow( &ui.tabs.browser, ctune_UIConfig.browse_tab.largeRowSize( ui_config, FLAG_GET_VALUE ) );
         ctune_UI_BrowserWin.themeFavourites( &ui.tabs.browser, true );
@@ -2026,7 +2044,7 @@ static void ctune_UI_resize() {
     ctune_UI_destroyPanels();
     ctune_UI_calculateWinSizes( &ui.size );
 
-    const bool mouse_enabled = ctune_UIConfig.mouse( ctune_Controller.cfg.getUIConfig(), FLAG_GET_VALUE );
+    const bool mouse_enabled = ctune_UIConfig.mouse.enabled( ctune_Controller.cfg.getUIConfig(), FLAG_GET_VALUE );
 
     ctune_UI_RSListWin.setMouseCtrl( &ui.tabs.favourites, mouse_enabled );
     ctune_UI_RSListWin.setMouseCtrl( &ui.tabs.search, mouse_enabled );
