@@ -10,8 +10,8 @@ static ctune_UIConfig_t ctune_UIConfig_create( void ) {
     return (ctune_UIConfig_t) {
         .unicode_icons = false,
         .mouse = {
-           .enabled  = false,
-           .interval = 0,
+           .enabled    = false,
+           .resolution = 0,
         },
         .fav_tab = {
             .large_rows       = true,
@@ -44,7 +44,7 @@ static bool ctune_UIConfig_copy( const ctune_UIConfig_t * from, ctune_UIConfig_t
     }
 
     to->mouse.enabled       = from->mouse.enabled;
-    to->mouse.interval      = from->mouse.interval;
+    to->mouse.resolution    = from->mouse.resolution;
     to->unicode_icons       = from->unicode_icons;
     to->fav_tab             = from->fav_tab;
     to->search_tab          = from->search_tab;
@@ -99,8 +99,8 @@ bool ctune_UIConfig_mouse_enabled( ctune_UIConfig_t * cfg, ctune_Flag_e flag ) {
  * @param Mouse Interval value in milliseconds between press and release to be recognised as a click
  */
 int ctune_UIConfig_mouse_resolution( ctune_UIConfig_t * cfg ) {
-    if( cfg &&  cfg->mouse.interval >= 0 ) {
-        return cfg->mouse.interval;
+    if( cfg && cfg->mouse.resolution >= 0 ) {
+        return cfg->mouse.resolution;
     }
 
     return -1;
@@ -113,7 +113,7 @@ int ctune_UIConfig_mouse_resolution( ctune_UIConfig_t * cfg ) {
  */
 void ctune_UIConfig_mouse_setResolution( ctune_UIConfig_t * cfg, int interval_ms ) {
     if( cfg && interval_ms >= 0 ) {
-        cfg->mouse.interval = interval_ms;
+        cfg->mouse.resolution = interval_ms;
     }
 }
 

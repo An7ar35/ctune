@@ -23,7 +23,7 @@
 #define CFG_KEY_STREAM_TIMEOUT                  "IO::StreamTimeout"
 #define CFG_KEY_NETWORK_TIMEOUT                 "IO::NetworkTimeout"
 #define CFG_KEY_UI_MOUSE                        "UI::Mouse"
-#define CFG_KEY_UI_MOUSE_INTERVAL               "UI::Mouse::Interval"
+#define CFG_KEY_UI_MOUSE_RESOLUTION             "UI::Mouse::Resolution"
 #define CFG_KEY_UI_UNICODE_ICONS                "UI::UnicodeIcons"
 #define CFG_KEY_UI_FAVTAB_SHOW_THEMING          "UI::Favourites::ShowTheme"
 #define CFG_KEY_UI_FAVTAB_USE_CUSTOM_THEMING    "UI::Favourites::UseCustomTheme"
@@ -372,8 +372,8 @@ static bool ctune_Settings_loadCfg() {
             } else if( strcmp( CFG_KEY_UI_MOUSE, key._raw ) == 0 ) { //bool
                 error = !ctune_Parser_KVPairs.validateBoolean( &val, &config.ui.mouse.enabled );
 
-            } else if( strcmp( CFG_KEY_UI_MOUSE_INTERVAL, key._raw ) == 0 ) { //int
-                error = !ctune_Parser_KVPairs.validateInteger( &val, &config.ui.mouse.interval );
+            } else if( strcmp( CFG_KEY_UI_MOUSE_RESOLUTION, key._raw ) == 0 ) { //int
+                error = !ctune_Parser_KVPairs.validateInteger( &val, &config.ui.mouse.resolution );
 
             } else if( strcmp( CFG_KEY_UI_UNICODE_ICONS, key._raw ) == 0 ) { //bool
                 error = !ctune_Parser_KVPairs.validateBoolean( &val, &config.ui.unicode_icons );
@@ -512,7 +512,7 @@ static bool ctune_Settings_writeCfg() {
     ret[ 7] = fprintf( file, "%s=%d\n", CFG_KEY_NETWORK_TIMEOUT, config.timeout_network_val );
 
     ret[ 8] = fprintf( file, "%s=%s\n", CFG_KEY_UI_MOUSE, ( config.ui.mouse.enabled ? "true" : "false" ) );
-    ret[ 9] = fprintf( file, "%s=%i\n", CFG_KEY_UI_MOUSE_INTERVAL, config.ui.mouse.interval );
+    ret[ 9] = fprintf( file, "%s=%i\n", CFG_KEY_UI_MOUSE_RESOLUTION, config.ui.mouse.resolution );
     ret[10] = fprintf( file, "%s=%s\n", CFG_KEY_UI_UNICODE_ICONS, ( config.ui.unicode_icons ? "true" : "false" ) );
     ret[11] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_SHOW_THEMING, ( config.ui.fav_tab.theme_favourites ? "true" : "false" ) );
     ret[12] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_USE_CUSTOM_THEMING, ( config.ui.fav_tab.custom_theming ? "true" : "false" ) );
