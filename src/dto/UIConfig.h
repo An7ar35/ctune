@@ -5,14 +5,16 @@
 
 #include "ColourTheme.h"
 #include "../enum/Flag.h"
+#include "../enum/MouseResolution.h"
 #include "../enum/StationSrc.h"
 
 typedef struct {
     bool unicode_icons;
 
     struct {
-        bool enabled;
-        int  resolution;
+        bool                    enabled;
+        int                     resolution;
+        ctune_MouseResolution_e preset;
     } mouse;
 
     struct {
@@ -83,6 +85,23 @@ extern const struct ctune_UIConfig_Namespace {
          * @param interval_ms Interval value in milliseconds between press and release to be recognised as a click
          */
         void (* setResolution)( ctune_UIConfig_t * cfg, int interval_ms );
+
+
+        /**
+         * Gets the associated enum of the resolution value stored
+         * @param cfg Pointer to ctune_UIConfig_t object
+         * @return MouseResolution enum
+         */
+        ctune_MouseResolution_e (* preset)( ctune_UIConfig_t * cfg );
+
+        /**
+         * Sets the mouse resolution preset
+         * @param cfg Pointer to ctune_UIConfig_t object
+         * @param res MouseResolution preset
+         * @param Success
+         */
+        bool (* setResolutionPreset)( ctune_UIConfig_t * cfg, ctune_MouseResolution_e res );
+
     } mouse;
 
     struct {

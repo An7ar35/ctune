@@ -12,6 +12,7 @@ static ctune_UIConfig_t ctune_UIConfig_create( void ) {
         .mouse = {
            .enabled    = false,
            .resolution = 0,
+           .preset     = CTUNE_MOUSERESOLUTION_NOT_SET,
         },
         .fav_tab = {
             .large_rows       = true,
@@ -45,6 +46,7 @@ static bool ctune_UIConfig_copy( const ctune_UIConfig_t * from, ctune_UIConfig_t
 
     to->mouse.enabled       = from->mouse.enabled;
     to->mouse.resolution    = from->mouse.resolution;
+    to->mouse.preset        = from->mouse.preset;
     to->unicode_icons       = from->unicode_icons;
     to->fav_tab             = from->fav_tab;
     to->search_tab          = from->search_tab;
@@ -62,7 +64,7 @@ static bool ctune_UIConfig_copy( const ctune_UIConfig_t * from, ctune_UIConfig_t
  * @param flag Flag action
  * @return Flag state
  */
-bool ctune_UIConfig_unicodeIcons( ctune_UIConfig_t * cfg, ctune_Flag_e flag ) {
+static bool ctune_UIConfig_unicodeIcons( ctune_UIConfig_t * cfg, ctune_Flag_e flag ) {
     if( cfg ) {
         switch( flag ) {
             case FLAG_SET_OFF: return ( cfg->unicode_icons = false );
@@ -81,7 +83,7 @@ bool ctune_UIConfig_unicodeIcons( ctune_UIConfig_t * cfg, ctune_Flag_e flag ) {
  * @param flag Flag action
  * @return Property value after operation
  */
-bool ctune_UIConfig_mouse_enabled( ctune_UIConfig_t * cfg, ctune_Flag_e flag ) {
+static bool ctune_UIConfig_mouse_enabled( ctune_UIConfig_t * cfg, ctune_Flag_e flag ) {
     if( cfg ) {
         switch( flag ) {
             case FLAG_SET_OFF: return ( cfg->mouse.enabled = false );
@@ -98,9 +100,13 @@ bool ctune_UIConfig_mouse_enabled( ctune_UIConfig_t * cfg, ctune_Flag_e flag ) {
  * @param cfg Pointer to ctune_UIConfig_t object
  * @param Mouse Interval value in milliseconds between press and release to be recognised as a click
  */
-int ctune_UIConfig_mouse_resolution( ctune_UIConfig_t * cfg ) {
-    if( cfg && cfg->mouse.resolution >= 0 ) {
-        return cfg->mouse.resolution;
+static int ctune_UIConfig_mouse_resolution( ctune_UIConfig_t * cfg ) {
+    if( cfg ) {
+        if( cfg->mouse.preset == CTUNE_MOUSERESOLUTION_CUSTOM && cfg->mouse.resolution >= 0 ) {
+            return cfg->mouse.resolution;
+        } else {
+            return ctune_MouseResolution.value( cfg->mouse.preset );
+        }
     }
 
     return -1;
@@ -111,19 +117,51 @@ int ctune_UIConfig_mouse_resolution( ctune_UIConfig_t * cfg ) {
  * @param cfg Pointer to ctune_UIConfig_t object
  * @param interval_ms Interval value in milliseconds between press and release to be recognised as a click
  */
-void ctune_UIConfig_mouse_setResolution( ctune_UIConfig_t * cfg, int interval_ms ) {
+static void ctune_UIConfig_mouse_setResolution( ctune_UIConfig_t * cfg, int interval_ms ) {
     if( cfg && interval_ms >= 0 ) {
         cfg->mouse.resolution = interval_ms;
+        cfg->mouse.preset     = ctune_MouseResolution.resolution( interval_ms );
     }
 }
 
+/**
+ * Gets the associated enum of the resolution value stored
+ * @param cfg Pointer to ctune_UIConfig_t object
+ * @return MouseResolution enum
+ */
+static ctune_MouseResolution_e ctune_UIConfig_mouse_preset( ctune_UIConfig_t * cfg ) {
+    if( cfg ) {
+        if( cfg->mouse.preset == CTUNE_MOUSERESOLUTION_NOT_SET ) {
+            cfg->mouse.preset = ctune_MouseResolution.resolution( cfg->mouse.resolution );
+        }
+
+        return cfg->mouse.preset; //EARLY RETURN
+    }
+
+    return CTUNE_MOUSERESOLUTION_NOT_SET;
+}
+
+/**
+ * Sets the mouse resolution preset
+ * @param cfg Pointer to ctune_UIConfig_t object
+ * @param res MouseResolution preset
+ * @param Success
+ */
+static bool ctune_UIConfig_mouse_setResolutionPreset( ctune_UIConfig_t * cfg, ctune_MouseResolution_e res ) {
+    if( cfg && res >= 0 && res < CTUNE_MOUSERESOLUTION_COUNT ) {
+        cfg->mouse.preset = res;
+        return true; //EARLY RETURN
+    }
+
+    return false;
+}
 
 /**
  * Gets the current preset
  * @param cfg Pointer to ctune_UIConfig_t object
  * @return Theme preset
  */
-ctune_UIPreset_e ctune_UIConfig_theming_currentPreset( ctune_UIConfig_t * cfg ) {
+static ctune_UIPreset_e ctune_UIConfig_theming_currentPreset( ctune_UIConfig_t * cfg ) {
     if( cfg ) {
         return cfg->theme.preset;
     }
@@ -136,7 +174,7 @@ ctune_UIPreset_e ctune_UIConfig_theming_currentPreset( ctune_UIConfig_t * cfg ) 
  * @param cfg Pointer to ctune_UIConfig_t object
  * @return Pointer to active theme pallet or NULL if the pointer to the config is NULL
  */
-struct ctune_ColourTheme * ctune_UIConfig_theming_getCurrentThemePallet( ctune_UIConfig_t * cfg ) {
+static struct ctune_ColourTheme * ctune_UIConfig_theming_getCurrentThemePallet( ctune_UIConfig_t * cfg ) {
     if( cfg ) {
         if( cfg->theme.preset == CTUNE_UIPRESET_CUSTOM ) {
             return &cfg->theme.custom_pallet; //EARLY RETURN
@@ -159,7 +197,7 @@ struct ctune_ColourTheme * ctune_UIConfig_theming_getCurrentThemePallet( ctune_U
  * @param preset ctune_UIPreset_e preset
  * @return Success
  */
-bool ctune_UIConfig_theming_setPreset( ctune_UIConfig_t * cfg, ctune_UIPreset_e preset ) {
+static bool ctune_UIConfig_theming_setPreset( ctune_UIConfig_t * cfg, ctune_UIPreset_e preset ) {
     if( cfg && preset >= 0 && preset < CTUNE_UIPRESET_COUNT ) {
         cfg->theme.preset = preset;
 
@@ -226,7 +264,7 @@ static short ctune_UIConfig_FavTab_getCustomThemingColour( ctune_UIConfig_t * cf
  * @param station_src ctune_StationSrc_e enum value
  * @param colour      Colour code
  */
-void ctune_UIConfig_FavTab_setCustomThemingColour( ctune_UIConfig_t * cfg, ctune_StationSrc_e station_src, short colour_code ) {
+static void ctune_UIConfig_FavTab_setCustomThemingColour( ctune_UIConfig_t * cfg, ctune_StationSrc_e station_src, short colour_code ) {
     switch( station_src ) {
         case CTUNE_STATIONSRC_LOCAL       : { cfg->theme.custom_pallet.rows.favourite_local_fg = colour_code;  } break;
         case CTUNE_STATIONSRC_RADIOBROWSER: //fallthrough
@@ -285,14 +323,16 @@ const struct ctune_UIConfig_Namespace ctune_UIConfig = {
     .unicodeIcons = &ctune_UIConfig_unicodeIcons,
 
     .mouse = {
-        .enabled       = &ctune_UIConfig_mouse_enabled,
-        .resolution    = &ctune_UIConfig_mouse_resolution,
-        .setResolution = &ctune_UIConfig_mouse_setResolution,
+        .enabled                = &ctune_UIConfig_mouse_enabled,
+        .resolution             = &ctune_UIConfig_mouse_resolution,
+        .setResolution          = &ctune_UIConfig_mouse_setResolution,
+        .preset                 = &ctune_UIConfig_mouse_preset,
+        .setResolutionPreset    = &ctune_UIConfig_mouse_setResolutionPreset,
     },
     .theming = {
-        .currentPreset         = &ctune_UIConfig_theming_currentPreset,
-        .getCurrentThemePallet = &ctune_UIConfig_theming_getCurrentThemePallet,
-        .setPreset             = &ctune_UIConfig_theming_setPreset,
+        .currentPreset          = &ctune_UIConfig_theming_currentPreset,
+        .getCurrentThemePallet  = &ctune_UIConfig_theming_getCurrentThemePallet,
+        .setPreset              = &ctune_UIConfig_theming_setPreset,
     },
 
     .fav_tab = {
@@ -304,10 +344,10 @@ const struct ctune_UIConfig_Namespace ctune_UIConfig = {
     },
 
     .search_tab = {
-        .largeRowSize = &ctune_UIConfig_SearchTab_largeRowSize,
+        .largeRowSize           = &ctune_UIConfig_SearchTab_largeRowSize,
     },
 
     .browse_tab = {
-        .largeRowSize = &ctune_UIConfig_BrowseTab_largeRowSize,
+        .largeRowSize           = &ctune_UIConfig_BrowseTab_largeRowSize,
     },
 };
