@@ -1777,24 +1777,15 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
     // MOUSE NAVIGATION
     if( mouse_nav ) {
         if( mousemask( ALL_MOUSE_EVENTS, NULL ) != 0 ) {
-            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_setup( %i, %i )] Mouse navigation enabled (interval=%i.", show_cursor, mouse_nav );
+            const ctune_MouseResolution_e resolution_preset = ctune_UIConfig.mouse.preset( ui_config );
+            const int                     resolution        = ctune_UIConfig.mouse.resolution( ui_config );
 
-            const int interval = ctune_UIConfig.mouse.resolution( ui_config );
+            mouseinterval( resolution );
 
-            if( interval > 0 ) {
-                mouseinterval( interval );
-                CTUNE_LOG( CTUNE_LOG_MSG,
-                           "[ctune_UI_setup( %i, %i )] Mouse interval: %i ms",
-                           show_cursor, mouse_nav, interval
-                );
-
-            } else if( interval < 0 ) {
-                ctune_UIConfig.mouse.setResolution( ui_config, mouseinterval( -1 ) );
-                CTUNE_LOG( CTUNE_LOG_WARNING,
-                           "[ctune_UI_setup( %i, %i )] Invalid mouse interval (%i) - default used.",
-                           show_cursor, mouse_nav, interval
-                );
-            }
+            CTUNE_LOG( CTUNE_LOG_MSG,
+                       "[ctune_UI_setup( %i, %i )] Mouse navigation enabled (resolution '%s': %ims).",
+                       show_cursor, mouse_nav, ctune_MouseResolution.str( resolution_preset ), resolution
+            );
 
         } else {
             CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_setup( %i, %i )] Failed to enable mouse navigation.", show_cursor, mouse_nav );
