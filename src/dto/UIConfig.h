@@ -12,7 +12,7 @@ typedef struct {
 
     struct {
         bool enabled;
-        int  interval;
+        int  resolution;
     } mouse;
 
     struct {
