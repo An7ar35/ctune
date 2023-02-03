@@ -8,8 +8,12 @@
 #include "../enum/StationSrc.h"
 
 typedef struct {
-    bool mouse;
     bool unicode_icons;
+
+    struct {
+        bool enabled;
+        int  interval;
+    } mouse;
 
     struct {
         bool theme_favourites;
@@ -50,20 +54,36 @@ extern const struct ctune_UIConfig_Namespace {
     bool (* copy)( const ctune_UIConfig_t * from, ctune_UIConfig_t * to );
 
     /**
-     * Set/Gets the mouse flag
-     * @param cfg  Pointer to ctune_UIConfig_t object
-     * @param flag Flag action
-     * @return Property value after operation
-     */
-    bool (* mouse)( ctune_UIConfig_t * cfg, ctune_Flag_e flag );
-
-    /**
      * Gets the unicode icon flag property
      * @param cfg  Pointer to ctune_UIConfig_t object
      * @param flag Flag action
      * @return Flag state
      */
     bool (* unicodeIcons)( ctune_UIConfig_t * cfg, ctune_Flag_e flag );
+
+    struct {
+        /**
+         * Set/Gets the mouse flag
+         * @param cfg  Pointer to ctune_UIConfig_t object
+         * @param flag Flag action
+         * @return Property value after operation
+         */
+        bool (* enabled)( ctune_UIConfig_t * cfg, ctune_Flag_e flag );
+
+        /**
+         * Gets the mouse resolution value
+         * @param cfg Pointer to ctune_UIConfig_t object
+         * @param Mouse Interval value in milliseconds between press and release to be recognised as a click
+         */
+        int (* resolution)( ctune_UIConfig_t * cfg );
+
+        /**
+         * Sets the mouse resolution
+         * @param cfg Pointer to ctune_UIConfig_t object
+         * @param interval_ms Interval value in milliseconds between press and release to be recognised as a click
+         */
+        void (* setResolution)( ctune_UIConfig_t * cfg, int interval_ms );
+    } mouse;
 
     struct {
         /**

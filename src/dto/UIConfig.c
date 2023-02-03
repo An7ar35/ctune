@@ -8,8 +8,11 @@
  */
 static ctune_UIConfig_t ctune_UIConfig_create( void ) {
     return (ctune_UIConfig_t) {
-        .mouse         = false,
         .unicode_icons = false,
+        .mouse = {
+           .enabled  = false,
+           .interval = 0,
+        },
         .fav_tab = {
             .large_rows       = true,
             .theme_favourites = true,
@@ -40,7 +43,8 @@ static bool ctune_UIConfig_copy( const ctune_UIConfig_t * from, ctune_UIConfig_t
         return false;
     }
 
-    to->mouse               = from->mouse;
+    to->mouse.enabled       = from->mouse.enabled;
+    to->mouse.interval      = from->mouse.interval;
     to->unicode_icons       = from->unicode_icons;
     to->fav_tab             = from->fav_tab;
     to->search_tab          = from->search_tab;
@@ -50,24 +54,6 @@ static bool ctune_UIConfig_copy( const ctune_UIConfig_t * from, ctune_UIConfig_t
     to->theme.custom_pallet = from->theme.custom_pallet;
 
     return true;
-}
-
-/**
- * Set/Gets the mouse flag
- * @param cfg  Pointer to ctune_UIConfig_t object
- * @param flag Flag action
- * @return Property value after operation
- */
-bool ctune_UIConfig_mouse( ctune_UIConfig_t * cfg, ctune_Flag_e flag ) {
-    if( cfg ) {
-        switch( flag ) {
-            case FLAG_SET_OFF: return ( cfg->mouse = false );
-            case FLAG_SET_ON : return ( cfg->mouse = true );
-            default          : return cfg->mouse;
-        }
-    }
-
-    return false;
 }
 
 /**
@@ -87,6 +73,50 @@ bool ctune_UIConfig_unicodeIcons( ctune_UIConfig_t * cfg, ctune_Flag_e flag ) {
 
     return false;
 }
+
+
+/**
+ * Set/Gets the mouse flag
+ * @param cfg  Pointer to ctune_UIConfig_t object
+ * @param flag Flag action
+ * @return Property value after operation
+ */
+bool ctune_UIConfig_mouse_enabled( ctune_UIConfig_t * cfg, ctune_Flag_e flag ) {
+    if( cfg ) {
+        switch( flag ) {
+            case FLAG_SET_OFF: return ( cfg->mouse.enabled = false );
+            case FLAG_SET_ON : return ( cfg->mouse.enabled = true );
+            default          : return cfg->mouse.enabled;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Gets the mouse resolution value
+ * @param cfg Pointer to ctune_UIConfig_t object
+ * @param Mouse Interval value in milliseconds between press and release to be recognised as a click
+ */
+int ctune_UIConfig_mouse_resolution( ctune_UIConfig_t * cfg ) {
+    if( cfg &&  cfg->mouse.interval >= 0 ) {
+        return cfg->mouse.interval;
+    }
+
+    return -1;
+}
+
+/**
+ * Sets the mouse resolution
+ * @param cfg Pointer to ctune_UIConfig_t object
+ * @param interval_ms Interval value in milliseconds between press and release to be recognised as a click
+ */
+void ctune_UIConfig_mouse_setResolution( ctune_UIConfig_t * cfg, int interval_ms ) {
+    if( cfg && interval_ms >= 0 ) {
+        cfg->mouse.interval = interval_ms;
+    }
+}
+
 
 /**
  * Gets the current preset
@@ -252,9 +282,13 @@ static bool ctune_UIConfig_BrowseTab_largeRowSize( ctune_UIConfig_t * cfg, ctune
 const struct ctune_UIConfig_Namespace ctune_UIConfig = {
     .create       = &ctune_UIConfig_create,
     .copy         = &ctune_UIConfig_copy,
-    .mouse        = &ctune_UIConfig_mouse,
     .unicodeIcons = &ctune_UIConfig_unicodeIcons,
 
+    .mouse = {
+        .enabled       = &ctune_UIConfig_mouse_enabled,
+        .resolution    = &ctune_UIConfig_mouse_resolution,
+        .setResolution = &ctune_UIConfig_mouse_setResolution,
+    },
     .theming = {
         .currentPreset         = &ctune_UIConfig_theming_currentPreset,
         .getCurrentThemePallet = &ctune_UIConfig_theming_getCurrentThemePallet,
