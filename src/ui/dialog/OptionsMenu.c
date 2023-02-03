@@ -187,39 +187,27 @@ static bool ctune_UI_Dialog_OptionsMenu_populateUIThemeMenu( ctune_UI_OptionsMen
     }
 
     { //UI presets entries
-        Vector_t presets = Vector.init( sizeof( ctune_UIPreset_t ), NULL );
+        ctune_UIConfig_t * ui_config   = om->cb.getUIConfig();
+        ctune_UIPreset_e   curr_preset = ui_config->theme.preset;
 
-        om->cb.getUIPresets( &presets );
+        for( int id = CTUNE_UIPRESET_DEFAULT; id < CTUNE_UIPRESET_COUNT; ++id ) {
+            if( id != curr_preset ) {
+                const char                * text      = ctune_UIPreset.str( id );
+                CbPayload_t               * payload   = createCbPayload( om, &om->cache.payloads, om->cb.setUIPreset, id );
+                ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, text, payload, ctrlMenuFunctionCb );
 
-        if( Vector.empty( &presets ) ) {
-            CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[ctune_UI_Dialog_OptionsMenu_populateUIThemeMenu( %p, %p )] Failed creation of menu items (preset list).",
-                       om, root
-            );
+                if( payload && menu_item ) {
+                    max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
 
-            error_state = true;
-            Vector.clear_vector( &presets );
-            goto end;
-        }
-
-        for( size_t i = 0; i < Vector.size( &presets ); ++i ) {
-            ctune_UIPreset_t          * preset    = Vector.at( &presets, i );
-            CbPayload_t               * payload   = createCbPayload( om, &om->cache.payloads, om->cb.setUIPreset, preset->id );
-            ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, preset->name, payload, ctrlMenuFunctionCb );
-
-            if( payload && menu_item ) {
-                max_text_width = ctune_max_ul( max_text_width, strlen( preset->name ) );
-
-            } else {
-                CTUNE_LOG( CTUNE_LOG_ERROR,
-                           "[ctune_UI_Dialog_OptionsMenu_populateUIThemeMenu( %p )] Failed creation of menu item '%s'.",
-                           om, preset->name
-                );
-                error_state = true;
+                } else {
+                    CTUNE_LOG( CTUNE_LOG_ERROR,
+                               "[ctune_UI_Dialog_OptionsMenu_populateUIThemeMenu( %p )] Failed creation of menu item '%s'.",
+                               om, text
+                    );
+                    error_state = true;
+                }
             }
         }
-
-        Vector.clear_vector( &presets );
     }
 
     if( !ctune_utoi( max_text_width, &om->cache.slide_menu_property.cols ) ) {
@@ -360,7 +348,7 @@ static bool ctune_UI_Dialog_OptionsMenu_populateConfigMenu( ctune_UI_OptionsMenu
         }
     }
 
-    if( om->cb.getUIPresets != NULL && om->cb.setUIPreset != NULL ) { //UI themes menu
+    if( om->cb.getUIConfig != NULL && om->cb.setUIPreset != NULL ) { //UI themes menu
         const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_UI_THEME );
         ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_MENU, text, NULL, NULL );
 
@@ -796,7 +784,7 @@ static ctune_UI_OptionsMenu_t ctune_UI_Dialog_OptionsMenu_create( const WindowPr
             .favTabTheming       = NULL,
             .favTabCustomTheming = NULL,
             .listRowSizeLarge    = NULL,
-            .getUIPresets        = NULL,
+            .getUIConfig         = NULL,
             .setUIPreset         = NULL,
             .mouseSupport        = NULL,
             .unicodeIcons        = NULL,
@@ -1129,13 +1117,13 @@ static void ctune_UI_Dialog_OptionsMenu_cb_setSetListRowSizeLarge( ctune_UI_Opti
 }
 
 /**
- * Sets the callback method to get the list of available UI colour pallet presets
+ * Sets the callback method to get a pointer to the UIConfig object
  * @param om       Pointer to ctune_UI_OptionsMenu_t object
  * @param callback Callback function
  */
-static void ctune_UI_Dialog_OptionsMenu_cb_setGetUIPresetCallback( ctune_UI_OptionsMenu_t * om, void (* callback)( Vector_t * ) ) {
+static void ctune_UI_Dialog_OptionsMenu_cb_setGetUIConfigCallback( ctune_UI_OptionsMenu_t * om, ctune_UIConfig_t * (* callback)( void ) ) {
     if( om != NULL ) {
-        om->cb.getUIPresets = callback;
+        om->cb.getUIConfig = callback;
     }
 }
 
@@ -1177,7 +1165,7 @@ static void ctune_UI_Dialog_OptionsMenu_cb_setUnicodeIconsCallback( ctune_UI_Opt
  * @param om       Pointer to ctune_UI_OptionsMenu_t object
  * @param callback Callback function
  */
-static void ctune_UI_Dialog_OptionsMenu_setStreamTimeoutValueCallback( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback ) {
+static void ctune_UI_Dialog_OptionsMenu_cb_setStreamTimeoutValueCallback( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback ) {
     if( om != NULL ) {
         om->cb.streamTimeout = callback;
     }
@@ -1204,10 +1192,10 @@ const struct ctune_UI_Dialog_OptionsMenu_Namespace ctune_UI_OptionsMenu = {
         .setFavouriteTabThemingCallback     = &ctune_UI_Dialog_OptionsMenu_cb_setFavThemingCallback,
         .setFavTabCustomThemingCallback     = &ctune_UI_Dialog_OptionsMenu_cb_setFavTabCustomThemingCallback,
         .setListRowSizeLargeCallback        = &ctune_UI_Dialog_OptionsMenu_cb_setSetListRowSizeLarge,
-        .setGetUIPresetCallback             = &ctune_UI_Dialog_OptionsMenu_cb_setGetUIPresetCallback,
+        .setGetUIConfigCallback             = &ctune_UI_Dialog_OptionsMenu_cb_setGetUIConfigCallback,
         .setSetUIPresetCallback             = &ctune_UI_Dialog_OptionsMenu_cb_setSetUIPresetCallback,
         .setMouseSupportCallback            = &ctune_UI_Dialog_OptionsMenu_cb_setMouseSupportCallback,
         .setUnicodeIconsCallback            = &ctune_UI_Dialog_OptionsMenu_cb_setUnicodeIconsCallback,
-        .setStreamTimeoutValueCallback      = &ctune_UI_Dialog_OptionsMenu_setStreamTimeoutValueCallback,
+        .setStreamTimeoutValueCallback      = &ctune_UI_Dialog_OptionsMenu_cb_setStreamTimeoutValueCallback,
     },
 };

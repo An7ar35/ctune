@@ -42,20 +42,21 @@ typedef struct ctune_UI_Dialog_OptionsMenu {
     } cache;
 
     struct Callbacks {
-        const char * (* getDisplayText)( ctune_UI_TextID_e );
-        int          (* sortStationList)( ctune_UI_PanelID_e tab, int sort_by_e );
-        int          (* addNewStation)( ctune_UI_PanelID_e tab, int /* unused */ );
-        int          (* editStation)( ctune_UI_PanelID_e tab, int /* unused */ );
-        int          (* toggleFavourite)( ctune_UI_PanelID_e tab, int /* unused */ );
-        int          (* syncUpstream)( ctune_UI_PanelID_e tab, int /* unused */ );
-        int          (* favTabTheming)( ctune_UI_PanelID_e tab, int action_flag_e );
-        int          (* favTabCustomTheming)( ctune_UI_PanelID_e tab, int action_flag_e );
-        int          (* listRowSizeLarge)( ctune_UI_PanelID_e tab, int action_flag_e );
-        void         (* getUIPresets)( Vector_t * presets );
-        int          (* setUIPreset)( ctune_UI_PanelID_e tab, int preset_e );
-        int          (* mouseSupport)( ctune_UI_PanelID_e tab, int action_flag_e );
-        int          (* unicodeIcons)( ctune_UI_PanelID_e tab, int action_flag_e );
-        int          (* streamTimeout)( ctune_UI_PanelID_e tab, int value );
+        const char *       (* getDisplayText)( ctune_UI_TextID_e );
+        int                (* sortStationList)( ctune_UI_PanelID_e tab, int sort_by_e );
+        int                (* addNewStation)( ctune_UI_PanelID_e tab, int /* unused */ );
+        int                (* editStation)( ctune_UI_PanelID_e tab, int /* unused */ );
+        int                (* toggleFavourite)( ctune_UI_PanelID_e tab, int /* unused */ );
+        int                (* syncUpstream)( ctune_UI_PanelID_e tab, int /* unused */ );
+        int                (* favTabTheming)( ctune_UI_PanelID_e tab, int action_flag_e );
+        int                (* favTabCustomTheming)( ctune_UI_PanelID_e tab, int action_flag_e );
+        int                (* listRowSizeLarge)( ctune_UI_PanelID_e tab, int action_flag_e );
+        ctune_UIConfig_t * (* getUIConfig)( void );
+        int                (* setUIPreset)( ctune_UI_PanelID_e tab, int preset_e );
+        int                (* mouseSupport)( ctune_UI_PanelID_e tab, int action_flag_e );
+        int                (* unicodeIcons)( ctune_UI_PanelID_e tab, int action_flag_e );
+        int                (* streamTimeout)( ctune_UI_PanelID_e tab, int value );
+
     } cb;
 
 } ctune_UI_OptionsMenu_t;
@@ -176,11 +177,11 @@ extern const struct ctune_UI_Dialog_OptionsMenu_Namespace {
         void (* setListRowSizeLargeCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
 
         /**
-         * Sets the callback method to get the list of available UI colour pallet presets
+         * Sets the callback method to get a pointer to the UIConfig object
          * @param om       Pointer to ctune_UI_OptionsMenu_t object
          * @param callback Callback function
          */
-        void (* setGetUIPresetCallback)( ctune_UI_OptionsMenu_t * om, void (* callback)( Vector_t * ) );
+        void (* setGetUIConfigCallback)( ctune_UI_OptionsMenu_t * om, ctune_UIConfig_t * (* callback)( void ) );
 
         /**
          * Sets the callback method to set a UI colour pallet preset
