@@ -162,8 +162,8 @@ set(SOURCE_FILES
         src/enum/Flag.c
         src/enum/ListCategory.c
         src/enum/ListCategory.h
-        src/enum/MouseResolution.c
-        src/enum/MouseResolution.h
+        src/enum/MouseInterval.c
+        src/enum/MouseInterval.h
         src/enum/PlaybackCtrl.h
         src/enum/SearchCtrl.h
         src/enum/StationAttribute.c

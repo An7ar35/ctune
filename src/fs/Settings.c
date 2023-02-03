@@ -23,8 +23,7 @@
 #define CFG_KEY_STREAM_TIMEOUT                  "IO::StreamTimeout"
 #define CFG_KEY_NETWORK_TIMEOUT                 "IO::NetworkTimeout"
 #define CFG_KEY_UI_MOUSE                        "UI::Mouse"
-#define CFG_KEY_UI_MOUSE_RESOLUTION             "UI::Mouse::Resolution"
-#define CFG_KEY_UI_MOUSE_RESOLUTION_PRESET      "UI::Mouse::Resolution::Preset"
+#define CFG_KEY_UI_MOUSE_INTERVAL_PRESET        "UI::Mouse::IntervalPreset"
 #define CFG_KEY_UI_UNICODE_ICONS                "UI::UnicodeIcons"
 #define CFG_KEY_UI_FAVTAB_SHOW_THEMING          "UI::Favourites::ShowTheme"
 #define CFG_KEY_UI_FAVTAB_USE_CUSTOM_THEMING    "UI::Favourites::UseCustomTheme"
@@ -373,11 +372,8 @@ static bool ctune_Settings_loadCfg() {
             } else if( strcmp( CFG_KEY_UI_MOUSE, key._raw ) == 0 ) { //bool
                 error = !ctune_Parser_KVPairs.validateBoolean( &val, &config.ui.mouse.enabled );
 
-            } else if( strcmp( CFG_KEY_UI_MOUSE_RESOLUTION, key._raw ) == 0 ) { //int
-                error = !ctune_Parser_KVPairs.validateInteger( &val, &config.ui.mouse.resolution );
-
-            } else if( strcmp( CFG_KEY_UI_MOUSE_RESOLUTION_PRESET, key._raw ) == 0 ) {
-                int preset = CTUNE_MOUSERESOLUTION_NOT_SET;
+            } else if( strcmp( CFG_KEY_UI_MOUSE_INTERVAL_PRESET, key._raw ) == 0 ) {
+                int preset = CTUNE_MOUSEINTERVAL_DEFAULT;
 
                 error = !ctune_Parser_KVPairs.validateInteger( &val, &preset );
 
@@ -510,7 +506,7 @@ static bool ctune_Settings_writeCfg() {
         goto end;
     }
 
-    int ret[32];
+    int ret[31];
 
     ret[ 0] = fprintf( file, "%s=%s\n", CFG_KEY_LAST_STATION_PLAYED_UUID, config.last_station.uuid._raw );
     ret[ 1] = fprintf( file, "%s=%i\n", CFG_KEY_LAST_STATION_PLAYED_SRC, config.last_station.src );
@@ -522,33 +518,32 @@ static bool ctune_Settings_writeCfg() {
     ret[ 7] = fprintf( file, "%s=%d\n", CFG_KEY_NETWORK_TIMEOUT, config.timeout_network_val );
 
     ret[ 8] = fprintf( file, "%s=%s\n", CFG_KEY_UI_MOUSE, ( config.ui.mouse.enabled ? "true" : "false" ) );
-    ret[ 9] = fprintf( file, "%s=%i\n", CFG_KEY_UI_MOUSE_RESOLUTION, config.ui.mouse.resolution );
-    ret[10] = fprintf( file, "%s=%i\n", CFG_KEY_UI_MOUSE_RESOLUTION_PRESET, config.ui.mouse.preset );
-    ret[11] = fprintf( file, "%s=%s\n", CFG_KEY_UI_UNICODE_ICONS, ( config.ui.unicode_icons ? "true" : "false" ) );
-    ret[12] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_SHOW_THEMING, ( config.ui.fav_tab.theme_favourites ? "true" : "false" ) );
-    ret[13] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_USE_CUSTOM_THEMING, ( config.ui.fav_tab.custom_theming ? "true" : "false" ) );
-    ret[14] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_LRG, ( config.ui.fav_tab.large_rows ? "true" : "false" ) );
-    ret[15] = fprintf( file, "%s=%i\n", CFG_KEY_UI_FAVTAB_SORTBY, favourites.sort_id );
-    ret[16] = fprintf( file, "%s=%s\n", CFG_KEY_UI_SEARCHTAB_LRG, ( config.ui.search_tab.large_rows ? "true" : "false" ) );
-    ret[17] = fprintf( file, "%s=%s\n", CFG_KEY_UI_BROWSERTAB_LRG, ( config.ui.browse_tab.large_rows ? "true" : "false" ) );
+    ret[ 9] = fprintf( file, "%s=%i\n", CFG_KEY_UI_MOUSE_INTERVAL_PRESET, config.ui.mouse.interval_preset );
+    ret[10] = fprintf( file, "%s=%s\n", CFG_KEY_UI_UNICODE_ICONS, ( config.ui.unicode_icons ? "true" : "false" ) );
+    ret[11] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_SHOW_THEMING, ( config.ui.fav_tab.theme_favourites ? "true" : "false" ) );
+    ret[12] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_USE_CUSTOM_THEMING, ( config.ui.fav_tab.custom_theming ? "true" : "false" ) );
+    ret[13] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_LRG, ( config.ui.fav_tab.large_rows ? "true" : "false" ) );
+    ret[14] = fprintf( file, "%s=%i\n", CFG_KEY_UI_FAVTAB_SORTBY, favourites.sort_id );
+    ret[15] = fprintf( file, "%s=%s\n", CFG_KEY_UI_SEARCHTAB_LRG, ( config.ui.search_tab.large_rows ? "true" : "false" ) );
+    ret[16] = fprintf( file, "%s=%s\n", CFG_KEY_UI_BROWSERTAB_LRG, ( config.ui.browse_tab.large_rows ? "true" : "false" ) );
 
-    ret[18] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_PRESET, ctune_UIPreset.str( config.ui.theme.preset ) );
-    ret[19] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME, ctune_ColourTheme.str( config.ui.theme.custom_pallet.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.background, true ) );
-    ret[20] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.background, true ) );
-    ret[21] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW_SELECTED_FOCUSED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_focused_fg, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_focused_bg, true ) );
-    ret[22] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW_SELECTED_UNFOCUSED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_unfocused_fg, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_unfocused_bg, true ) );
-    ret[23] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ROW_FAVOURITE_LOCAL, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.favourite_local_fg, true ) );
-    ret[24] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ROW_FAVOURITE_REMOTE, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.favourite_remote_fg, true ) );
+    ret[17] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_PRESET, ctune_UIPreset.str( config.ui.theme.preset ) );
+    ret[18] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME, ctune_ColourTheme.str( config.ui.theme.custom_pallet.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.background, true ) );
+    ret[19] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.background, true ) );
+    ret[20] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW_SELECTED_FOCUSED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_focused_fg, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_focused_bg, true ) );
+    ret[21] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW_SELECTED_UNFOCUSED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_unfocused_fg, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_unfocused_bg, true ) );
+    ret[22] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ROW_FAVOURITE_LOCAL, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.favourite_local_fg, true ) );
+    ret[23] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ROW_FAVOURITE_REMOTE, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.favourite_remote_fg, true ) );
 
-    ret[25] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_PLAYBACK_ON, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.playback_on, true ) );
-    ret[26] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_PLAYBACK_OFF, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.playback_off, true ) );
-    ret[27] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_QUEUED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.queued_station, true ) );
+    ret[24] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_PLAYBACK_ON, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.playback_on, true ) );
+    ret[25] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_PLAYBACK_OFF, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.playback_off, true ) );
+    ret[26] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_QUEUED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.queued_station, true ) );
 
-    ret[28] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_FIELD_INVALID, ctune_ColourTheme.str( config.ui.theme.custom_pallet.field.invalid_fg, true ) );
+    ret[27] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_FIELD_INVALID, ctune_ColourTheme.str( config.ui.theme.custom_pallet.field.invalid_fg, true ) );
 
-    ret[29] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_BUTTON, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.background, true ) );
-    ret[30] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_BUTTON_INVALID, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.invalid_fg, true ) );
-    ret[31] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_BUTTON_VALIDATED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.validated_fg, true ) );
+    ret[28] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_BUTTON, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.background, true ) );
+    ret[29] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_BUTTON_INVALID, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.invalid_fg, true ) );
+    ret[30] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_BUTTON_VALIDATED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.validated_fg, true ) );
 
     for( size_t item_no = 0; item_no < 16; ++item_no ) {
         if( ret[item_no] < 0 ) {
