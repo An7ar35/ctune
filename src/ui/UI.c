@@ -569,33 +569,6 @@ static int ctune_UI_favouriteTabCustomTheming( ctune_UI_PanelID_e tab, int actio
 }
 
 /**
- * [PRIVATE] Get all available colour pallet presets except the currently used
- * @param list Pointer to Vector_t where append presets to (expected to be already initialised)
- */
-static void ctune_UI_getUIThemes( Vector_t * list ) {
-    ctune_UIPreset_e curr = ctune_Controller.cfg.getUIConfig()->theme.preset;
-
-    for( int i = CTUNE_UIPRESET_DEFAULT; i < CTUNE_UIPRESET_COUNT; ++i ) {
-        if( i != curr ) {
-            ctune_UIPreset_t *preset = Vector.emplace_back( list );
-
-            if( preset ) {
-                ( *preset ) = ( ctune_UIPreset_t ) {
-                    .id     = i,
-                    .name   = ctune_UIPreset.str( i ),
-                };
-
-            } else {
-                CTUNE_LOG( CTUNE_LOG_ERROR,
-                           "[ctune_UI_getUIThemes( %p )] Failed to add new preset to list ('%s').",
-                           list, ctune_UIPreset.str( i )
-                );
-            }
-        }
-    }
-}
-
-/**
  * [PRIVATE] Sets the mouse support
  * @param tab           PanelID of the current tab
  * @param action_flag_e Action to take (get/set)
@@ -979,7 +952,7 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_OptionsMenu.cb.setSyncCurrSelectedStationCallback( &ui.dialogs.optmenu, ctune_UI_syncRemoteStation );
             ctune_UI_OptionsMenu.cb.setFavouriteTabThemingCallback( &ui.dialogs.optmenu, ctune_UI_setFavouriteTabTheming );
             ctune_UI_OptionsMenu.cb.setListRowSizeLargeCallback( &ui.dialogs.optmenu, ctune_UI_setCurrListRowSize );
-            ctune_UI_OptionsMenu.cb.setGetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_getUIThemes );
+            ctune_UI_OptionsMenu.cb.setGetUIConfigCallback( &ui.dialogs.optmenu, ctune_Controller.cfg.getUIConfig );
             ctune_UI_OptionsMenu.cb.setSetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_setUITheme );
             ctune_UI_OptionsMenu.cb.setFavTabCustomThemingCallback( &ui.dialogs.optmenu, ctune_UI_favouriteTabCustomTheming );
             ctune_UI_OptionsMenu.cb.setMouseSupportCallback( &ui.dialogs.optmenu, ctune_UI_setMouseSupport );
@@ -1006,7 +979,7 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
 
             ui.dialogs.optmenu = ctune_UI_OptionsMenu.create( &ui.size.screen, tab, ctune_UI_Language.text );
             ctune_UI_OptionsMenu.cb.setListRowSizeLargeCallback( &ui.dialogs.optmenu, ctune_UI_setCurrListRowSize );
-            ctune_UI_OptionsMenu.cb.setGetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_getUIThemes );
+            ctune_UI_OptionsMenu.cb.setGetUIConfigCallback( &ui.dialogs.optmenu, ctune_Controller.cfg.getUIConfig );
             ctune_UI_OptionsMenu.cb.setSetUIPresetCallback( &ui.dialogs.optmenu, ctune_UI_setUITheme );
             ctune_UI_OptionsMenu.cb.setMouseSupportCallback( &ui.dialogs.optmenu, ctune_UI_setMouseSupport );
             ctune_UI_OptionsMenu.cb.setUnicodeIconsCallback( &ui.dialogs.optmenu, ctune_UI_setUnicodeIcons );
