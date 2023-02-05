@@ -183,7 +183,7 @@ static bool ctune_init( const ctune_ArgOptions_t * options ) {
     ctune_Controller.setResizeUIEventCallback( ctune_UI_Resizer.resize );
 
     /* UI */
-    if( !ctune_UI.setup( options->ui.show_cursor, ctune_Settings.cfg.enableMouse() ) ) {
+    if( !ctune_UI.setup( options->ui.show_cursor ) ) {
         CTUNE_LOG( CTUNE_LOG_FATAL, "[INIT] Failed to setup the UI." );
         error_state = true;
     }

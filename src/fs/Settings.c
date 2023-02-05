@@ -657,14 +657,6 @@ static int ctune_Settings_getNetworkTimeoutVal( void ) {
 }
 
 /**
- * Gets the mouse support requirement
- * @return "Enable mouse" state
- */
-static bool ctune_Settings_enableMouse( void ) {
-    return config.ui.mouse.enabled;
-}
-
-/**
  * Gets the UI configuration
  * @return ctune_UIConfig object
  */
@@ -1073,7 +1065,6 @@ const struct ctune_Settings_Instance ctune_Settings = {
         .getStreamTimeoutVal    = &ctune_Settings_getStreamTimeoutVal,
         .setStreamTimeoutVal    = &ctune_Settings_setStreamTimeoutVal,
         .getNetworkTimeoutVal   = &ctune_Settings_getNetworkTimeoutVal,
-        .enableMouse            = &ctune_Settings_enableMouse,
         .getUIConfig            = &ctune_Settings_getUIConfig,
         .setUIConfig            = &ctune_Settings_setUIConfig,
     },
