@@ -231,6 +231,7 @@ static void ctune_audio_sendToAudioSink( const void * buffer, int buff_size ) {
 const struct ctune_AudioOut ctune_AudioOutput = {
     .init         = &ctune_audio_initAudioOut,
     .write        = &ctune_audio_sendToAudioSink,
+    .setVolume    = &ctune_audio_setVolume,
     .changeVolume = &ctune_audio_changeVolume,
     .getVolume    = &ctune_audio_getVolume,
     .shutdown     = &ctune_audio_shutdownAudioOut
