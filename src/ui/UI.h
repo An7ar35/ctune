@@ -13,10 +13,9 @@ struct ctune_UI_Instance {
     /**
      * Initialises the UI and its internal variables
      * @param show_cursor Flag to show the UI cursor
-     * @param mouse_nav   Flag to enable mouse navigation
      * @return Success
      */
-    bool (* setup)( bool show_cursor, bool mouse_nav );
+    bool (* setup)( bool show_cursor );
 
     /**
      * Start the UI loop

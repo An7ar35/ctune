@@ -1728,16 +1728,15 @@ static void ctune_UI_runKeyInterfaceLoop() {
 /**
  * Initialises the UI and its internal variables
  * @param show_cursor Flag to show the UI cursor
- * @param mouse_nav   Flag to enable mouse navigation
  * @return Success
  */
-static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
-    CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_setup( %i, %i )] Initialising the UI.", show_cursor, mouse_nav );
+static bool ctune_UI_setup( bool show_cursor ) {
+    CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_setup( %i )] Initialising the UI.", show_cursor );
 
     ui.old_cursor = curs_set( 0 );
 
     if( !ctune_UI_KeyBinding.init() ) {
-        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i, %i )] Failed key binding init.", show_cursor, mouse_nav );
+        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i )] Failed key binding init.", show_cursor );
         ctune_err.set( CTUNE_ERR_UI );
         return false; //EARLY RETURN
 
@@ -1748,7 +1747,7 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
     ctune_UI_Icons.setUnicode( ctune_UIConfig.unicodeIcons( ctune_Controller.cfg.getUIConfig(), FLAG_GET_VALUE ) );
 
     if( ( stdscr = initscr() ) == NULL ) {
-        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i, %i )] Failed `initscr()`.", show_cursor, mouse_nav );
+        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i )] Failed `initscr()`.", show_cursor );
         ctune_err.set( CTUNE_ERR_UI );
         return false; //EARLY RETURN
 
@@ -1764,7 +1763,7 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
     }
 
     if( has_colors() == false ) {
-        CTUNE_LOG( CTUNE_LOG_WARNING, "[ctune_UI_setup( %i, %i )] Terminal does not support colours.", show_cursor, mouse_nav );
+        CTUNE_LOG( CTUNE_LOG_WARNING, "[ctune_UI_setup( %i )] Terminal does not support colours.", show_cursor );
         ctune_err.set( CTUNE_ERR_UI );
         return false; //EARLY RETURN
 
@@ -1778,6 +1777,7 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
     keypad( stdscr, TRUE );
 
     ctune_UIConfig_t * ui_config = ctune_Controller.cfg.getUIConfig();
+    bool               mouse_nav = ctune_UIConfig.mouse.enabled( ui_config, FLAG_GET_VALUE );
 
     // MOUSE NAVIGATION
     if( mouse_nav ) {
@@ -1788,12 +1788,12 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
             mouseinterval( resolution );
 
             CTUNE_LOG( CTUNE_LOG_MSG,
-                       "[ctune_UI_setup( %i, %i )] Mouse navigation enabled (resolution '%s': %ims).",
-                       show_cursor, mouse_nav, ctune_MouseInterval.str( resolution_preset ), resolution
+                       "[ctune_UI_setup( %i )] Mouse navigation enabled (resolution '%s': %ims).",
+                       show_cursor, ctune_MouseInterval.str( resolution_preset ), resolution
             );
 
         } else {
-            CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_setup( %i, %i )] Failed to enable mouse navigation.", show_cursor, mouse_nav );
+            CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_setup( %i, %i )] Failed to enable mouse navigation.", show_cursor );
             ctune_err.set( CTUNE_ERR_IO_MOUSE_ENABLE_FAIL );
             ctune_UIConfig.mouse.enabled( ui_config, FLAG_SET_OFF );
             mouse_nav = false;
@@ -1803,7 +1803,7 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
     // CONTEXTUAL HELP POPUP DIALOG
     if( !ctune_UI_ContextHelp.init( &ui.size.screen, ctune_UI_Language.text ) ) {
         ctune_err.set( CTUNE_ERR_UI );
-        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i, %i )] Could not init contextual help.", show_cursor, mouse_nav );
+        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i )] Could not init contextual help.", show_cursor );
         return false; //EARLY RETURN
 
     } else {
@@ -1814,7 +1814,7 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
     // FIND RADIO STATION FORM
     ui.dialogs.rsfind = ctune_UI_RSFind.create( &ui.size.screen, ctune_UI_Language.text );
     if( !ctune_UI_RSFind.init( &ui.dialogs.rsfind, mouse_nav ) ) {
-        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i, %i )] Could not init RSFind dialog.", show_cursor, mouse_nav );
+        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i )] Could not init RSFind dialog.", show_cursor );
         ctune_err.set( CTUNE_ERR_UI );
         return false; //EARLY RETURN
 
@@ -1829,7 +1829,7 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
                                                 ctune_Controller.playback.testStream,
                                                 ctune_Controller.playback.validateURL );
     if( !ctune_UI_RSEdit.init( &ui.dialogs.rsedit, mouse_nav ) ) {
-        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i, %i )] Could not init RSEdit dialog.", show_cursor, mouse_nav );
+        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i )] Could not init RSEdit dialog.", show_cursor );
         ctune_err.set( CTUNE_ERR_UI );
         return false; //EARLY RETURN
 
@@ -1840,7 +1840,7 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
     // RADIO STATION INFO DIALOG
     ui.dialogs.rsinfo = ctune_UI_RSInfo.create( &ui.size.screen, ctune_UI_Language.text, ": " );
     if( !ctune_UI_RSInfo.init( &ui.dialogs.rsinfo, mouse_nav ) ) {
-        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i, %i )] Could not init RSInfo_t dialog.", show_cursor, mouse_nav );
+        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i )] Could not init RSInfo_t dialog.", show_cursor );
         ctune_err.set( CTUNE_ERR_UI );
         return false; //EARLY RETURN
 
@@ -1852,7 +1852,7 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
     ui.dialogs.optmenu = ctune_UI_OptionsMenu.create( &ui.size.screen, ui.cache.curr_panel, ctune_UI_Language.text );
 
     if( !ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu, mouse_nav ) ) {
-        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i, %i )] Could not init OptionsMenu_t dialog.", show_cursor, mouse_nav );
+        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i )] Could not init OptionsMenu_t dialog.", show_cursor );
         ctune_err.set( CTUNE_ERR_UI );
         return false; //EARLY RETURN
 
@@ -1918,8 +1918,8 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
 //    nonl();
 
     CTUNE_LOG( CTUNE_LOG_DEBUG,
-               "[ctune_UI_setup( %i, %i )] Init = [%i][%i][%i][%i][%i][%i][%i][%i][%i][%i]",
-               show_cursor, mouse_nav,
+               "[ctune_UI_setup( %i )] Init = [%i][%i][%i][%i][%i][%i][%i][%i][%i][%i]",
+               show_cursor,
                ui.init_stages[CTUNE_UI_INITSTAGE_KEYBINDS],
                ui.init_stages[CTUNE_UI_INITSTAGE_STDSCR],
                ui.init_stages[CTUNE_UI_INITSTAGE_THEME],
@@ -1932,7 +1932,7 @@ static bool ctune_UI_setup( bool show_cursor, bool mouse_nav ) {
                ui.init_stages[CTUNE_UI_INITSTAGE_COMPLETE]
     );
 
-    CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_setup( %i, %i )] UI Initialised successfully.", show_cursor, mouse_nav );
+    CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_setup( %i )] UI Initialised successfully.", show_cursor );
 
     refresh();
     return true;
