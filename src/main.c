@@ -238,6 +238,8 @@ void ctune_setupSigHandler() {
     sigaction( SIGTERM,  &signal_handler, NULL );
     sigaction( SIGQUIT,  &signal_handler, NULL );
     sigaction( SIGTSTP,  &signal_handler, NULL );
+    sigaction( SIGHUP,   &signal_handler, NULL );
+    sigaction( SIGABRT,  &signal_handler, NULL );
 }
 
 /**
@@ -247,26 +249,33 @@ void ctune_setupSigHandler() {
  * @param context Pointer to context
  */
 void ctune_handleSignal( int signo, siginfo_t * info, void * context ) {
+    int exit_state = OK;
+
     switch( signo ) {
-        case SIGWINCH: //terminal resize event
+        case SIGWINCH: { //terminal resize event
             CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught interrupt signal (SIGWINCH).", signo );
             ctune_Controller.resizeUI();
-            break;
-        case SIGINT: //interrupt (^C)
-            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught interrupt signal (^C).", signo );
-            ctune_shutdown();
-            exit_curses( ERR );
-            break;
-        case SIGTERM: //terminate
-            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught SIGTERM signal.", signo );
-            ctune_shutdown();
-            exit_curses( OK );
-            break;
-        case SIGQUIT: //quit (^\)
-        case SIGTSTP: //suspend (^Z)
-        default:
-            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught signal, forwarding...", signo );
+        } break;
+
+        case SIGABRT: //fallthrough
+        case SIGINT : exit_state = ERR;
+        case SIGQUIT:
+        case SIGTSTP:
+        case SIGTERM: //fallthrough
+        case SIGHUP : {
+            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught signal: %s", signo, strsignal( signo ) );
+            goto shutdown;
+        } break;
+
+        default: {
+            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Forwarding signal: %s", signo, strsignal( signo ) );
             signal( signo, SIG_DFL );
-            break;
+        } break;
     }
+
+    return;
+
+    shutdown:
+        ctune_shutdown();
+        exit_curses( exit_state );
 }

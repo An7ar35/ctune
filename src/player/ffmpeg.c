@@ -172,7 +172,7 @@ static int ctune_Player_setupStreamInput( AVFormatContext * in_format_ctx, AVCod
 
     CTUNE_LOG( CTUNE_LOG_DEBUG,
                "[ctune_Player_setupStreamInput( %p, %i, %p )] "
-               "Input stream setup complete: { codec = '%s', channels = %d, sample-rate = %d, bits per samples = %ld, bit-rate = %ld, frame-size = %d }",
+               "Input stream setup complete: { codec = '%s', channels = %d, sample-rate = %d, bits per samples = %d, bit-rate = %ld, frame-size = %d }",
                in_format_ctx, *audio_stream_i, url,
                avcodec_get_name( parameters->codec_id ), parameters->ch_layout.nb_channels, parameters->sample_rate, parameters->bits_per_coded_sample, parameters->bit_rate, parameters->frame_size
     );
