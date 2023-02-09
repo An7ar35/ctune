@@ -10,7 +10,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "../ctune_err.h"
 
 #define RCV_BUFFER_SIZE        4096

@@ -1,7 +1,7 @@
 #include "ScrollWin.h"
 
 #include <stdlib.h>
-#include "../../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 //https://man7.org/linux/man-pages/man3/idlok.3x.html
 

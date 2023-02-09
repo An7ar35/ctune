@@ -5,7 +5,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 /**
  * Get file state

@@ -1,7 +1,7 @@
 #include "Language.h"
 
 #include "project_version.h"
-#include "../../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 static const char * field_str[CTUNE_UI_TEXT_ENUM_COUNT] = {
     [CTUNE_UI_TEXT_WIN_TITLE_MAIN                   ] = CTUNE_APPNAME " " CTUNE_VERSION,

@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 #define NUMBER_OF_COLOURS   8
 #define COLOUR_CODE_BLACK   0b0000

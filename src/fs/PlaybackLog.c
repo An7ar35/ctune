@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <wchar.h>
 
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 static FILE * playback_log = NULL;
 

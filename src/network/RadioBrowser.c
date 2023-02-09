@@ -6,7 +6,7 @@
 #include <string.h>
 
 #include "project_version.h"
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "NetworkUtils.h"
 #include "../parser/JSON.h"
 #include "../ctune_err.h"

@@ -14,7 +14,7 @@ typedef enum {
 /**
  * MouseResolution namespace
  */
-const extern struct ctune_MouseInterval_Namespace {
+extern const struct ctune_MouseInterval_Namespace {
     /**
      * Gets the resolution value
      * @param resolution_e Resolution enum

@@ -1,6 +1,6 @@
 #include "RSFind.h"
 
-#include "../../logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "../definitions/KeyBinding.h"
 #include "../definitions/Theme.h"
 #include "ContextHelp.h"

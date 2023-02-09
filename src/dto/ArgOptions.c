@@ -1,6 +1,6 @@
 #include "ArgOptions.h"
 
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 /**
  * Sends all options to the log (for debug purposes)

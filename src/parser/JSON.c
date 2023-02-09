@@ -4,7 +4,7 @@
 #include <json-c/json.h>
 #include <json-c/json_visit.h>
 
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "../datastructure/StrList.h"
 #include "../dto/RadioStationInfo.h"
 #include "../dto/CategoryItem.h"

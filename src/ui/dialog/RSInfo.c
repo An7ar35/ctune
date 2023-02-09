@@ -3,7 +3,7 @@
 #include <string.h>
 #include <panel.h>
 
-#include "../../logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "../../ctune_err.h"
 #include "../../utils/utilities.h"
 #include "../definitions/Theme.h"

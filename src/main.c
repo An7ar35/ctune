@@ -3,7 +3,7 @@
 #include <locale.h>
 #include <langinfo.h>
 
-#include "logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "ctune_err.h"
 #include "cli/CLI.h"
 #include "fs/Settings.h"
@@ -258,7 +258,7 @@ void ctune_handleSignal( int signo, siginfo_t * info, void * context ) {
         } break;
 
         case SIGABRT: //fallthrough
-        case SIGINT : exit_state = ERR;
+        case SIGINT : exit_state = ERR; //fallthrough
         case SIGQUIT:
         case SIGTSTP:
         case SIGTERM: //fallthrough

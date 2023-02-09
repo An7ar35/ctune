@@ -108,6 +108,7 @@ Available theme preset values: "`default`", "`hackerman`", "`red-zone`", "`deep-
 |---------------|----------------------------------------|
 | Network       | OpenSSL, POSIX sockets, Curl           |
 | Playback      | FFMpeg/VLC, SDL2/PulseAudio/ALSA/sndio |
+| Recording     | lame                                   |
 | Parsing       | json-c (static)                        |
 
 
@@ -120,6 +121,7 @@ Requires the following to be installed on the system first:
 - `cmake` version **3.17** and the CMake extra-modules package
 - `git` for fetching the repos
 - `ffmpeg`, `vlc` player libraries*
+- `lame` for recording streams to mp3
 - `curl` and `openssl` libraries
 - `sdl2`  or `pulsedaudio` or `alsa` or `sndio` sound library/servers*
 - `pandoc` and `gzip` for the man page
@@ -166,7 +168,7 @@ sudo apt-get install gcc libncurses5 git cmake cmake-extras make man pandoc gzip
 ```
 
 ```shell
-sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev libavdevice-dev libavfilter-dev libssl-dev libcurl4-openssl-dev libncurses5-dev libbsd-dev libpulse-dev
+sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev libavdevice-dev libavfilter-dev libssl-dev libcurl4-openssl-dev libncurses5-dev libbsd-dev libpulse-dev lame
 ```
 
 Once all these are on the system compiling from source should work without hiccups.
@@ -192,6 +194,7 @@ As a baseline v1.1.5 works on ArchLinux with:
 - Curl (7.77.0)
 - nCurses (6.4.20221231)
 - libbsd
+- lame (3.100)
 
 ## F.A.Q.
 

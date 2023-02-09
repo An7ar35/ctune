@@ -2,7 +2,7 @@
 
 #include <pthread.h>
 
-#include "logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "ctune_err.h"
 #include "fs/Settings.h"
 #include "fs/PlaybackLog.h"
@@ -107,6 +107,11 @@ static bool ctune_Controller_init( void ) {
 
     ctune_RadioPlayer.init( ctune_Controller_songChangeEvent,
                             ctune_Controller_volumeChangeEvent );
+
+    if( !ctune_Settings.plugins.loadPlugins() ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Controller_init()] Failed to load all available plugins." );
+        return false; //EARLY RETURN
+    }
 
     if( !ctune_RadioPlayer.loadSoundServerPlugin( ctune_Settings.plugins.getAudioServer() ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Controller_init()] Failed to load a sound server plugin." );

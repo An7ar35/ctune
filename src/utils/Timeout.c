@@ -1,7 +1,7 @@
 #include "Timeout.h"
 
 #include <assert.h>
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 /**
  * Check if timer has timed-out (if so the `ctune_set_err( int )` is called with the prearranged error number)

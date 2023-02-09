@@ -4,7 +4,7 @@
 #include <sys/ioctl.h>
 
 #include "../ctune_err.h"
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "../datastructure/Vector.h"
 #include "../datastructure/StrList.h"
 #include "../dto/RadioBrowserFilter.h"

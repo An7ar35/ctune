@@ -2,7 +2,7 @@
 
 #include <assert.h>
 
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 /**
  * [PRIVATE] Grows the vector data-structure

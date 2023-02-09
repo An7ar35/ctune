@@ -1,5 +1,5 @@
 #include "ctune_err.h"
-#include "logger/Logger.h"
+#include "logger/src/Logger.h"
 
 static struct {
     volatile int    errno;
@@ -19,10 +19,13 @@ struct ctune_error {
 
 static const struct ctune_error ctune_error_descs[] = {
     { CTUNE_ERR_NONE,                  "" },
+    { CTUNE_ERR_BUFF_UNDERFLOW,        "Buffer underflow" },
     { CTUNE_ERR_BUFF_OVERFLOW,         "Buffer overflow" },
+    { CTUNE_ERR_BUFF_NULL,             "Buffer is NULL - see log" },
     { CTUNE_ERR_BUFF_ALLOC,            "Buffer allocation failed - see log" },
     { CTUNE_ERR_MALLOC,                "Memory allocation failed - see log" },
     { CTUNE_ERR_BAD_CAST,              "Bad cast" },
+    { CTUNE_ERR_NO_DATA,               "No data" },
     { CTUNE_ERR_BAD_FUNC_ARGS,         "Bad function arguments - see log" },
     { CTUNE_ERR_LOG,                   "Logger error" },
     { CTUNE_ERR_LOG_SERVICE_TIMEOUT,   "Logger service timout" },
@@ -32,6 +35,8 @@ static const struct ctune_error ctune_error_descs[] = {
     { CTUNE_ERR_IO_STDERR_REDIRECT,    "Redirecting stderr failed" },
     { CTUNE_ERR_IO_STDERR_RESET,       "Resetting stderr output to default failed" },
     { CTUNE_ERR_IO_PLAYLOG_OPEN,       "Opening playback log file failed" },
+    { CTUNE_ERR_IO_AUDIOFILE_OPEN,     "Opening audio output file failed" },
+    { CTUNE_ERR_IO_AUDIOFILE_OPENED,   "Audio output file already opened" },
     { CTUNE_ERR_IO_PLUGIN_OPEN,        "Could not open plugin" },
     { CTUNE_ERR_IO_PLUGIN_CLOSE,       "Could not close plugin" },
     { CTUNE_ERR_IO_PLUGIN_LINK,        "Failed linking to plugin" },

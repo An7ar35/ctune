@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "../datastructure/Deque.h"
 
 /**
