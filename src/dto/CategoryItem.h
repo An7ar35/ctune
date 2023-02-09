@@ -43,6 +43,14 @@ extern const struct ctune_CategoryItem_Namespace {
     ctune_Field_t (* getField)( struct ctune_CategoryItem *cat_item, const char *api_name );
 
     /**
+     * Compares CategoryItems based on their names
+     * @param lhs Pointer to a CategoryItem object
+     * @param rhs Pointer to a CategoryItem object to compare against
+     * @return Result of comparison (-1: less, 0: equal, +1: greater)
+     */
+    int (* compareByName)( const void * lhs, const void * rhs );
+
+    /**
      * Getters
      */
     struct {
@@ -51,6 +59,8 @@ extern const struct ctune_CategoryItem_Namespace {
         const char * (* data)( const ctune_CategoryItem_t * cat_item );
         const char * (* country)( const ctune_CategoryItem_t * cat_item );
     } get;
+
+
 
 } ctune_CategoryItem;;
 

@@ -310,7 +310,14 @@ static bool ctune_RadioBrowser_downloadCategoryItems(
                        "[ctune_RadioBrowser_downloadCategoryies( %p, %i, %i, %p, %p )] rcv_buff:\n%s",
                        addr_list, timeout, category, filter, category_items, ( String.empty( &rcv_buff ) ? "\"\"" : rcv_buff._raw )
             );
+
+        } else if( category == RADIOBROWSER_CATEGORY_COUNTRIES
+                || category == RADIOBROWSER_CATEGORY_COUNTRYCODES
+                || category == RADIOBROWSER_CATEGORY_CODECS )
+        { //In-house sorting since reading RadioBrowserAPI's json yields somewhat inconsistent ordering
+            Vector.sort( category_items, ctune_CategoryItem.compareByName ); //<- as long as the text is ASCII, comparison should not go weird
         }
+
     } else {
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_RadioBrowser_downloadCategoryies( %p, %i, %i, %p, %p )] Error downloading data (uri=\"%s\").",
