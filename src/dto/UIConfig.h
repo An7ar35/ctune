@@ -7,6 +7,7 @@
 #include "../enum/Flag.h"
 #include "../enum/MouseInterval.h"
 #include "../enum/StationSrc.h"
+#include "../datastructure/String.h"
 
 typedef struct {
     bool unicode_icons;

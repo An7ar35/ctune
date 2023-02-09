@@ -17,6 +17,11 @@ extern const struct ctune_Settings_Instance {
      */
     void (* init)( void );
 
+    /**
+     * De-allocates anything stored on the heap
+     */
+    void (* free)( void );
+
     struct { /* Runtime lock file*/
         /**
          * Creates the lock file
@@ -175,6 +180,18 @@ extern const struct ctune_Settings_Instance {
         int (* getNetworkTimeoutVal)( void );
 
         /**
+         * Get the output path
+         * @return Output path
+         */
+        const char * (* outputPath)( void );
+
+        /**
+         * Sets the output path
+         * @param path Output path
+         */
+        bool (* setOutputPath)( const char * path );
+
+        /**
          * Gets the UI configuration
          * @return ctune_UIConfig object
          */
@@ -191,6 +208,12 @@ extern const struct ctune_Settings_Instance {
 
     struct { /* Plugins */
         /**
+         * Call to load all available plugins into the engine
+         * @return Success
+         */
+        bool (* loadPlugins)( void );
+
+        /**
          * Gets the audio server plugin
          * @return Pointer to the loaded plugin
          */
@@ -203,11 +226,6 @@ extern const struct ctune_Settings_Instance {
         ctune_Player_t * (* getPlayer)( void );
 
     } plugins;
-
-    /**
-     * De-allocates anything stored on the heap
-     */
-    void (* free)( void );
 
 } ctune_Settings;
 

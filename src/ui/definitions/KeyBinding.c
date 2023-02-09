@@ -4,7 +4,7 @@
 #include <ncurses.h>
 
 #include "KeyDescription.h"
-#include "../../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 /**
  * [PRIVATE] Key mapping cache between ncurses key and the associated action (int -> ctune_UI_ActionID_e)

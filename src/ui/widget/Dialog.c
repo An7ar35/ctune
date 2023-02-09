@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <panel.h>
 
-#include "../../logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "../definitions/Theme.h"
 
 /**

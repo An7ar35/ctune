@@ -2,7 +2,7 @@
 
 #include <ncurses.h>
 
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 static const int values[CTUNE_MOUSEINTERVAL_COUNT] = {
     [CTUNE_MOUSEINTERVAL_FAST   ] =  83,

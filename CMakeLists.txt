@@ -8,10 +8,10 @@ project(ctune
 set(PROJECT_AUTHOR "E.A.Davison")
 set(PROJECT_YEARS  "2020-23")
 
-set(CMAKE_C_STANDARD 99)
-set(CMAKE_C_FLAGS "-Wall")
-set(CMAKE_C_FLAGS "-Wextra")
-set(CMAKE_C_FLAGS_RELEASE "-O2")
+set(CMAKE_C_STANDARD 99         CACHE INTERNAL "")
+set(CMAKE_C_FLAGS "-Wall"       CACHE INTERNAL "")
+set(CMAKE_C_FLAGS "-Wextra"     CACHE INTERNAL "")
+set(CMAKE_C_FLAGS_RELEASE "-O2" CACHE INTERNAL "")
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
@@ -21,20 +21,23 @@ include(ExternalProject)
 include(GNUInstallDirs)
 
 #Build directories
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/bin")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/lib")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/lib")
-set(CMAKE_EXTERNAL_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/external")
+set(CMAKE_OUTPUT_DIRECTORY          "${CMAKE_CURRENT_SOURCE_DIR}/build"         CACHE INTERNAL "")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  "${CMAKE_OUTPUT_DIRECTORY}/bin"             CACHE INTERNAL "")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY  "${CMAKE_OUTPUT_DIRECTORY}/lib"             CACHE INTERNAL "")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY  "${CMAKE_OUTPUT_DIRECTORY}/lib"             CACHE INTERNAL "")
+set(CMAKE_EXTERNAL_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/external"      CACHE INTERNAL "")
+set(PLUGINS_OUTPUT_DIRECTORY        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/plugins" CACHE INTERNAL "")
 
 #External imports/dependencies directories
 set(CMAKE_RESOURCE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/resource")
 set(CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/lib")
 set(TEMP_DIR_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tmp")
+include_directories(libraries)
 
 #Installation directories
-set(CTUNE_INSTALL_BINDIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR})
-set(CTUNE_INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME})
-set(CTUNE_INSTALL_MANDIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_MANDIR}/man1)
+set(CTUNE_INSTALL_BINDIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}                 CACHE INTERNAL "")
+set(CTUNE_INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME} CACHE INTERNAL "")
+set(CTUNE_INSTALL_MANDIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_MANDIR}/man1            CACHE INTERNAL "")
 
 #Path linkage
 set(CMAKE_INSTALL_RPATH ${CTUNE_INSTALL_LIBDIR})
@@ -43,9 +46,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 #Import external CMake modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 include(FetchContent)
-include(Findsndio)
-include(Findffmpeg)
-include(Findvlc)
+
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
@@ -75,14 +76,14 @@ add_custom_target(make-jsonc-install-dir ALL
 )
 
 ExternalProject_Add(libjsonc
-        PREFIX              "${JSONC_DOWNLOAD_PATH}"
-        SOURCE_DIR          "${JSONC_DOWNLOAD_PATH}/src/libjsonc-build"
-        GIT_REPOSITORY      "https://github.com/json-c/json-c.git"
-        CMAKE_ARGS          "-DBUILD_STATIC_LIBS=ON"
-                            "-DBUILD_SHARED_LIBS=OFF"
-                            "-DCMAKE_INSTALL_PREFIX:PATH=${JSONC_INSTALL_PATH}"
-                            "-DHAVE_ARC4RANDOM=OFF"
-                            "-DCMAKE_BUILD_TYPE=release"
+        PREFIX         "${JSONC_DOWNLOAD_PATH}"
+        SOURCE_DIR     "${JSONC_DOWNLOAD_PATH}/src/libjsonc-build"
+        GIT_REPOSITORY "https://github.com/json-c/json-c.git"
+        CMAKE_ARGS     "-DBUILD_STATIC_LIBS=ON"
+                       "-DBUILD_SHARED_LIBS=OFF"
+                       "-DCMAKE_INSTALL_PREFIX:PATH=${JSONC_INSTALL_PATH}"
+                       "-DHAVE_ARC4RANDOM=OFF"
+                       "-DCMAKE_BUILD_TYPE=release"
 )
 
 set(JSONC_LIBRARIES
@@ -247,245 +248,113 @@ set(SOURCE_FILES
         src/ui/widget/ScrollBar.c
         src/ui/widget/ScrollBar.h
         src/ui/widget/BorderWin.c
-        src/ui/widget/BorderWin.h)
+        src/ui/widget/BorderWin.h
 
-set(LOGGER_SOURCE_FILES
-        src/logger/Logger.h
-        src/logger/Logger.c
-        src/logger/LogQueue.c
-        src/logger/LogQueue.h
-        src/logger/LogWriter.c
-        src/logger/LogWriter.h
-        src/utils/Timeout.c
-        src/utils/Timeout.h
-        src/datastructure/String.c
-        src/datastructure/String.h)
+        src/audio/FileOut.h src/audio/FileOut.h src/enum/PluginType.h src/enum/PluginType.c)
 
 #==================================== CTUNE LOGGER LIBRARY ========================================#
-add_library(ctune_logger SHARED ${LOGGER_SOURCE_FILES})
-
-target_link_libraries(ctune_logger pthread)
-
-set_target_properties(ctune_logger
-        PROPERTIES PREFIX        ""
-        OUTPUT_NAME              logger
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+add_subdirectory(libraries/logger)
+link_directories(libraries/logger)
 
 #===================================== AUDIO INPUT PLUGINS ========================================#
-option(USING_FFMPEG "Compile FFMPEG player plugin" OFF)
-option(USING_VLC    "Compile with VLC"             OFF)
+set(CTUNE_PLUGIN_LIST_AUDIO_PLAYER "")
 
-set(CTUNE_INPUTS_COUNT          0)
-set(CTUNE_PLAYER_PLUGIN_TARGETS "")
-set(CTUNE_PLAYER_PLUGIN_DFLT    "")
-set(CTUNE_PLAYER_PLUGIN_DIR     player)
+add_subdirectory(plugins/input/ffmpeg)
+add_subdirectory(plugins/input/vlc)
+
+get_directory_property(FFMPEG_FOUND DIRECTORY plugins/input/ffmpeg DEFINITION FFMPEG_FOUND)
+get_directory_property(VLC_FOUND    DIRECTORY plugins/input/vlc    DEFINITION VLC_FOUND)
 
 if(FFMPEG_FOUND)
-    include_directories(${FFMPEG_INCLUDE_DIR})
-
-    MESSAGE(STATUS "FFMpeg detected")
-    MATH(EXPR CTUNE_INPUTS_COUNT "${CTUNE_INPUTS_COUNT}+1")
-
-    add_library(ctune_plugin_in_ffmpeg SHARED src/player/ffmpeg.c)
-
-    set_target_properties(ctune_plugin_in_ffmpeg
-            PROPERTIES PREFIX        ""
-            OUTPUT_NAME              ffmpeg
-            LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CTUNE_PLAYER_PLUGIN_DIR})
-
-    target_link_libraries(ctune_plugin_in_ffmpeg PRIVATE
-            ${FFMPEG_LIBRARIES}
-            ctune_logger)
-
-    set(USING_FFMPEG ON)
-    add_definitions(-DUSING_FFMPEG)
-    list(APPEND CTUNE_PLAYER_PLUGIN_TARGETS ctune_plugin_in_ffmpeg)
-
-    set(CTUNE_PLAYER_PLUGIN_DFLT ffmpeg)
-endif()
+    link_directories(plugins/input/ffmpeg)
+    list(APPEND CTUNE_PLUGIN_LIST_AUDIO_PLAYER ctune_plugin_ffmpeg)
+endif(FFMPEG_FOUND)
 
 if(VLC_FOUND)
-    include_directories(${VLC_INCLUDE_DIR})
+    link_directories(plugins/input/vlc)
+    list(APPEND CTUNE_PLUGIN_LIST_AUDIO_PLAYER ctune_plugin_vlc)
+endif(VLC_FOUND)
 
-    MESSAGE(STATUS "VLC detected")
-    MATH(EXPR CTUNE_INPUTS_COUNT "${CTUNE_INPUTS_COUNT}+1")
+list(LENGTH CTUNE_PLUGIN_LIST_AUDIO_PLAYER CTUNE_PLUGIN_LIST_AUDIO_PLAYER_COUNT)
 
-    add_library(ctune_plugin_in_vlc SHARED
-            src/player/vlc.c)
-
-    set_target_properties(ctune_plugin_in_vlc
-            PROPERTIES PREFIX        ""
-            OUTPUT_NAME              vlc
-            LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CTUNE_PLAYER_PLUGIN_DIR})
-
-    target_link_libraries(ctune_plugin_in_vlc PRIVATE
-            ${VLC_LIBRARIES}
-            ctune_logger)
-
-    set(USING_VLC ON)
-    add_definitions(-DUSING_VLC)
-    list(APPEND CTUNE_PLAYER_PLUGIN_TARGETS ctune_plugin_in_vlc)
-
-    if(USING_FFMPEG EQUAL OFF)
-        set(CTUNE_PLAYER_PLUGIN_DFLT vlc)
-    endif()
-endif()
-
-if(CTUNE_INPUTS_COUNT EQUAL 0)
+if(CTUNE_PLUGIN_LIST_AUDIO_PLAYER_COUNT EQUAL 0)
     message(FATAL_ERROR "no supported input libraries detected")
 else()
+    list(GET CTUNE_PLUGIN_LIST_AUDIO_PLAYER 0 CTUNE_DEFAULT_PLAYER_PLUGIN)
+    get_target_property(CTUNE_DEFAULT_PLAYER_PLUGIN_NAME ${CTUNE_DEFAULT_PLAYER_PLUGIN} OUTPUT_NAME)
     message(NOTICE "Found ${CTUNE_INPUTS_COUNT} supported input libraries for the player.")
-    message(NOTICE "Setting '${CTUNE_PLAYER_PLUGIN_DFLT}' as default player.")
+    message(NOTICE "Setting '${CTUNE_DEFAULT_PLAYER_PLUGIN_NAME}' as default player.")
 endif()
+
+#================================= SOUND FILE OUTPUT PLUGINS ======================================#
+set(CTUNE_PLUGIN_LIST_AUDIO_FILE   "")
+
+add_subdirectory(plugins/output/wave)
+add_subdirectory(plugins/output/mp3)
+
+get_directory_property(LAME_FOUND DIRECTORY plugins/output/mp3  DEFINITION LAME_FOUND)
+get_directory_property(WAVE_FOUND DIRECTORY plugins/output/wave DEFINITION WAVE_FOUND)
+
+if(WAVE_FOUND)
+    link_directories(plugins/output/wave)
+    list(APPEND CTUNE_PLUGIN_LIST_AUDIO_FILE ctune_plugin_wave)
+endif(WAVE_FOUND)
+
+if(LAME_FOUND)
+    link_directories(plugins/output/mp3)
+    list(APPEND CTUNE_PLUGIN_LIST_AUDIO_FILE ctune_plugin_mp3)
+endif ()
 
 #==================================== AUDIO OUTPUT PLUGINS ========================================#
-find_package(PulseAudio QUIET)
-find_package(ALSA QUIET)
-find_package(SDL2 QUIET)
+set(CTUNE_PLUGIN_LIST_AUDIO_SRV "")
 
-set(CTUNE_OUTPUTS_COUNT         0)
-set(CTUNE_OUTPUT_PLUGIN_TARGETS "")
-set(CTUNE_OUTPUT_PLUGIN_DFLT    "")
-set(CTUNE_OUTPUT_PLUGIN_DIR     output)
+add_subdirectory(plugins/output/pulseaudio)
+add_subdirectory(plugins/output/alsa)
+add_subdirectory(plugins/output/sdl)
+add_subdirectory(plugins/output/sndio)
 
-option(USING_PULSEAUDIO "Compile PulseAudio output plugin" OFF)
-option(USING_ALSA       "Compile ALSA output plugin"       OFF)
-option(USING_SDL        "Compile SDL2 output plugin"       OFF)
-option(USING_SNDIO      "Compile SNDIO output plugin"      OFF)
+get_directory_property(ALSA_FOUND       DIRECTORY plugins/output/alsa       DEFINITION ALSA_FOUND)
+get_directory_property(PULSEAUDIO_FOUND DIRECTORY plugins/output/pulseaudio DEFINITION PULSEAUDIO_FOUND)
+get_directory_property(SDL2_FOUND       DIRECTORY plugins/output/sdl        DEFINITION SDL2_FOUND)
+get_directory_property(SNDIO_FOUND      DIRECTORY plugins/output/sndio      DEFINITION SNDIO_FOUND)
 
 if(PULSEAUDIO_FOUND)
-    MESSAGE(STATUS "PulseAudio detected")
-    MATH(EXPR CTUNE_OUTPUTS_COUNT "${CTUNE_OUTPUTS_COUNT}+1")
-
-    add_library(ctune_plugin_out_pulseaudio SHARED src/audio/pulse.c)
-
-    set_target_properties(ctune_plugin_out_pulseaudio
-            PROPERTIES PREFIX        ""
-            OUTPUT_NAME              pulse
-            LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CTUNE_OUTPUT_PLUGIN_DIR})
-
-    target_link_libraries(ctune_plugin_out_pulseaudio PRIVATE
-            pulse
-            ctune_logger)
-
-    set(USING_PULSEAUDIO ON)
-    add_definitions(-DUSING_PULSEAUDIO)
-    list(APPEND CTUNE_OUTPUT_PLUGIN_TARGETS ctune_plugin_out_pulseaudio)
-
-    set(CTUNE_OUTPUT_PLUGIN_DFLT pulse)
-endif()
+    link_directories(plugins/output/pulseaudio)
+    list(APPEND CTUNE_PLUGIN_LIST_AUDIO_SRV ctune_plugin_pulseaudio)
+endif(PULSEAUDIO_FOUND)
 
 if(ALSA_FOUND)
-    message(STATUS "ALSA detected")
-    MATH(EXPR CTUNE_OUTPUTS_COUNT "${CTUNE_OUTPUTS_COUNT}+1")
-
-    add_library(ctune_plugin_out_alsa SHARED src/audio/alsa.c)
-
-    set_target_properties(ctune_plugin_out_alsa
-            PROPERTIES PREFIX        ""
-            OUTPUT_NAME              alsa
-            LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CTUNE_OUTPUT_PLUGIN_DIR})
-
-    target_link_libraries(ctune_plugin_out_alsa PRIVATE
-            ALSA::ALSA
-            ctune_logger)
-
-    set(USING_ALSA ON)
-    add_definitions(-DUSING_ALSA)
-    list(APPEND CTUNE_OUTPUT_PLUGIN_TARGETS ctune_plugin_out_alsa)
-
-    if(USING_PULSEAUDIO EQUAL OFF)
-        set(CTUNE_OUTPUT_PLUGIN_DFLT alsa)
-    endif()
+    link_directories(plugins/output/alsa)
+    list(APPEND CTUNE_PLUGIN_LIST_AUDIO_SRV ctune_plugin_alsa)
 endif()
 
 if(SDL2_FOUND)
-    message(STATUS "SDL2 detected")
-    MATH(EXPR CTUNE_OUTPUTS_COUNT "${CTUNE_OUTPUTS_COUNT}+1")
-
-    add_library(ctune_plugin_out_sdl SHARED src/audio/sdl.c)
-
-    set_target_properties(ctune_plugin_out_sdl
-            PROPERTIES PREFIX        ""
-            OUTPUT_NAME              sdl
-            LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CTUNE_OUTPUT_PLUGIN_DIR})
-
-    target_link_libraries(ctune_plugin_out_sdl PRIVATE
-            SDL2::SDL2
-            ctune_logger)
-
-    set(USING_SDL ON)
-    add_definitions(-DUSING_SDL)
-    list(APPEND CTUNE_OUTPUT_PLUGIN_TARGETS ctune_plugin_out_sdl)
-
-    if(USING_PULSEAUDIO EQUAL OFF AND USING_ALSA EQUAL OFF)
-        set(CTUNE_OUTPUT_PLUGIN_DFLT sdl)
-    endif()
+    link_directories(plugins/output/sdl)
+    list(APPEND CTUNE_PLUGIN_LIST_AUDIO_SRV ctune_plugin_sdl)
 endif()
 
 if(SNDIO_FOUND)
-    message(STATUS "sndio detected")
-    MATH(EXPR CTUNE_OUTPUTS_COUNT "${CTUNE_OUTPUTS_COUNT}+1")
-
-    add_library(ctune_plugin_out_sndio SHARED src/audio/sndio.c)
-
-    set_target_properties(ctune_plugin_out_sndio
-            PROPERTIES PREFIX        ""
-            OUTPUT_NAME              sndio
-            LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CTUNE_OUTPUT_PLUGIN_DIR})
-
-    target_link_libraries(ctune_plugin_out_sndio PRIVATE
-            sndio
-            ctune_logger)
-
-    set(USING_SNDIO ON)
-    add_definitions(-DUSING_SNDIO)
-    list(APPEND CTUNE_OUTPUT_PLUGIN_TARGETS ctune_plugin_out_sndio)
-
-    if(USING_PULSEAUDIO EQUAL OFF AND USING_ALSA EQUAL OFF AND USING_SDL EQUAL OFF)
-        set(CTUNE_OUTPUT_PLUGIN_DFLT sndio)
-    endif()
+    link_directories(plugins/output/sndio)
+    list(APPEND CTUNE_PLUGIN_LIST_AUDIO_SRV ctune_plugin_sndio)
 endif()
 
-if(CTUNE_OUTPUTS_COUNT EQUAL 0)
-    message(FATAL_ERROR "no supported sound server detected")
+list(LENGTH CTUNE_PLUGIN_LIST_AUDIO_SRV CTUNE_PLUGIN_LIST_AUDIO_SRV_COUNT)
+
+if(CTUNE_PLUGIN_LIST_AUDIO_SRV_COUNT EQUAL 0)
+    message(FATAL_ERROR "no supported sound server libraries detected")
 else()
-    message(NOTICE "Found ${CTUNE_OUTPUTS_COUNT} supported sound server libraries.")
-    message(NOTICE "Setting '${CTUNE_OUTPUT_PLUGIN_DFLT}' as default sound output.")
+    list(GET CTUNE_PLUGIN_LIST_AUDIO_SRV 0 CTUNE_DEFAULT_AUDIO_SRV_PLUGIN)
+    get_target_property(CTUNE_DEFAULT_AUDIO_SRV_PLUGIN_NAME ${CTUNE_DEFAULT_AUDIO_SRV_PLUGIN} OUTPUT_NAME)
+    message(NOTICE "Found ${CTUNE_INPUTS_COUNT} supported sound server libraries.")
+    message(NOTICE "Setting '${CTUNE_DEFAULT_AUDIO_SRV_PLUGIN_NAME}' as default sound server.")
 endif()
-
 
 #========================== CMAKE VARIABLES DEFINITION CREATOR FOR SOURCE =========================#
 configure_file(src/cmake/cmake_vars.h ${CMAKE_BINARY_DIR}/generated-src/project_version.h )
 include_directories( ${CMAKE_BINARY_DIR}/generated-src/ )
 
-#============================================ MAN PAGE ============================================#
-find_program(PANDOC pandoc)
-find_program(GZIP gzip)
-
-set(MAN_SRC_DIR      ${CMAKE_CURRENT_SOURCE_DIR}/docs/man)
-set(MAN_OUT_DIR      ${CMAKE_CURRENT_SOURCE_DIR}/build/man)
-set(MAN_SRC_FILENAME ${CMAKE_PROJECT_NAME}.1.md)
-set(MAN_OUT_FILENAME ${CMAKE_PROJECT_NAME}.1)
-set(MAN_INSTALL_DIR  ${CTUNE_INSTALL_MANDIR})
-
-if(PANDOC AND GZIP)
-    add_custom_target(man ALL
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${MAN_OUT_DIR}
-    )
-
-    add_custom_command(TARGET man
-            COMMAND pandoc
-            ARGS -s -t man -V hyphenate=false ${MAN_SRC_DIR}/${MAN_SRC_FILENAME} -o ${MAN_OUT_DIR}/${MAN_OUT_FILENAME}
-    )
-
-    add_custom_command(TARGET man
-            COMMAND gzip
-            ARGS -f ${MAN_OUT_DIR}/${MAN_OUT_FILENAME}
-    )
-else()
-    message(WARNING "Could not find pandoc and/or gzip - man page will not be generated.")
-endif()
+##============================================ MAN PAGE ============================================#
+add_subdirectory(docs)
 
 #======================================== CTUNE EXECUTABLE ========================================#
 #(debuging) prints cmake vars
@@ -499,33 +368,13 @@ add_executable(ctune ${SOURCE_FILES})
 add_dependencies(ctune ctune_logger libjsonc)
 include_directories(${CMAKE_EXTERNAL_OUTPUT_DIRECTORY}/include)
 
-if(USING_FFMPEG)
-    add_dependencies(ctune ctune_plugin_in_ffmpeg)
-endif()
+add_dependencies(ctune ${CTUNE_PLUGIN_LIST_AUDIO_PLAYER})
+add_dependencies(ctune ${CTUNE_PLUGIN_LIST_AUDIO_FILE})
+add_dependencies(ctune ${CTUNE_PLUGIN_LIST_AUDIO_SRV})
 
-if(USING_VLC)
-    add_dependencies(ctune ctune_plugin_in_vlc)
-endif()
-
-if(USING_SDL)
-    add_dependencies(ctune ctune_plugin_out_sdl)
-endif()
-
-if (USING_PULSEAUDIO)
-    add_dependencies(ctune ctune_plugin_out_pulseaudio)
-endif ()
-
-if(USING_ALSA)
-    add_dependencies(ctune ctune_plugin_out_alsa)
-endif()
-
-if(USING_SNDIO)
-    add_dependencies(ctune ctune_plugin_out_sndio)
-endif()
-
-if(PANDOC AND GZIP)
-    add_dependencies(ctune man)
-endif()
+if(GENERATE_DOCS)
+    add_dependencies(ctune ctune_documentation)
+endif(GENERATE_DOCS)
 
 target_link_libraries(ctune PRIVATE
         ctune_logger            #CTUNE_LOG(..)
@@ -544,41 +393,8 @@ target_link_libraries(ctune PRIVATE
 )
 
 #=========================================== INSTALL ==============================================#
-install(TARGETS
-            ctune
-        DESTINATION
-            ${CTUNE_INSTALL_BINDIR}
-)
-
-install(TARGETS
-            ctune_logger
-        DESTINATION
-            ${CTUNE_INSTALL_LIBDIR}
-)
-
-install(TARGETS
-            ${CTUNE_PLAYER_PLUGIN_TARGETS}
-        DESTINATION
-            ${CTUNE_INSTALL_LIBDIR}/${CTUNE_PLAYER_PLUGIN_DIR}
-)
-
-install(TARGETS
-            ${CTUNE_OUTPUT_PLUGIN_TARGETS}
-        DESTINATION
-            ${CTUNE_INSTALL_LIBDIR}/${CTUNE_OUTPUT_PLUGIN_DIR}
-)
-
-if(PANDOC AND GZIP)
-    install(FILES
-                ${MAN_OUT_DIR}/${MAN_OUT_FILENAME}.gz
-            DESTINATION
-                ${CTUNE_INSTALL_MANDIR}
-    )
-
-    install(CODE
-            "execute_process(COMMAND ${CMAKE_SOURCE_DIR}/cmake/scripts/update_mandb.sh ARGS ${CMAKE_BUILD_TYPE})"
-    )
-endif()
+install(TARGETS     ctune
+        DESTINATION ${CTUNE_INSTALL_BINDIR})
 
 #========================================== UNINSTALL =============================================#
 if(TARGET uninstall)

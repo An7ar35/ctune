@@ -167,15 +167,18 @@ static void ctune_RadioPlayer_setStateChangeCallback( void (* playback_state_cha
  * @return Success
  */
 static bool ctune_RadioPlayer_loadPlayerPlugin( ctune_Player_t * player ) {
-    if( player == NULL )
+    CTUNE_LOG( CTUNE_LOG_TRACE, "[ctune_RadioPlayer_loadPlayerPlugin( %p )] Loading stream player...", player );
+
+    if( player == NULL ) {
         return false; //EARLY RETURN
+    }
 
     if( radio_player.player_plugin == NULL ) {
-        CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_RadioPlayer_loadPlayerPlugin( %p )] New player set.", player );
+        CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_RadioPlayer_loadPlayerPlugin( %p )] New player set: %s", player, player->name() );
         radio_player.player_plugin = player;
 
     } else {
-        CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_RadioPlayer_loadPlayerPlugin( %p )] Player replaced.", player );
+        CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_RadioPlayer_loadPlayerPlugin( %p )] Player replaced: %s", player, player->name() );
         radio_player.player_plugin = player;
     }
 
@@ -198,15 +201,17 @@ static bool ctune_RadioPlayer_loadPlayerPlugin( ctune_Player_t * player ) {
  * @return Success
  */
  static bool ctune_RadioPlayer_loadSoundServerPlugin( ctune_AudioOut_t * sound_server ) {
-    if( sound_server == NULL )
+    CTUNE_LOG( CTUNE_LOG_TRACE, "[ctune_RadioPlayer_loadSoundServerPlugin( %p )] Loading sound server...", sound_server );
+
+    if( sound_server == NULL ) {
         return false; //EARLY RETURN
+    }
 
     if( radio_player.output_plugin == NULL ) {
-        CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_RadioPlayer_loadSoundServerPlugin( %p )] New sound server set.", sound_server );
+        CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_RadioPlayer_loadSoundServerPlugin( %p )] New sound server set: %s", sound_server, sound_server->name() );
         radio_player.output_plugin = sound_server;
-
     } else {
-        CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_RadioPlayer_loadSoundServerPlugin( %p )] Sound server replaced.", sound_server );
+        CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_RadioPlayer_loadSoundServerPlugin( %p )] Sound server replaced: %s", sound_server, sound_server->name() );
         radio_player.output_plugin->shutdown();
         radio_player.output_plugin = sound_server;
     }

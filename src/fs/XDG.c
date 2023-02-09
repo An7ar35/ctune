@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 #include "fs.h"
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 static struct ctune_Settings_XDG {
     //https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html

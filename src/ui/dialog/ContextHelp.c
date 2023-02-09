@@ -2,7 +2,7 @@
 
 #include <panel.h>
 
-#include "../../logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "../../datastructure/Vector.h"
 #include "../../utils/utilities.h"
 #include "../definitions/KeyBinding.h"

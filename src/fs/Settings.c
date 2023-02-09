@@ -7,7 +7,7 @@
 #include "XDG.h"
 #include "Plugin.h"
 #include "../datastructure/HashMap.h"
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "../dto/RadioStationInfo.h"
 #include "../parser/JSON.h"
 #include "../parser/KVPairs.h"
@@ -22,6 +22,7 @@
 #define CFG_KEY_OVERWRITE_PLAYLOG               "IO::OverwritePlayLog"
 #define CFG_KEY_STREAM_TIMEOUT                  "IO::StreamTimeout"
 #define CFG_KEY_NETWORK_TIMEOUT                 "IO::NetworkTimeout"
+#define CFG_KEY_RECORDING_PATH                  "IO::Recording::Path"
 #define CFG_KEY_UI_MOUSE                        "UI::Mouse"
 #define CFG_KEY_UI_MOUSE_INTERVAL_PRESET        "UI::Mouse::IntervalPreset"
 #define CFG_KEY_UI_UNICODE_ICONS                "UI::UnicodeIcons"
@@ -70,12 +71,13 @@ static const char * sound_output_plugins[CTUNE_SOUND_OUTPUT_PLUGIN_COUNT] = {
 };
 
 static struct ctune_Settings_Cfg {
-    bool             loaded;
-    const char *     file_name;
-    int              resume_volume;
-    bool             play_log_overwrite;
-    int              timeout_stream_val;
-    int              timeout_network_val;
+    bool         loaded;
+    const char * file_name;
+    int          resume_volume;
+    bool         play_log_overwrite;
+    int          timeout_stream_val;
+    int          timeout_network_val;
+    String_t     recording_path;
 
     struct {
         const char * sys_lib_path;
@@ -100,6 +102,7 @@ static struct ctune_Settings_Cfg {
         String_t           uuid;
         ctune_StationSrc_e src;
     } last_station;
+
 } config;
 
 static struct ctune_Settings_Fav {
@@ -141,24 +144,46 @@ static void ctune_Settings_init( void ) {
         .play_log_overwrite     = true,
         .timeout_stream_val     = 5, //in seconds
         .timeout_network_val    = 8, //in seconds
+        .recording_path         = String.init(),
 
         .io_libs = {
             .sys_lib_path           = CTUNE_SYSLIB_PATH,
-            .player.dir_name        = "/player/",
+            .player.dir_name        = "/plugins/input/",
             .player.dflt_name       = CTUNE_PLUGIN_PLAYER_DFLT,
             .player.name            = { NULL, 0 },
-            .sound_server.dir_name  = "/output/",
+            .sound_server.dir_name  = "/plugins/output/",
             .sound_server.dflt_name = CTUNE_PLUGIN_SNDSRV_DFLT,
             .sound_server.name      = { NULL, 0 },
         },
 
         .last_station = {
-            .uuid = { ._raw = NULL, ._length = 0 },
+            .uuid = String.init(),
             .src  = CTUNE_STATIONSRC_LOCAL,
         },
     };
 
     config.ui = ctune_UIConfig.create(); //init with default variables and theme
+
+    ctune_Plugin.init();
+}
+
+/**
+ * De-allocates anything stored on the heap
+ */
+static void ctune_Settings_free() {
+    ctune_XDG.free();
+    String.free( &config.io_libs.player.name );
+    String.free( &config.io_libs.sound_server.name );
+    String.free( &config.last_station.uuid );
+    String.free( &config.recording_path );
+
+    ctune_Plugin.free();
+
+    for( int i = 0; i < CTUNE_STATIONSRC_COUNT; ++i ) {
+        HashMap.clear( &favourites.favs[ i ] );
+    }
+
+    CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_Settings_free()] Settings freed." );
 }
 
 //=================================== CTUNE RUNTIME LOCK ===========================================
@@ -393,6 +418,9 @@ static bool ctune_Settings_loadCfg() {
             } else if( strcmp( CFG_KEY_NETWORK_TIMEOUT, key._raw ) == 0 ) { //int
                 error = !ctune_Parser_KVPairs.validateInteger( &val, &config.timeout_network_val );
 
+            } else if( strcmp( CFG_KEY_RECORDING_PATH, key._raw ) == 0 ) { //string
+                //TODO check it is a valid path string
+
             } else if( strcmp( CFG_KEY_UI_THEME_PRESET, key._raw ) == 0 ) { //string
                 ctune_UIPreset_e preset = ctune_Parser_KVPairs.validateString( &val, ctune_UIPreset.presetList(), CTUNE_UIPRESET_COUNT, false );
 
@@ -506,9 +534,9 @@ static bool ctune_Settings_writeCfg() {
         goto end;
     }
 
-    int ret[31];
+    int ret[32];
 
-    ret[ 0] = fprintf( file, "%s=%s\n", CFG_KEY_LAST_STATION_PLAYED_UUID, config.last_station.uuid._raw );
+    ret[ 0] = fprintf( file, "%s=%s\n", CFG_KEY_LAST_STATION_PLAYED_UUID, String.empty( &config.last_station.uuid ) ? "" : config.last_station.uuid._raw ) ;
     ret[ 1] = fprintf( file, "%s=%i\n", CFG_KEY_LAST_STATION_PLAYED_SRC, config.last_station.src );
     ret[ 2] = fprintf( file, "%s=%d\n", CFG_KEY_RESUME_VOL, config.resume_volume );
     ret[ 3] = fprintf( file, "%s=%s\n", CFG_KEY_INPUT_LIB, ( String.empty( &config.io_libs.player.name ) ? "" : config.io_libs.player.name._raw ) );
@@ -516,34 +544,35 @@ static bool ctune_Settings_writeCfg() {
     ret[ 5] = fprintf( file, "%s=%s\n", CFG_KEY_OVERWRITE_PLAYLOG, ( config.play_log_overwrite ? "true" : "false" ) );
     ret[ 6] = fprintf( file, "%s=%d\n", CFG_KEY_STREAM_TIMEOUT, config.timeout_stream_val );
     ret[ 7] = fprintf( file, "%s=%d\n", CFG_KEY_NETWORK_TIMEOUT, config.timeout_network_val );
+    ret[ 8] = fprintf( file, "%s=\"%s\"\n", CFG_KEY_RECORDING_PATH, ( String.empty( &config.recording_path ) ? "" : config.recording_path._raw ) );
 
-    ret[ 8] = fprintf( file, "%s=%s\n", CFG_KEY_UI_MOUSE, ( config.ui.mouse.enabled ? "true" : "false" ) );
-    ret[ 9] = fprintf( file, "%s=%i\n", CFG_KEY_UI_MOUSE_INTERVAL_PRESET, config.ui.mouse.interval_preset );
-    ret[10] = fprintf( file, "%s=%s\n", CFG_KEY_UI_UNICODE_ICONS, ( config.ui.unicode_icons ? "true" : "false" ) );
-    ret[11] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_SHOW_THEMING, ( config.ui.fav_tab.theme_favourites ? "true" : "false" ) );
-    ret[12] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_USE_CUSTOM_THEMING, ( config.ui.fav_tab.custom_theming ? "true" : "false" ) );
-    ret[13] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_LRG, ( config.ui.fav_tab.large_rows ? "true" : "false" ) );
-    ret[14] = fprintf( file, "%s=%i\n", CFG_KEY_UI_FAVTAB_SORTBY, favourites.sort_id );
-    ret[15] = fprintf( file, "%s=%s\n", CFG_KEY_UI_SEARCHTAB_LRG, ( config.ui.search_tab.large_rows ? "true" : "false" ) );
-    ret[16] = fprintf( file, "%s=%s\n", CFG_KEY_UI_BROWSERTAB_LRG, ( config.ui.browse_tab.large_rows ? "true" : "false" ) );
+    ret[ 9] = fprintf( file, "%s=%s\n", CFG_KEY_UI_MOUSE, ( config.ui.mouse.enabled ? "true" : "false" ) );
+    ret[10] = fprintf( file, "%s=%i\n", CFG_KEY_UI_MOUSE_INTERVAL_PRESET, config.ui.mouse.interval_preset );
+    ret[11] = fprintf( file, "%s=%s\n", CFG_KEY_UI_UNICODE_ICONS, ( config.ui.unicode_icons ? "true" : "false" ) );
+    ret[12] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_SHOW_THEMING, ( config.ui.fav_tab.theme_favourites ? "true" : "false" ) );
+    ret[13] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_USE_CUSTOM_THEMING, ( config.ui.fav_tab.custom_theming ? "true" : "false" ) );
+    ret[14] = fprintf( file, "%s=%s\n", CFG_KEY_UI_FAVTAB_LRG, ( config.ui.fav_tab.large_rows ? "true" : "false" ) );
+    ret[15] = fprintf( file, "%s=%i\n", CFG_KEY_UI_FAVTAB_SORTBY, favourites.sort_id );
+    ret[16] = fprintf( file, "%s=%s\n", CFG_KEY_UI_SEARCHTAB_LRG, ( config.ui.search_tab.large_rows ? "true" : "false" ) );
+    ret[17] = fprintf( file, "%s=%s\n", CFG_KEY_UI_BROWSERTAB_LRG, ( config.ui.browse_tab.large_rows ? "true" : "false" ) );
 
-    ret[17] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_PRESET, ctune_UIPreset.str( config.ui.theme.preset ) );
-    ret[18] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME, ctune_ColourTheme.str( config.ui.theme.custom_pallet.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.background, true ) );
-    ret[19] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.background, true ) );
-    ret[20] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW_SELECTED_FOCUSED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_focused_fg, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_focused_bg, true ) );
-    ret[21] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW_SELECTED_UNFOCUSED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_unfocused_fg, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_unfocused_bg, true ) );
-    ret[22] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ROW_FAVOURITE_LOCAL, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.favourite_local_fg, true ) );
-    ret[23] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ROW_FAVOURITE_REMOTE, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.favourite_remote_fg, true ) );
+    ret[18] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_PRESET, ctune_UIPreset.str( config.ui.theme.preset ) );
+    ret[19] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME, ctune_ColourTheme.str( config.ui.theme.custom_pallet.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.background, true ) );
+    ret[20] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.background, true ) );
+    ret[21] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW_SELECTED_FOCUSED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_focused_fg, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_focused_bg, true ) );
+    ret[22] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_ROW_SELECTED_UNFOCUSED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_unfocused_fg, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.selected_unfocused_bg, true ) );
+    ret[23] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ROW_FAVOURITE_LOCAL, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.favourite_local_fg, true ) );
+    ret[24] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ROW_FAVOURITE_REMOTE, ctune_ColourTheme.str( config.ui.theme.custom_pallet.rows.favourite_remote_fg, true ) );
 
-    ret[24] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_PLAYBACK_ON, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.playback_on, true ) );
-    ret[25] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_PLAYBACK_OFF, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.playback_off, true ) );
-    ret[26] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_QUEUED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.queued_station, true ) );
+    ret[25] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_PLAYBACK_ON, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.playback_on, true ) );
+    ret[26] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_PLAYBACK_OFF, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.playback_off, true ) );
+    ret[27] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_ICON_QUEUED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.icons.queued_station, true ) );
 
-    ret[27] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_FIELD_INVALID, ctune_ColourTheme.str( config.ui.theme.custom_pallet.field.invalid_fg, true ) );
+    ret[28] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_FIELD_INVALID, ctune_ColourTheme.str( config.ui.theme.custom_pallet.field.invalid_fg, true ) );
 
-    ret[28] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_BUTTON, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.background, true ) );
-    ret[29] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_BUTTON_INVALID, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.invalid_fg, true ) );
-    ret[30] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_BUTTON_VALIDATED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.validated_fg, true ) );
+    ret[29] = fprintf( file, "%s={%s,%s}\n", CFG_KEY_UI_THEME_BUTTON, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.foreground, true ), ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.background, true ) );
+    ret[30] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_BUTTON_INVALID, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.invalid_fg, true ) );
+    ret[31] = fprintf( file, "%s=%s\n", CFG_KEY_UI_THEME_BUTTON_VALIDATED, ctune_ColourTheme.str( config.ui.theme.custom_pallet.button.validated_fg, true ) );
 
     for( size_t item_no = 0; item_no < 16; ++item_no ) {
         if( ret[item_no] < 0 ) {
@@ -654,6 +683,23 @@ static bool ctune_Settings_setStreamTimeoutVal( int val ) {
  */
 static int ctune_Settings_getNetworkTimeoutVal( void ) {
     return config.timeout_network_val;
+}
+
+/**
+ * Get the output path
+ * @return Output path
+ */
+static const char * ctune_Settings_outputPath( void ) {
+    return config.recording_path._raw;
+}
+
+/**
+ * Sets the output path
+ * @param path Output path
+ */
+static bool ctune_Settings_setOutputPath( const char * path ) {
+    //TODO check path is valid
+    return String.set( &config.recording_path, path );
 }
 
 /**
@@ -949,6 +995,28 @@ static bool ctune_Settings_removeStation( const ctune_RadioStationInfo_t * rsi, 
 }
 
 /**
+ * Call to load all available plugins into the engine
+ * @return Success
+ */
+static bool ctune_Settings_loadPlugins() {
+    String_t input_plugins_path = String.init();
+    String.append_back( &input_plugins_path, config.io_libs.sys_lib_path );
+    String.append_back( &input_plugins_path, config.io_libs.player.dir_name );
+
+    String_t output_plugins_path = String.init();
+    String.append_back( &output_plugins_path, config.io_libs.sys_lib_path );
+    String.append_back( &output_plugins_path, config.io_libs.sound_server.dir_name );
+
+    const bool input_success = ctune_Plugin.loadPlugins( input_plugins_path._raw ); //TODO check return
+    const bool output_success = ctune_Plugin.loadPlugins( output_plugins_path._raw ); //TODO check return
+
+    String.free( &input_plugins_path );
+    String.free( &output_plugins_path );
+
+    return ( input_success && output_success );
+}
+
+/**
  * Gets the audio server plugin
  * @return Pointer to the loaded plugin
  */
@@ -958,14 +1026,15 @@ static ctune_AudioOut_t * ctune_Settings_getAudioServer( void ) {
     String.append_back( &dir_path, config.io_libs.sys_lib_path );
     String.append_back( &dir_path, config.io_libs.sound_server.dir_name );
 
-    ctune_AudioOut_t * plugin = NULL;
-
     if( String.empty( &config.io_libs.sound_server.name ) ) {
         String.set( &config.io_libs.sound_server.name, config.io_libs.sound_server.dflt_name );
-        plugin = ctune_Plugin.loadAudioOut( dir_path._raw, config.io_libs.sound_server.dflt_name );
+    }
 
-    } else {
-        plugin = ctune_Plugin.loadAudioOut( dir_path._raw, config.io_libs.sound_server.name._raw );
+    ctune_AudioOut_t * plugin = ctune_Plugin.getSelectedPlugin( CTUNE_PLUGIN_OUT_AUDIO_SERVER );
+
+    if( plugin == NULL ) {
+        ctune_Plugin.setPlugin( CTUNE_PLUGIN_OUT_AUDIO_SERVER, config.io_libs.sound_server.name._raw );
+        plugin = ctune_Plugin.getSelectedPlugin( CTUNE_PLUGIN_OUT_AUDIO_SERVER );
     }
 
     if( plugin == NULL ) {
@@ -989,14 +1058,15 @@ static ctune_Player_t * ctune_Settings_getPlayer( void ) {
     String.append_back( &dir_path, config.io_libs.sys_lib_path );
     String.append_back( &dir_path, config.io_libs.player.dir_name );
 
-    ctune_Player_t * plugin = NULL;
-
     if( String.empty( &config.io_libs.player.name ) ) {
         String.set( &config.io_libs.player.name, config.io_libs.player.dflt_name );
-        plugin = ctune_Plugin.loadPlayer( dir_path._raw, config.io_libs.player.dflt_name );
+    }
 
-    } else {
-        plugin = ctune_Plugin.loadPlayer( dir_path._raw, config.io_libs.player.name._raw );
+    ctune_Player_t * plugin = ctune_Plugin.getSelectedPlugin( CTUNE_PLUGIN_IN_STREAM_PLAYER );
+
+    if( plugin == NULL ) {
+        ctune_Plugin.setPlugin( CTUNE_PLUGIN_IN_STREAM_PLAYER, config.io_libs.player.name._raw );
+        plugin = ctune_Plugin.getSelectedPlugin( CTUNE_PLUGIN_IN_STREAM_PLAYER );
     }
 
     if( plugin == NULL ) {
@@ -1010,30 +1080,13 @@ static ctune_Player_t * ctune_Settings_getPlayer( void ) {
     return plugin;
 }
 
-/**
- * De-allocates anything stored on the heap
- */
-static void ctune_Settings_free() {
-    ctune_XDG.free();
-    String.free( &config.io_libs.player.name );
-    String.free( &config.io_libs.sound_server.name );
-    String.free( &config.last_station.uuid );
-
-    ctune_Plugin.free();
-
-    for( int i = 0; i < CTUNE_STATIONSRC_COUNT; ++i ) {
-        HashMap.clear( &favourites.favs[ i ] );
-    }
-
-    CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_Settings_free()] Settings freed." );
-}
-
 
 /**
  * Namespace constructor
  */
 const struct ctune_Settings_Instance ctune_Settings = {
     .init = &ctune_Settings_init,
+    .free = &ctune_Settings_free,
 
     .rtlock = {
         .lock                 = &ctune_Settings_rtlock_lock,
@@ -1052,27 +1105,28 @@ const struct ctune_Settings_Instance ctune_Settings = {
     },
 
     .cfg = {
-        .loadCfg                = &ctune_Settings_loadCfg,
-        .isLoaded               = &ctune_Settings_isLoaded,
-        .writeCfg               = &ctune_Settings_writeCfg,
-        .getVolume              = &ctune_Settings_getVolume,
-        .setVolume              = &ctune_Settings_setVolume,
-        .modVolume              = &ctune_Settings_modVolume,
-        .getLastPlayedUUID      = &ctune_Settings_getLastPlayedUUID,
-        .getLastPlayedSrc       = &ctune_Settings_getLastPlayedSrc,
-        .setLastPlayedStation   = &ctune_Settings_setLastPlayedStation,
-        .playbackLogOverwrite   = &ctune_Settings_playbackLogOverwrite,
-        .getStreamTimeoutVal    = &ctune_Settings_getStreamTimeoutVal,
-        .setStreamTimeoutVal    = &ctune_Settings_setStreamTimeoutVal,
-        .getNetworkTimeoutVal   = &ctune_Settings_getNetworkTimeoutVal,
-        .getUIConfig            = &ctune_Settings_getUIConfig,
-        .setUIConfig            = &ctune_Settings_setUIConfig,
+        .loadCfg              = &ctune_Settings_loadCfg,
+        .isLoaded             = &ctune_Settings_isLoaded,
+        .writeCfg             = &ctune_Settings_writeCfg,
+        .getVolume            = &ctune_Settings_getVolume,
+        .setVolume            = &ctune_Settings_setVolume,
+        .modVolume            = &ctune_Settings_modVolume,
+        .getLastPlayedUUID    = &ctune_Settings_getLastPlayedUUID,
+        .getLastPlayedSrc     = &ctune_Settings_getLastPlayedSrc,
+        .setLastPlayedStation = &ctune_Settings_setLastPlayedStation,
+        .playbackLogOverwrite = &ctune_Settings_playbackLogOverwrite,
+        .getStreamTimeoutVal  = &ctune_Settings_getStreamTimeoutVal,
+        .setStreamTimeoutVal  = &ctune_Settings_setStreamTimeoutVal,
+        .getNetworkTimeoutVal = &ctune_Settings_getNetworkTimeoutVal,
+        .outputPath           = &ctune_Settings_outputPath,
+        .setOutputPath        = &ctune_Settings_setOutputPath,
+        .getUIConfig          = &ctune_Settings_getUIConfig,
+        .setUIConfig          = &ctune_Settings_setUIConfig,
     },
 
     .plugins = {
-        .getAudioServer = &ctune_Settings_getAudioServer,
-        .getPlayer      = &ctune_Settings_getPlayer,
+        .loadPlugins          = &ctune_Settings_loadPlugins,
+        .getAudioServer       = &ctune_Settings_getAudioServer,
+        .getPlayer            = &ctune_Settings_getPlayer,
     },
-
-    .free = &ctune_Settings_free,
 };

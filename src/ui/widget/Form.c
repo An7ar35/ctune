@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <string.h>
 
-#include "../../logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "../../ctune_err.h"
 #include "../Resizer.h"
 

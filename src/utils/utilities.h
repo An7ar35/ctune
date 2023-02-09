@@ -6,7 +6,7 @@
 #include <math.h>
 #include <stdint.h>
 
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "../ctune_err.h"
 #include "../datastructure/String.h"
 #include "../datastructure/StrList.h"
