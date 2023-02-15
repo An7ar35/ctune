@@ -25,6 +25,7 @@ struct ctune_ColourTheme {
     struct {
         short playback_on;
         short playback_off;
+        short playback_rec;
         short queued_station;
     } icons;
 

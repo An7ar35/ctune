@@ -19,6 +19,12 @@ extern const struct ctune_XDG_Instance {
     void (* resolveDataFilePath)( const char * file_name, String_t * resolved_path );
 
     /**
+     * Resolves the current user's recording output directory path
+     * @param resolved_path Container for the resolved file path to be stored in
+     */
+    void (* resolveMusicOutputFilePath)( String_t * resolved_path );
+
+    /**
      * De-allocates anything stored on the heap
      */
     void (* free)( void );

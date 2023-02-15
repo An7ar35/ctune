@@ -5,31 +5,35 @@
 #include <openssl/opensslv.h>
 #include <ncurses.h>
 
-#ifdef USING_PULSEAUDIO
+#ifdef PULSEAUDIO_FOUND
 #include <pulse/version.h>
 #endif
 
-#ifdef USING_SDL
+#ifdef SDL2_FOUND
 #include <SDL2/SDL_version.h>
 #endif
 
-#ifdef USING_ALSA
+#ifdef ALSA_FOUND
 #include <alsa/version.h>
 #endif
 
-#ifdef USING_SNDIO
+#ifdef SNDIO_FOUND
 #include <sndio.h>
 #endif
 
-#ifdef USING_FFMPEG
+#ifdef FFMPEG_FOUND
 #include <libavformat/version.h>
 #include <libavcodec/version.h>
 #include <libavdevice/version.h>
 #include <libswresample/version.h>
 #endif
 
-#ifdef USING_VLC
+#ifdef VLC_FOUND
 #include <vlc/libvlc_version.h>
+#endif
+
+#ifdef LAME_FOUND
+#include <lame/lame.h>
 #endif
 
 #include "../audio/AudioOut.h"
@@ -46,7 +50,7 @@ static struct {
     Vector_t actionable_options;
 
 } cli;
-
+//TODO pre-generate in cmake_vars?
 /**
  * [PRIVATE] Gets the cTune version information string
  * @return information string
@@ -58,25 +62,28 @@ static const char * ctune_CLI_version() {
                                   "Released under : " CTUNE_LICENSE "\n"
                                   "----------------------------------------------------\n"
                                   "Libraries:\n"
-#ifdef USING_FFMPEG
+#ifdef FFMPEG_FOUND
                                   "  FFMpeg (libavformat " XSTR(LIBAVFORMAT_VERSION_MAJOR) "." XSTR(LIBAVFORMAT_VERSION_MINOR) "." XSTR(LIBAVFORMAT_VERSION_MICRO) ", "
 "libavcodec " XSTR(LIBAVCODEC_VERSION_MAJOR) "." XSTR(LIBAVCODEC_VERSION_MINOR) "." XSTR(LIBAVCODEC_VERSION_MICRO) ", "
 "libswresample " XSTR(LIBSWRESAMPLE_VERSION_MAJOR) "." XSTR(LIBSWRESAMPLE_VERSION_MINOR) "." XSTR(LIBSWRESAMPLE_VERSION_MICRO) ")\n"
 #endif
-#ifdef USING_VLC
+#ifdef VLC_FOUND
                                   "  VLC " XSTR(LIBVLC_VERSION_MAJOR) "." XSTR(LIBVLC_VERSION_MINOR) "." XSTR(LIBVLC_VERSION_REVISION) "\n"
 #endif
-#ifdef USING_PULSEAUDIO
+#ifdef PULSEAUDIO_FOUND
                                   "  PulseAudio (" XSTR(PA_MAJOR) "." XSTR(PA_MINOR) "." XSTR(PA_MICRO) ")\n"
 #endif
-#ifdef USING_SDL
+#ifdef SDL2_FOUND
                                   "  SDL (" XSTR(SDL_MAJOR_VERSION) "." XSTR(SDL_MINOR_VERSION) "." XSTR(SDL_PATCHLEVEL) ")\n"
 #endif
-#ifdef USING_ALSA
+#ifdef ALSA_FOUND
                                   "  ALSA (" XSTR(SND_LIB_MAJOR) "." XSTR(SND_LIB_MINOR) "." XSTR(SND_LIB_SUBMINOR) ")\n"
 #endif
-#ifdef USING_SNDIO
+#ifdef SNDIO_FOUND
                                   "  sndio\n"
+#endif
+#ifdef LAME_FOUND
+                                  "  Lame\n"
 #endif
                                   "  json-c " XSTR(JSON_C_MAJOR_VERSION) "." XSTR(JSON_C_MINOR_VERSION) "." XSTR(JSON_C_MICRO_VERSION) "\n"
                                   "  " OPENSSL_VERSION_TEXT "\n"

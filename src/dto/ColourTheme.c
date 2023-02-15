@@ -41,6 +41,7 @@ struct ctune_ColourTheme ctune_ColourTheme_init( ctune_UIPreset_e theme ) {
                 .icons = {
                     .playback_on    = ctune_ColourTheme.colour.GREEN,
                     .playback_off   = ctune_ColourTheme.colour.RED,
+                    .playback_rec   = ctune_ColourTheme.colour.YELLOW,
                     .queued_station = ctune_ColourTheme.colour.CYAN,
                 },
 
@@ -77,6 +78,7 @@ struct ctune_ColourTheme ctune_ColourTheme_init( ctune_UIPreset_e theme ) {
                 .icons = {
                     .playback_on    = ctune_ColourTheme.colour.WHITE,
                     .playback_off   = ctune_ColourTheme.colour.RED,
+                    .playback_rec   = ctune_ColourTheme.colour.YELLOW,
                     .queued_station = ctune_ColourTheme.colour.CYAN,
                 },
 
@@ -113,6 +115,7 @@ struct ctune_ColourTheme ctune_ColourTheme_init( ctune_UIPreset_e theme ) {
                 .icons = {
                     .playback_on    = ctune_ColourTheme.colour.GREEN,
                     .playback_off   = ctune_ColourTheme.colour.WHITE,
+                    .playback_rec   = ctune_ColourTheme.colour.WHITE,
                     .queued_station = ctune_ColourTheme.colour.CYAN,
                 },
 
@@ -149,6 +152,7 @@ struct ctune_ColourTheme ctune_ColourTheme_init( ctune_UIPreset_e theme ) {
                 .icons = {
                     .playback_on    = ctune_ColourTheme.colour.GREEN,
                     .playback_off   = ctune_ColourTheme.colour.RED,
+                    .playback_rec   = ctune_ColourTheme.colour.YELLOW,
                     .queued_station = ctune_ColourTheme.colour.CYAN,
                 },
 

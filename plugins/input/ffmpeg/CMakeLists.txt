@@ -12,6 +12,8 @@ if(FFMPEG_FOUND)
     set(CTUNE_SOURCE_FILES
             ../../../src/ctune_err.h
             ../../../src/ctune_err.c
+            ../../../src/enum/PlaybackCtrl.h
+            ../../../src/enum/PlaybackCtrl.c
             ../../../src/utils/Timeout.h
             ../../../src/utils/Timeout.c
             ../../../src/audio/AudioOut.h

@@ -151,6 +151,10 @@ static bool ctune_init( const ctune_ArgOptions_t * options ) {
     /* Print the args passed */
     ctune_ArgOptions.sendToLogger( "INIT", options );
 
+    if( !ctune_Settings.plugins.loadPlugins() ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR, "[INIT] Failed to load all available plugins." );
+    }
+
     /* CONFIGURATION */
     if( !ctune_Settings.cfg.loadCfg() ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[INIT] Failed to load configuration file - using defaults." );
@@ -206,6 +210,17 @@ static bool ctune_init( const ctune_ArgOptions_t * options ) {
  * Shutdown and cleanup cTune
  */
 static void ctune_shutdown() {
+    static bool initiated = false;
+
+    if( initiated ) {
+        //This is in case SIGABRT was raised in one of the 3rd party libraries
+        //so that everything exits cleanly regardless (looking at you pulseaudio!).
+        CTUNE_LOG( CTUNE_LOG_WARNING, "[ctune_shutdown()] Shutdown already initiated." );
+        return; //EARLY RETURN
+    }
+
+    initiated = true;
+
     ctune_Controller.playback.stop();
     ctune_Controller.free();
     ctune_PlaybackLog.close();

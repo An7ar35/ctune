@@ -151,6 +151,7 @@ set(SOURCE_FILES
         src/dto/ClickCounter.h
         src/dto/NewRadioStation.h
         src/dto/NewRadioStation.c
+        src/dto/PluginInfo.h
         src/dto/RadioStationVote.c
         src/dto/RadioStationVote.h
         src/dto/UIConfig.h
@@ -165,7 +166,10 @@ set(SOURCE_FILES
         src/enum/ListCategory.h
         src/enum/MouseInterval.c
         src/enum/MouseInterval.h
+        src/enum/PlaybackCtrl.c
         src/enum/PlaybackCtrl.h
+        src/enum/PluginType.h
+        src/enum/PluginType.c
         src/enum/SearchCtrl.h
         src/enum/StationAttribute.c
         src/enum/StationAttribute.h
@@ -179,6 +183,8 @@ set(SOURCE_FILES
         src/parser/KVPairs.h
         src/audio/AudioOut.h
         src/audio/channel_position.h
+        src/audio/FileOut.h
+        src/audio/FileOut.h
         src/audio/OutputFormat.h
         src/player/Player.h
         src/player/RadioPlayer.c
@@ -248,9 +254,7 @@ set(SOURCE_FILES
         src/ui/widget/ScrollBar.c
         src/ui/widget/ScrollBar.h
         src/ui/widget/BorderWin.c
-        src/ui/widget/BorderWin.h
-
-        src/audio/FileOut.h src/audio/FileOut.h src/enum/PluginType.h src/enum/PluginType.c)
+        src/ui/widget/BorderWin.h)
 
 #==================================== CTUNE LOGGER LIBRARY ========================================#
 add_subdirectory(libraries/logger)
@@ -289,21 +293,32 @@ endif()
 #================================= SOUND FILE OUTPUT PLUGINS ======================================#
 set(CTUNE_PLUGIN_LIST_AUDIO_FILE   "")
 
-add_subdirectory(plugins/output/wave)
 add_subdirectory(plugins/output/mp3)
+add_subdirectory(plugins/output/wave)
 
 get_directory_property(LAME_FOUND DIRECTORY plugins/output/mp3  DEFINITION LAME_FOUND)
 get_directory_property(WAVE_FOUND DIRECTORY plugins/output/wave DEFINITION WAVE_FOUND)
+
+if(LAME_FOUND)
+    link_directories(plugins/output/mp3)
+    list(APPEND CTUNE_PLUGIN_LIST_AUDIO_FILE ctune_plugin_mp3)
+endif ()
 
 if(WAVE_FOUND)
     link_directories(plugins/output/wave)
     list(APPEND CTUNE_PLUGIN_LIST_AUDIO_FILE ctune_plugin_wave)
 endif(WAVE_FOUND)
 
-if(LAME_FOUND)
-    link_directories(plugins/output/mp3)
-    list(APPEND CTUNE_PLUGIN_LIST_AUDIO_FILE ctune_plugin_mp3)
-endif ()
+list(LENGTH CTUNE_PLUGIN_LIST_AUDIO_FILE CTUNE_PLUGIN_LIST_AUDIO_FILE_COUNT)
+
+if(CTUNE_PLUGIN_LIST_AUDIO_FILE_COUNT EQUAL 0)
+    message(FATAL_ERROR "no supported recording libraries detected")
+else()
+    list(GET CTUNE_PLUGIN_LIST_AUDIO_FILE 0 CTUNE_DEFAULT_AUDIO_FILE_PLUGIN)
+    get_target_property(CTUNE_DEFAULT_AUDIO_FILE_PLUGIN_NAME ${CTUNE_DEFAULT_AUDIO_FILE_PLUGIN} OUTPUT_NAME)
+    message(NOTICE "Found ${CTUNE_RECORDER_COUNT} supported recording libraries for the player.")
+    message(NOTICE "Setting '${CTUNE_DEFAULT_AUDIO_FILE_PLUGIN_NAME}' as default recorder.")
+endif()
 
 #==================================== AUDIO OUTPUT PLUGINS ========================================#
 set(CTUNE_PLUGIN_LIST_AUDIO_SRV "")

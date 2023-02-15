@@ -85,6 +85,7 @@ typedef enum ctune_UI_InputKey {
     CTUNE_UI_INPUTKEY_CTRL_D,
     CTUNE_UI_INPUTKEY_CTRL_F,
     CTUNE_UI_INPUTKEY_CTRL_I,
+    CTUNE_UI_INPUTKEY_CTRL_R,
 
     /* Event input */
     CTUNE_UI_INPUTKEY_MOUSE_EVENT,

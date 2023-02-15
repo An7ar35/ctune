@@ -8,11 +8,9 @@
 #include "../network/RadioBrowser.h"
 #include "../datastructure/String.h"
 #include "../audio/AudioOut.h"
+#include "../audio/FileOut.h"
 
 #define CTUNE_PLAYER_ABI_VERSION 2
-
-#define CTUNE_PLAYER_STATE_PLAYING 1
-#define CTUNE_PLAYER_STATE_STOPPED 0
 
 #define CTUNE_MAX_FRAME_SIZE 192000 //default fallback for output frame buffer
 
@@ -63,6 +61,21 @@ typedef struct ctune_Player_Interface {
      * @return Success (if false the error_no in the RadioPlayer_t instance will be set accordingly)
      */
     bool (* playRadioStream)( const char * url, const int volume, int timeout_val );
+
+    //TODO have an internal circular buffer of x seconds/minutes for the recorder so that beginnings of songs can be included when recording is turned on
+
+    /**
+     * Attach a callback that copies the raw PCM buffer of the decoded stream
+     * @param filepath Output filepath
+     * @param plugin   File recording plugin
+     * @return Success
+     */
+    bool (* startRecording)( const char * filepath, ctune_FileOut_t * plugin );
+
+    /**
+     * Stops the recording and closes the output file
+     */
+    void (* stopRecording)( void );
 
     /**
      * Gets the error number set in RadioPlayer

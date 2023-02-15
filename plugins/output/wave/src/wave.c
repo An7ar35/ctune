@@ -5,94 +5,152 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
+#include <sys/statvfs.h>
+
+#include "../src/datastructure/String.h"
 
 //docs: http://soundfile.sapp.org/doc/WaveFormat/
 
-#define DATA_HEADER_SIZE 8 //4+4 bytes
+#define DATA_HEADER_SIZE      8 //4+4 bytes
+#define CHUNKSIZE_OFFSET      4
+#define SUBCHUNK2SIZE_OFFSET 40
+#define BUFFER_CHRONO_SIZE   30 //in seconds
 
 const unsigned           abi_version = CTUNE_FILEOUT_ABI_VERSION;
-const ctune_PluginType_e plugin_type = CTUNE_PLUGIN_OUT_AUDIO_FILE;
+const ctune_PluginType_e plugin_type = CTUNE_PLUGIN_OUT_AUDIO_RECORDER;
 
 /**
  * Output variables
- * @param file File handle
- * @param info Output information
- * @param buffer PCM data buffer
+ * @param path       File path + root name + count + extension
+ * @param file       File handle
+ * @param file_count Count of files generated in recording session
+ * @param info       Output information
+ * @param buffer     PCM data buffer
  */
 static struct {
-    FILE * file;
+    String_t path;
+    FILE   * file;
+    size_t   file_count;
 
     /**
      * Output information
-     * @param path            File path
      * @param nb_channels     Number of channels
      * @param sample_rate     Sample rate
      * @param bits_per_sample Bits per samples
+     * @param data_size       Number of bytes of data
      */
     struct Info {
-        String_t path;
         uint16_t nb_channels;
         uint32_t sample_rate;
         uint16_t bits_per_sample;
+        uint32_t data_size;
     } info;
 
     /**
      * Output buffer
      * @param size               Size of buffer in Bytes
      * @param i                  Current index
-     * @param data_size_offset_i Index offset where the size of the data chunk is located
-     * @param data_offset_i      Index offset where the audio data actually begins
      * @param data               Data buffer
      */
     struct Buffer {
         size_t    size;
         size_t    i;
-        size_t    data_size_offset_i;
-        size_t    data_offset_i;
         uint8_t * data;
     } buffer;
 
 } output = {
-    .file = NULL,
+    .file                = NULL,
+    .path                = { NULL, 0 },
+    .file_count          = 0,
+
     .info = {
-        .path            = { NULL, 0 },
         .nb_channels     = 0,
         .sample_rate     = 0,
         .bits_per_sample = 0,
+        .data_size       = 0,
+
     },
+
     .buffer = {
-        .size               = 10000000, //10MB
-        .i                  = 0,
-        .data_size_offset_i = 0,
-        .data_offset_i      = 0,
-        .data               = NULL,
+        .size            = 10000000, //10MB
+        .i               = 0,
+        .data            = NULL,
     }
 };
 
+///* Public API method pre-declarations */
+//static const char * ctune_FileOut_name( void );
+//static const char * ctune_FileOut_description( void );
+//static const char * ctune_FileOut_extension( void );
+//static int          ctune_FileOut_init( const char * path, ctune_OutputFmt_e fmt, int sample_rate, uint channels, uint samples, uint8_t buff_size_MB );
+//static int          ctune_FileOut_write( const void * buffer, int buff_size );
+//static int          ctune_FileOut_close( void );
+//
+///* Private method pre-declarations */
+//static size_t       write16LSB( uint8_t * buffer, uint16_t data );
+//static size_t       write16MSB( uint8_t * buffer, uint16_t data );
+//static size_t       write32LSB( uint8_t * buffer, uint32_t data );
+//static size_t       write32MSB( uint8_t * buffer, uint32_t data );
+//static uint32_t     calcByteRate( const struct Info * info );
+//static uint16_t     calcBlockAlignment( const struct Info * info );
+//static size_t       packHeader( uint8_t * buffer, struct Info * info );
+//static int          hasAvailableSpace( const char * path, size_t req_bytes );
+//static size_t       flushBufferToFile( FILE * out, int * err );
+//static bool         writeSizeToFile( FILE * out, struct Buffer * buffer, size_t data_size );
+
 /**
- * [PRIVATE] Writes a u16 into a u8 buffer
+ * [PRIVATE] Writes a u16 into a u8 buffer in LSB order
  * @param buffer Target buffer
  * @param data   u16 data to write
  * @return Number of bytes writen (2)
  */
-static size_t write16( uint8_t * buffer, uint16_t data ) {
-    buffer[0] = (uint8_t) ( data >> 8 );
-    buffer[1] = (uint8_t) data;
+static size_t write16LSB( uint8_t * buffer, uint16_t data ) {
+    buffer[0] = (uint8_t) ( data      );
+    buffer[1] = (uint8_t) ( data >> 8 );
 
     return 2;
 }
 
 /**
- * [PRIVATE] Writes a u32 into a u8 buffer
+ * [PRIVATE] Writes a u16 into a u8 buffer in LSB order
+ * @param buffer Target buffer
+ * @param data   u16 data to write
+ * @return Number of bytes writen (2)
+ */
+static size_t write16MSB( uint8_t * buffer, uint16_t data ) {
+    buffer[0] = (uint8_t) ( data >> 8 );
+    buffer[1] = (uint8_t) ( data      );
+
+    return 2;
+}
+
+/**
+ * [PRIVATE] Writes a u32 into a u8 buffer in LSB order
  * @param buffer Target buffer
  * @param data   u32 data to write
  * @return Number of bytes writen (4)
  */
-static size_t write32( uint8_t * buffer, uint32_t data ) {
+static size_t write32LSB( uint8_t * buffer, uint32_t data ) {
+    buffer[0] = (uint8_t) ( data       );
+    buffer[1] = (uint8_t) ( data >>  8 );
+    buffer[2] = (uint8_t) ( data >> 16 );
+    buffer[3] = (uint8_t) ( data >> 24 );
+
+    return 4;
+}
+
+/**
+ * [PRIVATE] Writes a u32 into a u8 buffer in LSB order
+ * @param buffer Target buffer
+ * @param data   u32 data to write
+ * @return Number of bytes writen (4)
+ */
+static size_t write32MSB( uint8_t * buffer, uint32_t data ) {
     buffer[0] = (uint8_t) ( data >> 24 );
     buffer[1] = (uint8_t) ( data >> 16 );
     buffer[2] = (uint8_t) ( data >>  8 );
-    buffer[3] = (uint8_t) data;
+    buffer[3] = (uint8_t) ( data       );
 
     return 4;
 }
@@ -130,57 +188,162 @@ static size_t packHeader( uint8_t * buffer, struct Info * info ) {
     const uint32_t WAVE = 0x57415645; //Big-endian "WAVE"
     const uint32_t FMT  = 0x666d7420; //Big-endian "fmt"
     const uint32_t PCM  = 1;
+    const uint32_t DATA = 0x64617461; //Big-endian "data"
 
     size_t i = 0;
 
-    i += write32( &buffer[i], RIFF );                       //ChunkID
-    i += write32( &buffer[i], 0 );                          //ChunkSize
-    i += write32( &buffer[i], WAVE );                       //Format
-    i += write32( &buffer[i], FMT );                        //SubChunk1ID
-    i += write32( &buffer[i], 16 );                         //SubChunk1Size
-    i += write16( &buffer[i], PCM );                        //AudioFormat
-    i += write16( &buffer[i], info->nb_channels );          //NumChannels
-    i += write32( &buffer[i], info->sample_rate );          //SampleRate
-    i += write32( &buffer[i], calcByteRate( info ) );       //ByteRate
-    i += write16( &buffer[i], calcBlockAlignment( info ) ); //BlockAlign
-    i += write16( &buffer[i], info->bits_per_sample );      //BitsPerSample
+    i += write32MSB( &buffer[ i ], RIFF );                       //ChunkID
+    i += write32MSB( &buffer[ i ], 0 );                          //ChunkSize
+    i += write32MSB( &buffer[ i ], WAVE );                       //Format
+    i += write32MSB( &buffer[ i ], FMT );                        //SubChunk1ID
+    i += write32LSB( &buffer[ i ], 16 );                         //SubChunk1Size
+    i += write16LSB( &buffer[ i ], PCM );                        //AudioFormat
+    i += write16LSB( &buffer[ i ], info->nb_channels );          //NumChannels
+    i += write32LSB( &buffer[ i ], info->sample_rate );          //SampleRate
+    i += write32LSB( &buffer[ i ], calcByteRate( info ) );       //ByteRate
+    i += write16LSB( &buffer[ i ], calcBlockAlignment( info ) ); //BlockAlign
+    i += write16LSB( &buffer[ i ], info->bits_per_sample );      //BitsPerSample
+
+    i += write32MSB( &buffer[ i ], DATA );                       //SubChunk2ID
+    i += write32LSB( &buffer[ i ], 0 );                          //SubChunk2Size
 
     return i;
 }
 
 /**
+ * [PRIVATE] Checks available disk space on path
+ * @param path      Target path
+ * @param req_bytes Required bytes
+ * @return Error code
+ */
+static int hasAvailableSpace( const char * path, size_t req_bytes ) {
+    struct statvfs stat;
+
+    if( statvfs( path, &stat ) != 0 ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[hasAvailableSpace( \"%s\" )] Failed to get file system stats.",
+                   path
+        );
+
+        return CTUNE_ERR_IO_DISK_ACCESS_FAIL; //EARLY RETURN
+    }
+
+    if( ( stat.f_bsize * stat.f_bavail ) < req_bytes ) {
+        return CTUNE_ERR_IO_DISK_FULL;  //EARLY RETURN
+    }
+
+    return 0;
+}
+
+/**
  * [PRIVATE] Flushed content of buffer to a file
- * @param out    Pointer to file handler
- * @param buffer Buffer
+ * @param out Pointer to file handler
+ * @param err Pointer to variable to set in case of error
+ * @return Bytes written
  */
-static void flushToFile( FILE * out, struct Buffer * buffer ) { //TODO check for space? what happens if disk is full or file handle is fucked? - return error code?
-    memcpy( out, buffer, buffer->i );
-    buffer->i = 0;
+static size_t flushBufferToFile( FILE * out, int * err ) {
+    const size_t free_to_write = ( ULONG_MAX - output.info.data_size );
+    const size_t to_write      = output.buffer.i;
+
+    size_t written = 0;
+
+    if( to_write > free_to_write ) {
+        written = fwrite( output.buffer.data, sizeof( uint8_t ), free_to_write, out );
+
+        if( err ) {
+            (*err) = CTUNE_ERR_IO_FILE_FULL;
+        }
+
+    } else {
+        written = fwrite( output.buffer.data, sizeof( uint8_t ), to_write, out );
+    }
+
+    CTUNE_LOG( CTUNE_LOG_TRACE,
+               "[flushBufferToFile( %p, %p )] Flushing buffer to file: writen %lu/%lu bytes.",
+               out, err, written, to_write );
+
+    fflush( out );
+    output.buffer.i = 0;
+    return written;
 }
 
 /**
- * [PRIVATE] Writes the data chunk header to a buffer
- * @param buffer Target buffer
+ * [PRIVATE] Write the final data size to the file
+ * @param out       File handle
+ * @param buffer    Data buffer
+ * @param data_size Size of data in bytes
+ * @return Success
  */
-static void beginDataChunk( struct Buffer * buffer ) {
-    const uint32_t DATA = 0x64617461; //Big-endian "data"
+static bool writeSizeToFile( FILE * out, struct Buffer * buffer, size_t data_size ) {
+    bool error_state = false;
 
-    buffer->i                 += write32( &output.buffer.data[buffer->i], DATA ); //SubChunk2ID
-    buffer->data_size_offset_i = buffer->i;                                       //SubChunk2Size index position
-    buffer->i                 += write32( &output.buffer.data[buffer->i], 0 );    //SubChunk2Size
-    buffer->data_offset_i      = buffer->i;                                       //Audio data index position
-}
+    if( data_size < 8 ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[writeSizeToFile( %p, %p, %lu )] Size is too small: %lu",
+                   out, buffer, data_size, data_size
+        );
 
-/**
- * [PRIVATE] Writes the size of the current data chunk into the buffer
- * @param buffer Target buffer
- */
-static void endDataChunk( struct Buffer * buffer ) {
-    write32( &buffer->data[buffer->data_size_offset_i], ( buffer->i - buffer->data_offset_i ) );
+        error_state = true;
+        goto end;
+    }
+
+    const size_t i = buffer->i;
+
+    { //ChunkSize
+        const size_t bytes = write32LSB( &buffer->data[i], ( data_size - 8 ) );
+
+        if( fseek( out, CHUNKSIZE_OFFSET, SEEK_SET ) != 0 ) {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[writeSizeToFile( %p, %p, %lu )] Failed to seek 'ChunkSize' in output file: %s",
+                       out, buffer, data_size, strerror( errno )
+            );
+
+            error_state = true;
+            goto end;
+        }
+
+        if( fwrite( &buffer->data[i], sizeof( uint8_t ), bytes, out ) != bytes ) {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[writeSizeToFile( %p, %p, %lu )] Failed to write 'ChunkSize' in output file: %s",
+                       out, buffer, data_size, strerror( errno )
+            );
+
+            error_state = true;
+            goto end;
+        }
+    }
+
+    { //SubChunk2Size
+        const size_t bytes = write32LSB( &buffer->data[i], data_size );
+
+        if( fseek( out, SUBCHUNK2SIZE_OFFSET, SEEK_SET ) != 0 ) {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[writeSizeToFile( %p, %p, %lu )] Failed to seek 'SubChunk2Size' in output file: %s",
+                       out, buffer, data_size, strerror( errno )
+            );
+
+            error_state = true;
+            goto end;
+        }
+
+        if( fwrite( &buffer[i], sizeof( uint8_t ), bytes, out ) != bytes ) {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[writeSizeToFile( %p, %p, %lu )] Failed to write 'SubChunk2Size' in output file: %s",
+                       out, buffer, data_size, strerror( errno )
+            );
+
+            error_state = true;
+            goto end;
+        }
+    }
+
+    end:
+        return !( error_state );
 }
 
 /**
  * Gets the plugin's name
+ * @return Plugin name string
  */
 static const char * ctune_FileOut_name( void ) {
     return "wave";
@@ -188,9 +351,18 @@ static const char * ctune_FileOut_name( void ) {
 
 /**
  * Gets the plugin's description
+ * @return Plugin description string
  */
 static const char * ctune_FileOut_description( void ) {
     return "Writes raw PCM data in a 'wav' format.";
+}
+
+/**
+ * Gets the plugin's file extension
+ * @return Plugin file extension
+ */
+static const char * ctune_FileOut_extension( void ) {
+    return "wav";
 }
 
 /**
@@ -204,6 +376,8 @@ static const char * ctune_FileOut_description( void ) {
  * @return 0 on success or negative ctune error number
  */
 static int ctune_FileOut_init( const char * path, ctune_OutputFmt_e fmt, int sample_rate, uint channels, uint samples, uint8_t buff_size_MB ) {
+    int error = CTUNE_ERR_NONE;
+
     if( output.file ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_FileOut_init( \"%s\", %d, %d, %d, %d, %dMB )] "
@@ -211,22 +385,32 @@ static int ctune_FileOut_init( const char * path, ctune_OutputFmt_e fmt, int sam
                    path, fmt, sample_rate, channels, samples, buff_size_MB
         );
 
-        return -CTUNE_ERR_IO_AUDIOFILE_OPENED; //EARLY RETURN
+        error = CTUNE_ERR_IO_AUDIOFILE_OPENED;
+        goto fail;
     }
 
+    output.file_count           = 0;
     output.info.sample_rate     = sample_rate;
     output.info.nb_channels     = (uint16_t)( channels & 0xFFFF );
     output.info.bits_per_sample = fmt;
-    String.set( &output.info.path, path );
+    String.set( &output.path, path );
 
-    if( buff_size_MB > 0 ) {
-        output.buffer.size = ( (size_t) buff_size_MB * 1000000 );
+    const size_t bytes_per_second  = ( sample_rate * fmt * channels ) / 8;
+    const size_t buff_size_B = ( buff_size_MB * 1000000 );
+
+    if( buff_size_MB && buff_size_B <= bytes_per_second ) {
+        CTUNE_LOG( CTUNE_LOG_WARNING,
+                   "[ctune_FileOut_init( \"%s\", %d, %d, %d, %d, %dMB )] "
+                   "Custom buffer size too small (<= 1s).",
+                   path, fmt, sample_rate, channels, samples, buff_size_MB
+        );
+
+        buff_size_MB = 0; //force to auto-calculated buffer size
     }
 
-    output.buffer.i                  = 0;
-    output.buffer.data_size_offset_i = 0;
-    output.buffer.data_offset_i      = 0;
-    output.buffer.data               = malloc( sizeof( uint8_t ) * output.buffer.size );
+    output.buffer.size = ( buff_size_MB > 0 ? buff_size_B : ( bytes_per_second * BUFFER_CHRONO_SIZE ) );
+    output.buffer.i    = 0;
+    output.buffer.data = malloc( sizeof( uint8_t ) * output.buffer.size );
 
     if( output.buffer.data == NULL ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
@@ -235,25 +419,43 @@ static int ctune_FileOut_init( const char * path, ctune_OutputFmt_e fmt, int sam
                    path, fmt, sample_rate, channels, samples, buff_size_MB
         );
 
-        return -CTUNE_ERR_BUFF_ALLOC; //EARLY RETURN
+        error = CTUNE_ERR_BUFF_ALLOC;
+        goto fail;
     }
 
-    if( ( output.file = fopen( path , "a" ) ) == NULL ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_FileOut_init( \"%s\", %d, %d, %d, %d, %dMB )] "
-                   "Failed to open PCM output file: %s",
-                   path, fmt, sample_rate, channels, samples, buff_size_MB, path
-        );
-
-        free( output.buffer.data );
-        return -CTUNE_ERR_IO_AUDIOFILE_OPEN; //EARLY RETURN
+    if( ( output.file = fopen( output.path._raw , "wb+" ) ) == NULL ) {
+        error = CTUNE_ERR_IO_AUDIOFILE_OPEN;
+        goto fail;
     }
 
     output.buffer.i += packHeader( &output.buffer.data[0], &output.info );
 
-    flushToFile( output.file, &output.buffer );
+    if( ( error = hasAvailableSpace( output.path._raw, output.buffer.i ) ) != CTUNE_ERR_NONE ) {
+        goto fail;
+    }
+
+    flushBufferToFile( output.file, &error );
+
+    if( error != CTUNE_ERR_NONE ) {
+        goto fail;
+    }
+
+    CTUNE_LOG( CTUNE_LOG_MSG,
+               "[ctune_FileOut_init( \"%s\", %d, %d, %d, %d, %dMB )] Wave recorder initialised (buffer = %luMB).",
+               path, fmt, sample_rate, channels, samples, buff_size_MB, ( output.buffer.size / 10000000 )
+    );
 
     return 0;
+
+    fail:
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_FileOut_init( \"%s\", %d, %d, %d, %d, %dMB )] Failed to initialise wave plugin: %s (%d)",
+                   path, fmt, sample_rate, channels, samples, buff_size_MB, ctune_err.print( error ), error
+        );
+
+        String.free( &output.path );
+        free( output.buffer.data );
+        return -error;
 }
 
 /**
@@ -281,84 +483,91 @@ static int ctune_FileOut_write( const void * buffer, int buff_size ) {
         return -CTUNE_ERR_NO_DATA; //EARLY RETURN
     }
 
-    if( output.buffer.size - buff_size < output.buffer.i ) {
-        endDataChunk( &output.buffer );
-        flushToFile( output.file, &output.buffer );
-    }
+    int error = CTUNE_ERR_NONE;
 
-    if( output.buffer.i == 0 ) {
-        beginDataChunk( &output.buffer );
+    if( ( output.buffer.size - buff_size ) < output.buffer.i &&
+        ( error = hasAvailableSpace( output.path._raw, output.buffer.i ) ) == 0 )
+    {
+        output.info.data_size += flushBufferToFile( output.file, &error );
+
+        if( error != CTUNE_ERR_NONE ) {
+            goto end;
+        }
     }
 
     if( (unsigned) buff_size <= ( output.buffer.size - DATA_HEADER_SIZE ) ) {
-        memcpy( output.buffer.data, buffer, buff_size );
+        memcpy( &output.buffer.data[output.buffer.i], buffer, buff_size );
+        output.buffer.i += buff_size;
 
-    } else {
-        CTUNE_LOG( CTUNE_LOG_WARNING,
-                   "[ctune_FileOut_write( %p, %lu )] PCM buffer too small (%dkB): data will be split (%dkB)",
-                   buffer, buff_size, output.buffer.data, ( output.buffer.size / 1000 ), ( buff_size * 1000 )
+    } else { //Should never happen but, just in case...
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_FileOut_write( %p, %lu )] PCM buffer too small (%dkB).",
+                   buffer, buff_size, ( output.buffer.size / 1000 )
         );
-
-        size_t offset = 0;
-
-        { //Fills remainder of file buffer
-            const size_t remaining_space = ( output.buffer.size - output.buffer.i );
-
-            memcpy( output.buffer.data, (uint8_t *) &buffer[offset], remaining_space );
-            endDataChunk( &output.buffer );
-            flushToFile( output.file, &output.buffer );
-
-            offset += remaining_space;
-        }
-
-        const size_t remaining_pending_data = ( buff_size - offset );
-        const size_t chunk_size             = ( output.buffer.size - DATA_HEADER_SIZE );
-        const size_t whole_chunks           = ( remaining_pending_data / chunk_size );
-        const size_t remainder_size         = ( remaining_pending_data % chunk_size );
-
-        for( size_t chunk = 0; chunk < whole_chunks; ++chunk ) {
-            beginDataChunk( &output.buffer );
-            memcpy( output.buffer.data, (uint8_t *) &buffer[offset], chunk_size );
-            offset += chunk_size;
-            endDataChunk( &output.buffer );
-            flushToFile( output.file, &output.buffer );
-        }
-
-        if( remainder_size > 0 ) {
-            beginDataChunk( &output.buffer );
-            memcpy( output.buffer.data, (uint8_t *) &buffer[offset], remainder_size );
-            endDataChunk( &output.buffer );
-            flushToFile( output.file, &output.buffer );
-        }
     }
 
-    return 0;
+    end:
+        return error;
 }
 
 /**
  * Calls all the cleaning/closing/shutdown functions
+ * @return 0 on success or negative ctune error number
  */
-static void ctune_FileOut_close( void ) {
-    if( output.buffer.i != 0 ) {
-        endDataChunk( &output.buffer );
-        flushToFile( output.file, &output.buffer );
-    }
+static int ctune_FileOut_close( void ) {
+    CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_FileOut_close()] Closing wave recorder." );
 
-    fflush( output.file );
+    int error = CTUNE_ERR_NONE;
 
     if( output.file != NULL ) {
-        fclose( output.file );
-        output.file = NULL;
+        if( output.buffer.i != 0 ) {
+
+            output.info.data_size += flushBufferToFile( output.file, &error );
+
+            if( error != CTUNE_ERR_NONE ) {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[closeCurrFile()] Failed to completely flush buffer to file: %s",
+                           output.path._raw
+                );
+            }
+        }
+
+        if( output.file != NULL ) {
+            if( !writeSizeToFile( output.file, &output.buffer, output.info.data_size ) ) {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[closeCurrFile()] Failed to write size to file: %s",
+                           output.path._raw
+                );
+
+                error = CTUNE_ERR_IO_FILE_WRITE_FAIL;
+            }
+
+            fflush( output.file );
+
+            if( fclose( output.file ) != 0 ) {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[closeCurrFile()] Failed to close file: %s",
+                           output.path._raw
+                );
+
+                error = CTUNE_ERR_IO_FILE_CLOSE_FAIL;
+            };
+
+            output.file = NULL;
+        }
     }
 
-    String.free( &output.info.path );
+    String.free( &output.path );
     free( output.buffer.data );
+
+    return -error;
 }
 
 
 const struct ctune_FileOut ctune_FileOutput = {
     .name        = &ctune_FileOut_name,
     .description = &ctune_FileOut_description,
+    .extension   = &ctune_FileOut_extension,
     .init        = &ctune_FileOut_init,
     .write       = &ctune_FileOut_write,
     .close       = &ctune_FileOut_close

@@ -50,15 +50,19 @@ package ctune #lightgrey {
             file alsa.so
             file sdl.so
             file sndio.so
+            file wave.so
+            file mp3.so
 
             interface libalsa
             interface libpulseaudio
             interface libsld2
+            interface libmp3lame
 
             pulse.so -down-( libpulseaudio : uses
             alsa.so -down-( libalsa : uses
             sdl.so -down-( libsld2 : uses
             sndio.so -down-( libsndio : uses
+            mp3.so -down-( libmp3lame : uses
         }
 
         package "config dir" #lightgrey {
@@ -77,6 +81,8 @@ package ctune #lightgrey {
         Plugin .[#RoyalBlue]..> alsa.so
         Plugin .[#RoyalBlue]..> sdl.so
         Plugin .[#RoyalBlue]..> sndio.so
+        Plugin .[#RoyalBlue]..> wave.so
+        Plugin .[#RoyalBlue]..> mp3.so
 
         Settings -> XDG
         Settings -down-> cfgfile
@@ -87,12 +93,15 @@ package ctune #lightgrey {
 
     package audio #white {
         interface AudioOutput
+        interface FileOutput
     }
 
     AudioOutput -- pulse.so
     AudioOutput -- alsa.so
     AudioOutput -- sdl.so
     AudioOutput -- sndio.so
+    FileOutput  -- mp3.so
+    FileOutput  -- wave.so
 
     package player #white {
         component RadioPlayer
@@ -104,6 +113,7 @@ package ctune #lightgrey {
     Player -- ffmpeg.so
     Player -- vlc.so
     RadioPlayer --( AudioOutput
+    RadioPlayer --( FileOutput
 
     package cli #white {
         component CLI
@@ -149,7 +159,7 @@ package ctune #lightgrey {
 
     driver --> CLI
     driver --> Controller
-    Settings  -->   Plugin
+    Settings --> Plugin
 
     RadioBrowser -->   JSON
 

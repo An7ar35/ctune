@@ -13,6 +13,8 @@ if(PULSEAUDIO_FOUND)
     set(CTUNE_SOURCE_FILES
             ../../../src/ctune_err.h
             ../../../src/ctune_err.c
+            ../../../src/utils/Timeout.h
+            ../../../src/utils/Timeout.c
             ../../../src/audio/AudioOut.h)
 
     set(PULSE_SOURCE_FILES
