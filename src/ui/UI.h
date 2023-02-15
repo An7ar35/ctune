@@ -6,6 +6,7 @@
 
 #include "../dto/ArgOptions.h"
 #include "../dto/RadioStationInfo.h"
+#include "../enum/PlaybackCtrl.h"
 #include "enum/PanelID.h"
 #include "definitions/Language.h"
 
@@ -60,7 +61,7 @@ struct ctune_UI_Instance {
      * Prints the playback state to the screen
      * @param state Playback state
      */
-    void (* printPlaybackState)( const bool state );
+    void (* printPlaybackState)( const ctune_PlaybackCtrl_e state );
 
     /**
      * Prints the search state to the screen

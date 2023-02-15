@@ -21,13 +21,13 @@ static struct {
     struct {
         Vector_t          list;
         ctune_FileOut_t * selected;
-    } audio_file_writers;
+    } audio_recorders;
 
 } private = {
-    .initialised                 = false,
-    .audio_players.selected      = NULL,
-    .audio_file_writers.selected = NULL,
-    .audio_servers.selected      = NULL,
+    .initialised              = false,
+    .audio_players.selected   = NULL,
+    .audio_recorders.selected = NULL,
+    .audio_servers.selected   = NULL,
 };
 
 /**
@@ -86,13 +86,15 @@ static const char * ctune_Plugin_loadPlugin( void * handle ) {
                     );
 
                     ctune_err.set ( CTUNE_ERR_IO_PLUGIN_LINK );
-                    Vector.remove( &private.audio_file_writers.list, Vector.size( &private.audio_players.list ) - 1 );
+                    Vector.remove( &private.audio_recorders.list, Vector.size( &private.audio_players.list ) - 1 );
 
                 } else {
                     plugin->name            = p->name;
                     plugin->description     = p->description;
                     plugin->init            = p->init;
                     plugin->playRadioStream = p->playRadioStream;
+                    plugin->startRecording  = p->startRecording;
+                    plugin->stopRecording   = p->stopRecording;
                     plugin->getError        = p->getError;
                     plugin->testStream      = p->testStream;
 
@@ -144,7 +146,7 @@ static const char * ctune_Plugin_loadPlugin( void * handle ) {
             }
         } break;
 
-        case CTUNE_PLUGIN_OUT_AUDIO_FILE: {
+        case CTUNE_PLUGIN_OUT_AUDIO_RECORDER: {
             if( *abi_version != CTUNE_AUDIOOUT_ABI_VERSION ) {
                 CTUNE_LOG( CTUNE_LOG_FATAL,
                            "[ctune_Plugin_loadPlugin( %p )] ABI version mismatch: plugin=%d, ctune=%d.",
@@ -154,7 +156,7 @@ static const char * ctune_Plugin_loadPlugin( void * handle ) {
                 return NULL; //EARLY RETURN
             }
 
-            ctune_FileOut_t * plugin = Vector.emplace_back( &private.audio_file_writers.list );
+            ctune_FileOut_t * plugin = Vector.emplace_back( &private.audio_recorders.list );
 
             if( plugin ) {
                 plugin->handle      = handle;
@@ -170,11 +172,12 @@ static const char * ctune_Plugin_loadPlugin( void * handle ) {
                     );
 
                     ctune_err.set ( CTUNE_ERR_IO_PLUGIN_LINK );
-                    Vector.remove( &private.audio_file_writers.list, Vector.size( &private.audio_file_writers.list ) - 1 );
+                    Vector.remove( &private.audio_recorders.list, Vector.size( &private.audio_recorders.list ) - 1 );
 
                 } else {
                     plugin->name        = fo->name;
                     plugin->description = fo->description;
+                    plugin->extension   = fo->extension;
                     plugin->init        = fo->init;
                     plugin->write       = fo->write;
                     plugin->close       = fo->close;
@@ -270,12 +273,26 @@ static void ctune_Plugin_freeSoundFileOutput( void * fileout ) {
 }
 
 /**
+ * [PRIVATE] Gets all the loaded plugins of a specified type
+ * @param type Plugin type enum
+ * @return Pointer to internal plugin list of specified type (or NULL on error)
+ */
+static const Vector_t * ctune_Plugin_getPluginList( ctune_PluginType_e type ) {
+    switch( type ) {
+        case CTUNE_PLUGIN_IN_STREAM_PLAYER  : return &private.audio_players.list;
+        case CTUNE_PLUGIN_OUT_AUDIO_SERVER  : return &private.audio_servers.list;
+        case CTUNE_PLUGIN_OUT_AUDIO_RECORDER: return &private.audio_recorders.list;
+        default                             : return NULL;
+    }
+}
+
+/**
  * Initialises plugin engine
  */
 static void ctune_Plugin_init( void ) {
-    private.audio_players.list      = Vector.init( sizeof( ctune_Player_t ), ctune_Plugin_freePlayer );
-    private.audio_servers.list      = Vector.init( sizeof( ctune_AudioOut_t ), ctune_Plugin_freeAudioOut );
-    private.audio_file_writers.list = Vector.init( sizeof( ctune_FileOut_t ), ctune_Plugin_freeSoundFileOutput );
+    private.audio_players.list   = Vector.init( sizeof( ctune_Player_t ), ctune_Plugin_freePlayer );
+    private.audio_servers.list   = Vector.init( sizeof( ctune_AudioOut_t ), ctune_Plugin_freeAudioOut );
+    private.audio_recorders.list = Vector.init( sizeof( ctune_FileOut_t ), ctune_Plugin_freeSoundFileOutput );
 }
 
 /**
@@ -342,12 +359,56 @@ bool ctune_Plugin_loadPlugins( const char * dir_path ) {
 }
 
 /**
+ * Validates a named plugin against the loaded plugins
+ * @param type Plugin type enum
+ * @param name Plugin name
+ * @return Validation state
+ */
+static bool ctune_Plugin_validate( ctune_PluginType_e type, const char * name ) {
+    switch( type ) {
+        case CTUNE_PLUGIN_IN_STREAM_PLAYER: {
+            for( size_t i = 0; i < Vector.size( &private.audio_players.list ); ++i ) {
+                ctune_Player_t * p = Vector.at( &private.audio_players.list, i );
+
+                if( strcmp( p->name(), name ) == 0 ) {
+                    return true;
+                }
+            }
+        } break;
+
+        case CTUNE_PLUGIN_OUT_AUDIO_SERVER: {
+            for( size_t i = 0; i < Vector.size( &private.audio_servers.list ); ++i ) {
+                ctune_AudioOut_t * p = Vector.at( &private.audio_servers.list, i );
+
+                if( strcmp( p->name(), name ) == 0 ) {
+                    return true;
+                }
+            }
+        } break;
+
+        case CTUNE_PLUGIN_OUT_AUDIO_RECORDER: {
+            for( size_t i = 0; i < Vector.size( &private.audio_recorders.list ); ++i ) {
+                ctune_FileOut_t * p = Vector.at( &private.audio_recorders.list, i );
+
+                if( strcmp( p->name(), name ) == 0 ) {
+                    return true;
+                }
+            }
+        } break;
+
+        default: break;
+    }
+
+    return false;
+}
+
+/**
  * Sets a plugin as 'selected'
  * @param type Plugin type enum
  * @param name Name of plugin to set
  * @return Success
  */
-static bool ctune_Plugin_setPlugin( ctune_PluginType_e type, const char * name ) {
+static bool ctune_Plugin_setPluginByName( ctune_PluginType_e type, const char * name ) {
     switch( type ) {
         case CTUNE_PLUGIN_IN_STREAM_PLAYER: {
             for( size_t i = 0; i < Vector.size( &private.audio_players.list ); ++i ) {
@@ -355,7 +416,7 @@ static bool ctune_Plugin_setPlugin( ctune_PluginType_e type, const char * name )
 
                 if( strcmp( p->name(), name ) == 0 ) {
                     CTUNE_LOG( CTUNE_LOG_DEBUG,
-                               "[ctune_Plugin_setPlugin( '%s', \"%s\" )] Plugin set as selected: %p",
+                               "[ctune_Plugin_setPluginByName( '%s', \"%s\" )] Plugin set as selected: %p",
                                ctune_PluginType.str( type ), name, p
                     );
 
@@ -371,7 +432,7 @@ static bool ctune_Plugin_setPlugin( ctune_PluginType_e type, const char * name )
 
                 if( strcmp( p->name(), name ) == 0 ) {
                     CTUNE_LOG( CTUNE_LOG_DEBUG,
-                               "[ctune_Plugin_setPlugin( '%s', \"%s\" )] Plugin set as selected: %p",
+                               "[ctune_Plugin_setPluginByName( '%s', \"%s\" )] Plugin set as selected: %p",
                                ctune_PluginType.str( type ), name, p
                     );
 
@@ -381,17 +442,17 @@ static bool ctune_Plugin_setPlugin( ctune_PluginType_e type, const char * name )
             }
         } break;
 
-        case CTUNE_PLUGIN_OUT_AUDIO_FILE: {
-            for( size_t i = 0; i < Vector.size( &private.audio_file_writers.list ); ++i ) {
-                ctune_FileOut_t * p = Vector.at( &private.audio_file_writers.list, i );
+        case CTUNE_PLUGIN_OUT_AUDIO_RECORDER: {
+            for( size_t i = 0; i < Vector.size( &private.audio_recorders.list ); ++i ) {
+                ctune_FileOut_t * p = Vector.at( &private.audio_recorders.list, i );
 
                 if( strcmp( p->name(), name ) == 0 ) {
                     CTUNE_LOG( CTUNE_LOG_DEBUG,
-                               "[ctune_Plugin_setPlugin( '%s', \"%s\" )] Plugin set as selected: %p",
+                               "[ctune_Plugin_setPluginByName( '%s', \"%s\" )] Plugin set as selected: %p",
                                ctune_PluginType.str( type ), name, p
                     );
 
-                    private.audio_file_writers.selected = p;
+                    private.audio_recorders.selected = p;
                     return true;
                 }
             }
@@ -401,7 +462,7 @@ static bool ctune_Plugin_setPlugin( ctune_PluginType_e type, const char * name )
     }
 
     CTUNE_LOG( CTUNE_LOG_ERROR,
-               "[ctune_Plugin_setPlugin( '%s', \"%s\" )] Failed to set selected.",
+               "[ctune_Plugin_setPluginByName( '%s', \"%s\" )] Failed to set selected.",
                ctune_PluginType.str( type ), name
     );
 
@@ -409,17 +470,150 @@ static bool ctune_Plugin_setPlugin( ctune_PluginType_e type, const char * name )
 }
 
 /**
- * Gets all the loaded plugins of a specified type
+ * Sets a plugin as 'selected'
  * @param type Plugin type enum
- * @return Pointer to internal plugin list of specified type (or NULL on error)
+ * @param id   ID of the plugin inside the list of the type
+ * @return Success
  */
-static const Vector_t * ctune_Plugin_getPluginList( ctune_PluginType_e type ) {
+static bool ctune_Plugin_setPluginByID( ctune_PluginType_e type, size_t id ) {
     switch( type ) {
-        case CTUNE_PLUGIN_IN_STREAM_PLAYER: return &private.audio_players.list;
-        case CTUNE_PLUGIN_OUT_AUDIO_SERVER: return &private.audio_servers.list;
-        case CTUNE_PLUGIN_OUT_AUDIO_FILE  : return &private.audio_file_writers.list;
-        default                           : return NULL;
+        case CTUNE_PLUGIN_IN_STREAM_PLAYER: {
+            if( id < Vector.size( &private.audio_players.list ) ) {
+                ctune_Player_t * p = Vector.at( &private.audio_recorders.list, id );
+
+                private.audio_players.selected = p;
+
+                CTUNE_LOG( CTUNE_LOG_DEBUG,
+                           "[ctune_Plugin_setPluginByID( '%s', %lu )] Plugin '%s' set as selected: %p",
+                           ctune_PluginType.str( type ), id, p->name(), p
+                );
+
+                return true; //EARLY RETURN;
+            }
+        } break;
+
+        case CTUNE_PLUGIN_OUT_AUDIO_SERVER: {
+            if( id < Vector.size( &private.audio_servers.list ) ) {
+                ctune_AudioOut_t * p = Vector.at( &private.audio_servers.list, id );
+
+                private.audio_servers.selected = p;
+
+                CTUNE_LOG( CTUNE_LOG_DEBUG,
+                           "[ctune_Plugin_setPluginByID( '%s', %lu )] Plugin '%s' set as selected: %p",
+                           ctune_PluginType.str( type ), id, p->name(), p
+                );
+
+                return true; //EARLY RETURN;
+            }
+        } break;
+
+        case CTUNE_PLUGIN_OUT_AUDIO_RECORDER: {
+            if( id < Vector.size( &private.audio_recorders.list ) ) {
+                ctune_FileOut_t * p = Vector.at( &private.audio_recorders.list, id );
+
+                private.audio_recorders.selected = p;
+
+                CTUNE_LOG( CTUNE_LOG_DEBUG,
+                           "[ctune_Plugin_setPluginByID( '%s', %lu )] Plugin '%s' set as selected: %p",
+                           ctune_PluginType.str( type ), id, p->name(), p
+                );
+
+                return true; //EARLY RETURN;
+            }
+        } break;
+
+        default: break;
     }
+
+    CTUNE_LOG( CTUNE_LOG_ERROR,
+               "[ctune_Plugin_setPluginByID( '%s', %lu )] Failed to set selected.",
+               ctune_PluginType.str( type ), id
+    );
+
+    return false;
+}
+
+/**
+ * Gets the information of all plugins for a given type
+ * @param type Plugin enum type
+ * @return Allocated list (or NULL)
+ */
+Vector_t * ctune_Plugin_getPluginInfoList( ctune_PluginType_e type ) {
+    const Vector_t * plugin_list = ctune_Plugin_getPluginList( type );
+    Vector_t       * v           = NULL;
+
+    if( plugin_list == NULL ) {
+        goto fail;
+    }
+
+    if( ( v = malloc( sizeof( Vector_t ) ) ) == NULL ) {
+        goto malloc_fail;
+    }
+
+    (*v) = Vector.init( sizeof( ctune_PluginInfo_t ), NULL );
+
+    switch( type ) {
+        case CTUNE_PLUGIN_IN_STREAM_PLAYER: {
+            for( size_t i = 0; i < Vector.size( plugin_list ); ++i ) {
+                const ctune_Player_t * p = Vector.at( (Vector_t *) plugin_list, i );
+                ctune_PluginInfo_t   * e = Vector.emplace_back( v );
+
+                if( e ) {
+                    e->id          = i;
+                    e->type        = type,
+                    e->name        = p->name(),
+                    e->description = p->description();
+                    e->selected    = ( p == ctune_Plugin.getSelectedPlugin( type ) );
+                }
+            }
+        } break;
+
+        case CTUNE_PLUGIN_OUT_AUDIO_SERVER: {
+            for( size_t i = 0; i < Vector.size( plugin_list ); ++i ) {
+                const ctune_AudioOut_t * p = Vector.at( (Vector_t *) plugin_list, i );
+                ctune_PluginInfo_t     * e = Vector.emplace_back( v );
+
+                if( e ) {
+                    e->id          = i;
+                    e->type        = type,
+                    e->name        = p->name(),
+                    e->description = p->description();
+                    e->selected    = ( p == ctune_Plugin.getSelectedPlugin( type ) );
+                }
+            }
+        } break;
+
+        case CTUNE_PLUGIN_OUT_AUDIO_RECORDER: {
+            for( size_t i = 0; i < Vector.size( plugin_list ); ++i ) {
+                const ctune_FileOut_t * p = Vector.at( (Vector_t *) plugin_list, i );
+                ctune_PluginInfo_t    * e = Vector.emplace_back( v );
+
+                if( e ) {
+                    e->id          = i;
+                    e->type        = type,
+                    e->name        = p->name(),
+                    e->description = p->description();
+                    e->extension   = p->extension();
+                    e->selected    = ( p == ctune_Plugin.getSelectedPlugin( type ) );
+                }
+            }
+        } break;
+
+        default: goto fail;
+    }
+
+    return v;
+
+    malloc_fail:
+        ctune_err.set( CTUNE_ERR_MALLOC );
+
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_Plugin_getPluginInfoList( '%s' )] Failed to create PluginInfo list.",
+                   ctune_PluginType.str( type )
+        );
+
+    fail:
+        return NULL;
 }
 
 /**
@@ -429,11 +623,31 @@ static const Vector_t * ctune_Plugin_getPluginList( ctune_PluginType_e type ) {
  */
 static void * ctune_Plugin_getSelectedPlugin( ctune_PluginType_e type ) {
     switch( type ) {
-        case CTUNE_PLUGIN_IN_STREAM_PLAYER: return private.audio_players.selected;
-        case CTUNE_PLUGIN_OUT_AUDIO_SERVER: return private.audio_servers.selected;
-        case CTUNE_PLUGIN_OUT_AUDIO_FILE  : return private.audio_file_writers.selected;
-        default                           : return NULL;
+        case CTUNE_PLUGIN_IN_STREAM_PLAYER  : return private.audio_players.selected;
+        case CTUNE_PLUGIN_OUT_AUDIO_SERVER  : return private.audio_servers.selected;
+        case CTUNE_PLUGIN_OUT_AUDIO_RECORDER: return private.audio_recorders.selected;
+        default                             : return NULL;
     }
+}
+
+/**
+ * Gets the currently selected plugin name of a specified type
+ * @param type Plugin type enum
+ * @return Name string or NULL
+ */
+static const char * ctune_Plugin_getSelectedPluginName( ctune_PluginType_e type ) {
+    const void * p = ctune_Plugin.getSelectedPlugin( type );
+
+    if( p ) {
+        switch( type ) {
+            case CTUNE_PLUGIN_IN_STREAM_PLAYER  : return ((const ctune_Player_t   *) p )->name(); //EARLY RETURN
+            case CTUNE_PLUGIN_OUT_AUDIO_SERVER  : return ((const ctune_AudioOut_t *) p )->name(); //EARLY RETURN
+            case CTUNE_PLUGIN_OUT_AUDIO_RECORDER: return ((const ctune_FileOut_t  *) p )->name(); //EARLY RETURN
+            default                             : break;
+        }
+    }
+
+    return NULL;
 }
 
 /**
@@ -441,11 +655,11 @@ static void * ctune_Plugin_getSelectedPlugin( ctune_PluginType_e type ) {
  */
 static void ctune_Plugin_free( void ) {
     Vector.clear_vector( &private.audio_players.list );
-    Vector.clear_vector( &private.audio_file_writers.list );
+    Vector.clear_vector( &private.audio_recorders.list );
     Vector.clear_vector( &private.audio_servers.list );
-    private.audio_players.selected      = NULL;
-    private.audio_file_writers.selected = NULL;
-    private.audio_servers.selected      = NULL;
+    private.audio_players.selected   = NULL;
+    private.audio_recorders.selected = NULL;
+    private.audio_servers.selected   = NULL;
 
     CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_Plugin_free()] Plugin(s) freed." );
 }
@@ -454,10 +668,13 @@ static void ctune_Plugin_free( void ) {
  * Namespace constructor
  */
 const struct ctune_Plugin_Namespace ctune_Plugin = {
-    .init              = &ctune_Plugin_init,
-    .loadPlugins       = &ctune_Plugin_loadPlugins,
-    .setPlugin         = &ctune_Plugin_setPlugin,
-    .getPluginList     = &ctune_Plugin_getPluginList,
-    .getSelectedPlugin = &ctune_Plugin_getSelectedPlugin,
-    .free              = &ctune_Plugin_free,
+    .init                  = &ctune_Plugin_init,
+    .loadPlugins           = &ctune_Plugin_loadPlugins,
+    .validate              = &ctune_Plugin_validate,
+    .setPluginByName       = &ctune_Plugin_setPluginByName,
+    .setPluginByID         = &ctune_Plugin_setPluginByID,
+    .getPluginInfoList     = &ctune_Plugin_getPluginInfoList,
+    .getSelectedPlugin     = &ctune_Plugin_getSelectedPlugin,
+    .getSelectedPluginName = &ctune_Plugin_getSelectedPluginName,
+    .free                  = &ctune_Plugin_free,
 };

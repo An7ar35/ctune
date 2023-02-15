@@ -10,6 +10,7 @@
 #include "../dto/UIConfig.h"
 #include "../audio/AudioOut.h"
 #include "../player/Player.h"
+#include "../audio/FileOut.h"
 
 extern const struct ctune_Settings_Instance {
     /**
@@ -214,16 +215,26 @@ extern const struct ctune_Settings_Instance {
         bool (* loadPlugins)( void );
 
         /**
-         * Gets the audio server plugin
-         * @return Pointer to the loaded plugin
+         * Gets the currently selected plugin of a given type or the default if it has not been selected yet
+         * @param type Plugin type enum
+         * @return Pointer to plugin interface of given type or NULL
          */
-        ctune_AudioOut_t * (* getAudioServer)( void );
+        void * (* getPlugin)( ctune_PluginType_e type );
 
         /**
-         * Gets the player plugin
-         * @return Pointer to the loaded plugin
+         * Sets a plugin as 'selected'
+         * @param type Plugin type enum
+         * @param id   Plugin ID
+         * @return Success
          */
-        ctune_Player_t * (* getPlayer)( void );
+        bool (* setPlugin)( ctune_PluginType_e type, size_t id );
+
+        /**
+         * Gets a list of all the loaded plugins of a specified type
+         * @param type Plugin type enum
+         * @return Pointer to a heap allocated list of ids, names, descriptions and 'selected' flags
+         */
+        const Vector_t * (* getPluginList)( ctune_PluginType_e type );
 
     } plugins;
 

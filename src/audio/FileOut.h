@@ -40,6 +40,12 @@ typedef struct ctune_FileOut {
     const char * (* description)( void );
 
     /**
+     * Gets the plugin's file extension
+     * @return Plugin file extension
+     */
+    const char * (* extension)( void );
+
+    /**
      * Initialises file output
      * @param path         Output path and filename
      * @param fmt          Output format
@@ -61,8 +67,9 @@ typedef struct ctune_FileOut {
 
     /**
      * Calls all the cleaning/closing/shutdown functions
+     * @return 0 on success or negative ctune error number
      */
-    void (* close)( void );
+    int (* close)( void );
 
 } ctune_FileOut_t;
 

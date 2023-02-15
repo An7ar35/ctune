@@ -3,6 +3,7 @@
 
 #include "../../dto/RadioStationInfo.h" //for sorting
 #include "../../dto/UIConfig.h"
+#include "../../enum/PluginType.h"
 #include "../../enum/StationAttribute.h" //for sorting
 #include "../datastructure/WindowMargin.h"
 #include "../definitions/Language.h"
@@ -57,6 +58,10 @@ typedef struct ctune_UI_Dialog_OptionsMenu {
         int                (* setMouseResolution)( ctune_UI_PanelID_e tab, int value );
         int                (* unicodeIcons)( ctune_UI_PanelID_e tab, int action_flag_e );
         int                (* streamTimeout)( ctune_UI_PanelID_e tab, int value );
+        const Vector_t *   (* pluginList)( ctune_PluginType_e type );
+        int                (* setPlayPlugin)( ctune_UI_PanelID_e tab, int id );
+        int                (* setSrvPlugin)( ctune_UI_PanelID_e tab, int id );
+        int                (* setRecPlugin)( ctune_UI_PanelID_e tab, int id );
     } cb;
 
 } ctune_UI_OptionsMenu_t;
@@ -217,6 +222,25 @@ extern const struct ctune_UI_Dialog_OptionsMenu_Namespace {
          * @param callback Callback function
          */
         void (* setStreamTimeoutValueCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
+
+        /**
+         * Sets the callback method to get a list of plugins
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
+         */
+        void (* setPluginListCallback)( ctune_UI_OptionsMenu_t * om, const Vector_t * (* callback)( ctune_PluginType_e ) );
+
+        /**
+         * Sets the callback methods to set plugins in the configuration
+         * @param om                       Pointer to ctune_UI_OptionsMenu_t object
+         * @param setPlayPlugin_callback   Plugin setter callback function
+         * @param setSndSrvPlugin_callback Plugin setter callback function
+         * @param setRecPlugin_callback    Plugin setter callback function
+         */
+        void (* setPluginSetterCallbacks)( ctune_UI_OptionsMenu_t * om,
+                                           OptionsMenuCb_fn setPlayPlugin_callback,
+                                           OptionsMenuCb_fn setSndSrvPlugin_callback,
+                                           OptionsMenuCb_fn setRecPlugin_callback );
     } cb;
 
 } ctune_UI_OptionsMenu;

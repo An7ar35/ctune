@@ -5,6 +5,7 @@
 
 #include "logger/src/Logger.h"
 #include "../src/ctune_err.h"
+#include "../src/utils/Timeout.h"
 #include "project_version.h"
 
 const unsigned           abi_version = CTUNE_AUDIOOUT_ABI_VERSION;
@@ -58,8 +59,8 @@ static pa_sample_format_t ctune_audio_translateToALSAFormat( ctune_OutputFmt_e f
 
 
 static void subscriptionCallback( pa_context * context, pa_subscription_event_type_t type, uint32_t idx, void * userdata ) {
-    unsigned       facility = type & PA_SUBSCRIPTION_EVENT_FACILITY_MASK;
-    unsigned       event    = type & PA_SUBSCRIPTION_EVENT_TYPE_MASK;
+    unsigned facility = type & PA_SUBSCRIPTION_EVENT_FACILITY_MASK;
+    unsigned event    = type & PA_SUBSCRIPTION_EVENT_TYPE_MASK;
 
     switch( facility ) {
         case PA_SUBSCRIPTION_EVENT_SINK: {
@@ -379,16 +380,26 @@ static void ctune_audio_shutdownAudioOut() {
 
     pulse_audio_server.ready = false;
 
-    if( pulse_audio_server.main_loop )
+    if( pulse_audio_server.main_loop ) {
         pa_threaded_mainloop_stop( pulse_audio_server.main_loop );
-    if( pulse_audio_server.context )
+    }
+
+    if( pulse_audio_server.context ) {
         pa_context_disconnect( pulse_audio_server.context );
+        pa_context_unref( pulse_audio_server.context );
+        pulse_audio_server.context = NULL;
+    }
+
     if( pulse_audio_server.stream ) {
         pa_stream_disconnect( pulse_audio_server.stream );
         pa_stream_unref( pulse_audio_server.stream );
+        pulse_audio_server.stream = NULL;
     }
-    if( pulse_audio_server.main_loop )
+
+    if( pulse_audio_server.main_loop ) {
         pa_threaded_mainloop_free( pulse_audio_server.main_loop );
+        pulse_audio_server.main_loop = NULL;
+    }
 }
 
 /**
@@ -501,6 +512,7 @@ static int ctune_audio_initAudioOut( ctune_OutputFmt_e fmt, int sample_rate, uin
     pa_stream_set_underflow_callback( pulse_audio_server.stream, notifyStreamUnderflowCallback, pulse_audio_server.main_loop );
     pa_stream_set_overflow_callback( pulse_audio_server.stream, notifyStreamOverflowCallback, pulse_audio_server.main_loop );
     pa_stream_set_latency_update_callback( pulse_audio_server.stream, notifyLatencyUpdateCallback, pulse_audio_server.main_loop );
+    pa_context_set_state_callback( pulse_audio_server.context, &notifyContextStateChangeCallback, pulse_audio_server.main_loop );
 
     pa_cvolume   * init_volume = &pulse_audio_server.channel_volume;
     pa_buffer_attr buffer_attributes = { .tlength   = -1,

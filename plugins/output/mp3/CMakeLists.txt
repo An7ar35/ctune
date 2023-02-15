@@ -23,7 +23,7 @@ if(LAME_FOUND)
 
     set_target_properties(ctune_plugin_mp3
             PROPERTIES PREFIX        ""
-            OUTPUT_NAME              mp3
+            OUTPUT_NAME              mp3lame
             LIBRARY_OUTPUT_DIRECTORY "${PLUGINS_OUTPUT_DIRECTORY}/output")
 
     install(TARGETS     ctune_plugin_mp3

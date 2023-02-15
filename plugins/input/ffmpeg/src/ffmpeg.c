@@ -26,14 +26,18 @@ enum RADIOPLAYER_INIT_STAGES {
  * Player plugin variables
  * @param error              ctune error no
  * @param audio_out          Pointer to the audio output to use
+ * @param record_plugin      Plugin to record the PCM audio data
+ * @param out_channel_layout Number of channels of the PCM data to be sent to the audio output
+ * @param out_sample_rate    Sample rate of the PCM output
  * @param out_sample_fmt     Sample format of the PCM data to be sent to the audio output
  * @param ctune_sample_fmt   Local ctune equivalent of `out_sample_fmt``
- * @param out_channel_layout Number of channels of the PCM data to be sent to the audio output
  */
 struct {
     int                    error;
     ctune_AudioOut_t     * audio_out;
+    ctune_FileOut_t      * record_plugin;
     struct AVChannelLayout out_channel_layout;
+    int                    out_sample_rate;
 
     struct {
         const enum AVSampleFormat ffmpeg;
@@ -49,6 +53,7 @@ struct {
 } ffmpeg_player = {
     .error              = CTUNE_ERR_NONE,
     .audio_out          = NULL,
+    .record_plugin      = NULL,
     .out_channel_layout = AV_CH_LAYOUT_STEREO,
     .out_sample_fmt     = {
         .ffmpeg = AV_SAMPLE_FMT_S32,
@@ -270,6 +275,8 @@ static bool ctune_Player_setupResampler( SwrContext ** resample_ctx, AVCodecPara
                                &codec_params->ch_layout, in_sample_format, codec_params->sample_rate,           //in
                                0, NULL );
 
+    ffmpeg_player.out_sample_rate = codec_params->sample_rate;
+
     if( ret < 0 ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_Player_setupResampler( %p, %p, '%s', '%s' )] "
@@ -486,7 +493,7 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
     ctune_Timeout.setFailErr( &timeout_timer, CTUNE_ERR_STREAM_READ_TIMEOUT, ctune_Player_timeoutCallback );
     ctune_Timeout.reset( &timeout_timer );
 
-    while( ffmpeg_player.cb.playback_ctrl_callback( CTUNE_PLAYBACK_CTRL_STATE ) == CTUNE_PLAYER_STATE_PLAYING
+    while( ffmpeg_player.cb.playback_ctrl_callback( CTUNE_PLAYBACK_CTRL_STATE_REQ )
         && ( ret = av_read_frame( in_format_ctx, packet ) ) >= 0 )
     {
         //check if metadata has been changed (i.e. new song playing)
@@ -540,6 +547,10 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
             }
 
             ffmpeg_player.audio_out->write( out_buffer, data_size );
+
+            if( ffmpeg_player.record_plugin ) {
+                ffmpeg_player.record_plugin->write( out_buffer, data_size );
+            }
         }
 
         av_packet_unref( packet );
@@ -575,6 +586,15 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
 
     end: //cleanup
         CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_Player_playRadioStream( \"%s\", %i, %is )] Shutting down stream.", radio_stream_url, volume, timeout_val );
+
+        if( ffmpeg_player.record_plugin ) {
+            if( ( ret = ffmpeg_player.record_plugin->close() ) != CTUNE_ERR_NONE ) {
+                ctune_err.set( ret );
+            }
+
+            ffmpeg_player.record_plugin = NULL;
+        }
+
         if( error_state ) {
             ctune_err.set( ffmpeg_player.error );
         }
@@ -616,14 +636,70 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
 
         ffmpeg_player.cb.playback_ctrl_callback( CTUNE_PLAYBACK_CTRL_OFF );
 
-        return !(error_state);
+        return !( error_state );
+}
+
+/**
+ * Attach a callback that copies the raw PCM buffer of the decoded stream
+ * @param filepath Output filepath
+ * @param plugin   File recording plugin
+ * @return Success
+ */
+static bool ctune_Player_startRecording( const char * filepath, ctune_FileOut_t * plugin ) {
+    if( ffmpeg_player.record_plugin == NULL ) {
+        const int ret = plugin->init( filepath, ffmpeg_player.out_sample_fmt.ctune, ffmpeg_player.out_sample_rate, ffmpeg_player.out_channel_layout.nb_channels, 0, 0 );
+
+        if( ret == CTUNE_ERR_NONE ) {
+            ffmpeg_player.record_plugin = plugin;
+
+            CTUNE_LOG( CTUNE_LOG_MSG,
+                       "[ctune_Player_startRecording( %s, %p )] '%s' recording started.",
+                       filepath, plugin, plugin->name()
+            );
+
+            ffmpeg_player.cb.playback_ctrl_callback( CTUNE_PLAYBACK_CTRL_SWITCH_REC_REQ );
+
+            return true; //EARLY RETURN
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_Player_startRecording( \"%s\", %p )] Failed to initialise plugin '%s'",
+                       filepath, plugin, plugin->name()
+            );
+
+            ctune_err.set( abs( ret ) );
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Stops the recording and closes the output file
+ */
+static void ctune_Player_stopRecording( void ) {
+    ctune_FileOut_t * plugin = ffmpeg_player.record_plugin;
+    ffmpeg_player.record_plugin = NULL;
+
+    const int ret = plugin->close();
+
+    if( ret != CTUNE_ERR_NONE ) {
+        ctune_err.set( ret );
+    }
+
+    ffmpeg_player.cb.playback_ctrl_callback( CTUNE_PLAYBACK_CTRL_SWITCH_REC_REQ );
+
+    CTUNE_LOG( CTUNE_LOG_MSG,
+               "[ctune_Player_startRecording()] '%s' recording stopped.",
+               plugin->name()
+    );
 }
 
 /**
  * Gets the plugin's name
  * @return Plugin name string
  */
-static const char * ctune_FileOut_name( void ) {
+static const char * ctune_Player_name( void ) {
     return "ffmpeg";
 }
 
@@ -631,7 +707,7 @@ static const char * ctune_FileOut_name( void ) {
  * Gets the plugin's description
  * @return Plugin description string
  */
-static const char * ctune_FileOut_description( void ) {
+static const char * ctune_Player_description( void ) {
     return "FFMPEG player";
 }
 
@@ -764,10 +840,12 @@ bool ctune_Player_testStream( const char * url, int timeout_val, String_t * code
  * Constructor
  */
 const struct ctune_Player_Interface ctune_Player = {
-    .name            = &ctune_FileOut_name,
-    .description     = &ctune_FileOut_description,
+    .name            = &ctune_Player_name,
+    .description     = &ctune_Player_description,
     .init            = &ctune_Player_init,
-    .getError        = &ctune_Player_errno,
     .playRadioStream = &ctune_Player_playRadioStream,
+    .startRecording  = &ctune_Player_startRecording,
+    .stopRecording   = &ctune_Player_stopRecording,
+    .getError        = &ctune_Player_errno,
     .testStream      = &ctune_Player_testStream,
 };

@@ -30,7 +30,6 @@ struct {
     struct { /* PLAYER CONTROL */
         pthread_t             thread;
         volatile sig_atomic_t state; //used to interrupt playing of a stream
-
     } player;
 
     ctune_PlaybackArgs_t stream_args;
@@ -38,7 +37,7 @@ struct {
     struct {
         void (* song_change_callback)( const char * str );
         void (* volume_change_event_callback)( const int vol );
-        void (* playback_state_change_cb)( bool state );
+        void (* playback_state_change_cb)( ctune_PlaybackCtrl_e state );
 
     } cb;
 
@@ -47,9 +46,7 @@ struct {
     .player_initialised = false,
     .player_plugin      = NULL,
     .output_plugin      = NULL,
-    .player = {
-        .state = false,
-    },
+    .player.state       = CTUNE_PLAYBACK_CTRL_OFF,
     .stream_args = {
         { NULL, 0 },
         0,
@@ -66,51 +63,92 @@ struct {
  * [PRIVATE/THREAD SAFE] Controls the playback state - use when getting and setting the state must be done as an atomic operation
  * Note: When calling ON/OFF only the callback method is called when `ctrl` matches the current state
  * @param ctrl Control request command (get state/turn on/turn off/switch)
- * @return Playback state (state/switch) or the change state (on/off)
+ * @return Playback state (state/switch) or if a change occurred (on/off)
  */
 static bool ctune_RadioPlayer_setPlaybackState( enum CTUNE_PLAYBACK_CTRL ctrl ) {
-    bool curr_state = CTUNE_PLAYER_STATE_PLAYING;
-
-    curr_state = radio_player.player.state;
+    ctune_PlaybackCtrl_e curr_state = radio_player.player.state;
 
     switch( ctrl ) {
         case CTUNE_PLAYBACK_CTRL_OFF: {
-            if( curr_state )
-                CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_RadioPlayer_setPlaybackState( %i )] %s -> turn OFF", (int) ctrl, ( curr_state ? "ON" : "OFF" ) );
+            if( ctune_PlaybackCtrl.isOn( curr_state ) ) {
+                CTUNE_LOG( CTUNE_LOG_DEBUG,
+                           "[ctune_RadioPlayer_setPlaybackState( %i )] %s -> %s",
+                           (int) ctrl, ctune_PlaybackCtrl.str( curr_state ), ctune_PlaybackCtrl.str( CTUNE_PLAYBACK_CTRL_OFF )
+                );
 
-            radio_player.player.state = CTUNE_PLAYER_STATE_STOPPED;
-            curr_state = ( curr_state != CTUNE_PLAYER_STATE_STOPPED );
+                radio_player.player.state = CTUNE_PLAYBACK_CTRL_OFF;
 
-            if( radio_player.cb.playback_state_change_cb != NULL )
-                radio_player.cb.playback_state_change_cb( CTUNE_PLAYER_STATE_STOPPED );
+                if( radio_player.cb.playback_state_change_cb != NULL ) {
+                    radio_player.cb.playback_state_change_cb( CTUNE_PLAYBACK_CTRL_OFF );
+                }
+
+                return true;  //EARLY RETURN
+
+            } else {
+                return false; //EARLY RETURN
+            }
         } break;
 
-        case CTUNE_PLAYBACK_CTRL_ON: {
-            if( !curr_state )
-                CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_RadioPlayer_setPlaybackState( %i )] %s -> turn ON", (int) ctrl, ( curr_state ? "ON" : "OFF" ) );
+        case CTUNE_PLAYBACK_CTRL_PLAY: {
+            if( ctune_PlaybackCtrl.isOff( curr_state ) ) {
+                CTUNE_LOG( CTUNE_LOG_DEBUG,
+                           "[ctune_RadioPlayer_setPlaybackState( %i )] %s -> %s",
+                           (int) ctrl, ctune_PlaybackCtrl.str( curr_state ), ctune_PlaybackCtrl.str( CTUNE_PLAYBACK_CTRL_PLAY )
+                );
 
-            radio_player.player.state = CTUNE_PLAYER_STATE_PLAYING;
-            curr_state = ( curr_state != CTUNE_PLAYER_STATE_PLAYING );
+                radio_player.player.state = CTUNE_PLAYBACK_CTRL_PLAY;
 
-            if( radio_player.cb.playback_state_change_cb != NULL )
-                radio_player.cb.playback_state_change_cb( CTUNE_PLAYER_STATE_PLAYING );
+                if( radio_player.cb.playback_state_change_cb != NULL ) {
+                    radio_player.cb.playback_state_change_cb( CTUNE_PLAYBACK_CTRL_PLAY );
+                }
+
+                return true;  //EARLY RETURN
+
+            } else {
+                return false; //EARLY RETURN
+            }
         } break;
 
-        case CTUNE_PLAYBACK_CTRL_SWITCH: {
-            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_RadioPlayer_setPlaybackState( %i )] switch (%i -> %i)", (int) ctrl, curr_state, !curr_state );
-            curr_state = radio_player.player.state;
-            curr_state = radio_player.player.state = !curr_state;
+        case CTUNE_PLAYBACK_CTRL_SWITCH_PLAY_REQ: {
+            const ctune_PlaybackCtrl_e next_state = ctune_PlaybackCtrl.isOn( curr_state )
+                                                   ? CTUNE_PLAYBACK_CTRL_OFF
+                                                   : CTUNE_PLAYBACK_CTRL_PLAY;
 
-            if( radio_player.cb.playback_state_change_cb != NULL )
+            CTUNE_LOG( CTUNE_LOG_DEBUG,
+                       "[ctune_RadioPlayer_setPlaybackState( %i )] switch (%s -> %s)",
+                       (int) ctrl, ctune_PlaybackCtrl.str( curr_state ), ctune_PlaybackCtrl.str( next_state )
+            );
+
+            curr_state = radio_player.player.state = next_state;
+
+            if( radio_player.cb.playback_state_change_cb != NULL ) {
                 radio_player.cb.playback_state_change_cb( curr_state );
+            }
         } break;
 
-        case CTUNE_PLAYBACK_CTRL_STATE: //fallthrough
-        default:
-            break;
+        case CTUNE_PLAYBACK_CTRL_REC           : //fallthrough
+        case CTUNE_PLAYBACK_CTRL_SWITCH_REC_REQ: {
+            const ctune_PlaybackCtrl_e next_state = ctune_PlaybackCtrl.isRecording( curr_state )
+                                                    ? CTUNE_PLAYBACK_CTRL_PLAY
+                                                    : CTUNE_PLAYBACK_CTRL_REC;
+
+            CTUNE_LOG( CTUNE_LOG_DEBUG,
+                       "[ctune_RadioPlayer_setPlaybackState( %i )] switch (%s -> %s)",
+                       (int) ctrl, ctune_PlaybackCtrl.str( curr_state ), ctune_PlaybackCtrl.str( next_state )
+            );
+
+            curr_state = radio_player.player.state = next_state;
+
+            if( radio_player.cb.playback_state_change_cb != NULL ) {
+                radio_player.cb.playback_state_change_cb( curr_state );
+            }
+        } break;
+
+        case CTUNE_PLAYBACK_CTRL_STATE_REQ: //fallthrough
+        default: break;
     }
 
-    return curr_state;
+    return ctune_PlaybackCtrl.isOn( curr_state );
 }
 
 /**
@@ -133,8 +171,8 @@ static void * ctune_RadioPlayer_launchPlayback( void * args ) {
 
 /**
  * Initialises the main functionalities
- * @param song_change_callback           Function to call when stream metadata changes (sends the current stream title)
- * @param volume_change_event_callback   Function to call when a volume change request is successful (new volume is passed as arg)
+ * @param song_change_callback         Function to call when stream metadata changes (sends the current stream title)
+ * @param volume_change_event_callback Function to call when a volume change request is successful (new volume is passed as arg)
  */
 static void ctune_RadioPlayer_init( void(* song_change_callback)( const char * ),
                                     void(* volume_change_event_callback)( const int ) )
@@ -157,7 +195,7 @@ static void ctune_RadioPlayer_init( void(* song_change_callback)( const char * )
  * Sets a playback state change callback method
  * @param playback_state_change_cb Callback function
  */
-static void ctune_RadioPlayer_setStateChangeCallback( void (* playback_state_change_cb)( bool ) ) {
+static void ctune_RadioPlayer_setStateChangeCallback( void (* playback_state_change_cb)( ctune_PlaybackCtrl_e ) ) {
     radio_player.cb.playback_state_change_cb = playback_state_change_cb;
 }
 
@@ -231,15 +269,19 @@ static bool ctune_RadioPlayer_loadPlayerPlugin( ctune_Player_t * player ) {
  * [THREAD SAFE] Stops the playback of the currently playing stream
  */
 static void ctune_RadioPlayer_stopRadioStream( void ) {
-    if( ctune_RadioPlayer_setPlaybackState( CTUNE_PLAYBACK_CTRL_OFF ) ) { //i.e. if a switch from ON->OFF occurred
-        if( pthread_join( radio_player.player.thread, NULL ) != 0 ) {
+    if( ctune_RadioPlayer_setPlaybackState( CTUNE_PLAYBACK_CTRL_OFF ) ) {
+
+        if( pthread_join( radio_player.player.thread, NULL ) == 0 ) {
+            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_RadioPlayer_stopRadioStream()] Playback terminated." );
+        } else {
             ctune_err.set( CTUNE_ERR_THREAD_JOIN );
         }
 
         ctune_err.set( ctune_RadioPlayer.getError() );
 
-        if( ctune_err.number() != CTUNE_ERR_NONE )
-            CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_stopPlayback] Player encountered an error: %s", ctune_err.strerror() );
+        if( ctune_err.number() != CTUNE_ERR_NONE ) {
+            CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_RadioPlayer_stopRadioStream()] Player encountered an error: %s", ctune_err.strerror() );
+        }
     }
 }
 
@@ -251,10 +293,11 @@ static void ctune_RadioPlayer_stopRadioStream( void ) {
  * @return Success (if false the error_no in RadioPlayer will be set accordingly)
  */
 static bool ctune_RadioPlayer_playRadioStream( const char * url, const int volume, int timeout_val ) {
-    if( ctune_RadioPlayer_setPlaybackState( CTUNE_PLAYBACK_CTRL_STATE ) == CTUNE_PLAYER_STATE_PLAYING )
+    if( ctune_PlaybackCtrl.isOn( ctune_RadioPlayer_setPlaybackState( CTUNE_PLAYBACK_CTRL_STATE_REQ ) ) ) {
         ctune_RadioPlayer_stopRadioStream();
+    }
 
-    ctune_RadioPlayer_setPlaybackState( CTUNE_PLAYBACK_CTRL_ON );
+    ctune_RadioPlayer_setPlaybackState( CTUNE_PLAYBACK_CTRL_PLAY );
 
     //set the playback arguments values
     String.set( &radio_player.stream_args.url, url );
@@ -278,11 +321,49 @@ static bool ctune_RadioPlayer_playRadioStream( const char * url, const int volum
 }
 
 /**
- * [THREAD SAFE] Gets the playback state variable's value
- * @return Playback state value
+ * [THREAD SAFE] Gets the playback state
+ * @return Playback state (boolean)
  */
 static bool ctune_RadioPlayer_getPlaybackState( void ) {
-    return radio_player.player.state;
+    return ctune_PlaybackCtrl.isOn( radio_player.player.state );
+}
+
+/**
+ * [THREAD SAFE] Starts stream recording
+ * @param filepath Output filepath
+ * @param plugin   File recording plugin
+ * @return Success
+ */
+static bool ctune_RadioPlayer_startRecording( const char * filepath, ctune_FileOut_t * plugin ) {
+    if( radio_player.player_plugin != NULL && ctune_PlaybackCtrl.isOn( radio_player.player.state ) ) { //TODO check if we need to know REC state?
+        CTUNE_LOG( CTUNE_LOG_TRACE,
+                   "[ctune_RadioPlayer_startRecording( %s, %p )] Player plugin: %p (%s)",
+                   filepath, plugin, radio_player.player_plugin, radio_player.player_plugin->name()
+        );
+
+        if( radio_player.player_plugin->startRecording( filepath, plugin ) ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * [THREAD SAFE] Stops the stream recording
+ */
+static void ctune_RadioPlayer_stopRecording( void ) {
+    if( radio_player.player_plugin != NULL ) {
+        radio_player.player_plugin->stopRecording();
+    }
+}
+
+/**
+ * [THREAD SAFE] Gets the recording state variable's value
+ * @return Recording state value
+ */
+static bool ctune_RadioPlayer_getRecordingState( void ) {
+    return ctune_PlaybackCtrl.isRecording( radio_player.player.state );
 }
 
 /**
@@ -316,7 +397,7 @@ static int ctune_RadioPlayer_getError( void ) {
  * @param bitrate     Pointer to the bitrate container
  * @return Stream OK
  */
-bool ctune_RadioPlayer_testStream( const char * url, int timeout_val, String_t * codec_str, ulong * bitrate ) {
+static bool ctune_RadioPlayer_testStream( const char * url, int timeout_val, String_t * codec_str, ulong * bitrate ) {
     if( radio_player.player_plugin != NULL ) {
         return radio_player.player_plugin->testStream( url, timeout_val, codec_str, bitrate );
     }
@@ -342,6 +423,9 @@ const struct ctune_RadioPlayer_Namespace ctune_RadioPlayer = {
     .playRadioStream        = &ctune_RadioPlayer_playRadioStream,
     .stopPlayback           = &ctune_RadioPlayer_stopRadioStream,
     .getPlaybackState       = &ctune_RadioPlayer_getPlaybackState,
+    .startRecording         = &ctune_RadioPlayer_startRecording,
+    .stopRecording          = &ctune_RadioPlayer_stopRecording,
+    .getRecordingState      = &ctune_RadioPlayer_getRecordingState,
     .modifyVolume           = &ctune_RadioPlayer_modifyVolume,
     .getError               = &ctune_RadioPlayer_getError,
     .testStream             = &ctune_RadioPlayer_testStream,

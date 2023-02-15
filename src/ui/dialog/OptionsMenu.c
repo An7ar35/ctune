@@ -1,5 +1,6 @@
 #include "OptionsMenu.h"
 
+#include "../../dto/PluginInfo.h"
 #include "../definitions/KeyBinding.h"
 #include "../definitions/Theme.h"
 #include "../Resizer.h"
@@ -405,6 +406,359 @@ static bool ctune_UI_Dialog_OptionsMenu_populateMouseMenu( ctune_UI_OptionsMenu_
 }
 
 /**
+ * [PRIVATE] Populates the "Player" plugins sub-menu
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @param root Pointer to SlideMenu item from which to spawn the menu from
+ * @return Success
+ */
+static bool ctune_UI_Dialog_OptionsMenu_populatePlayerPluginsMenu( ctune_UI_OptionsMenu_t * om, ctune_UI_SlideMenu_Item_t * root ) {
+    bool error_state = false;
+
+    if( ctune_UI_SlideMenu.createMenu( &root->sub_menu, root->parent_menu, root->index ) == NULL ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_UI_Dialog_OptionsMenu_populatePlayerPluginsMenu( %p, %p )] "
+                   "Failed to create sub menu for item ('%s').",
+                   om, root, root->text._raw
+        );
+
+        error_state = true;
+        goto end;
+    }
+
+    size_t max_text_width = om->cache.slide_menu_property.cols;
+
+    { //"Go back" entry
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_PLUGINS );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_PARENT, text, NULL, NULL );
+
+        if( menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populatePlayerPluginsMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
+            );
+
+            error_state = true;
+            goto end;
+        }
+    }
+
+    { //Player plugins
+        const Vector_t * list = om->cb.pluginList( CTUNE_PLUGIN_IN_STREAM_PLAYER );
+
+        for( size_t i = 0; i < Vector.size( list ); ++i ) {
+            ctune_PluginInfo_t * info = Vector.at( (Vector_t *) list, i );
+            String_t             text = String.init();
+
+            String.set( &text, info->name );
+
+            if( info->selected ) {
+                String.append_back( &text, " *" );
+            }
+
+            CbPayload_t               * payload   = createCbPayload( om, &om->cache.payloads, om->cb.setPlayPlugin, (int) info->id );
+            ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, text._raw, payload, ctrlMenuFunctionCb );
+
+            if( payload && menu_item ) {
+                max_text_width = ctune_max_ul( max_text_width, String.length( &text ) );
+
+            } else {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[ctune_UI_Dialog_OptionsMenu_populatePlayerPluginsMenu( %p )] Failed creation of menu item '%s'.",
+                           om, text._raw
+                );
+                error_state = true;
+            }
+
+            String.free( &text );
+        }
+    }
+
+    if( !ctune_utoi( max_text_width, &om->cache.slide_menu_property.cols ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL,
+                   "[ctune_UI_Dialog_OptionsMenu_populatePlayerPluginsMenu( %p, %p )] Failed to cast to integer (%lu).",
+                   om, root, max_text_width
+        );
+        error_state = true;
+    }
+
+    end:
+        return !( error_state );
+}
+
+/**
+ * [PRIVATE] Populates the "Sound Servers" plugins sub-menu
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @param root Pointer to SlideMenu item from which to spawn the menu from
+ * @return Success
+ */
+static bool ctune_UI_Dialog_OptionsMenu_populateSoundServerPluginsMenu( ctune_UI_OptionsMenu_t * om, ctune_UI_SlideMenu_Item_t * root ) {
+    bool error_state = false;
+
+    if( ctune_UI_SlideMenu.createMenu( &root->sub_menu, root->parent_menu, root->index ) == NULL ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_UI_Dialog_OptionsMenu_populateSoundServerPluginsMenu( %p, %p )] "
+                   "Failed to create sub menu for item ('%s').",
+                   om, root, root->text._raw
+        );
+
+        error_state = true;
+        goto end;
+    }
+
+    size_t max_text_width = om->cache.slide_menu_property.cols;
+
+    { //"Go back" entry
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_PLUGINS );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_PARENT, text, NULL, NULL );
+
+        if( menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateSoundServerPluginsMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
+            );
+
+            error_state = true;
+            goto end;
+        }
+    }
+
+    { //Player plugins
+        const Vector_t * list = om->cb.pluginList( CTUNE_PLUGIN_OUT_AUDIO_SERVER );
+
+        for( size_t i = 0; i < Vector.size( list ); ++i ) {
+            ctune_PluginInfo_t * info = Vector.at( (Vector_t *) list, i );
+            String_t             text = String.init();
+
+            String.set( &text, info->name );
+
+            if( info->selected ) {
+                String.append_back( &text, " *" );
+            }
+
+            CbPayload_t               * payload   = createCbPayload( om, &om->cache.payloads, om->cb.setSrvPlugin, (int) info->id );
+            ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, text._raw, payload, ctrlMenuFunctionCb );
+
+            if( payload && menu_item ) {
+                max_text_width = ctune_max_ul( max_text_width, String.length( &text ) );
+
+            } else {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[ctune_UI_Dialog_OptionsMenu_populateSoundServerPluginsMenu( %p )] Failed creation of menu item '%s'.",
+                           om, text._raw
+                );
+                error_state = true;
+            }
+
+            String.free( &text );
+        }
+    }
+
+    if( !ctune_utoi( max_text_width, &om->cache.slide_menu_property.cols ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL,
+                   "[ctune_UI_Dialog_OptionsMenu_populateSoundServerPluginsMenu( %p, %p )] Failed to cast to integer (%lu).",
+                   om, root, max_text_width
+        );
+        error_state = true;
+    }
+
+    end:
+        return !( error_state );
+}
+
+/**
+ * [PRIVATE] Populates the "Recorder" plugins sub-menu
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @param root Pointer to SlideMenu item from which to spawn the menu from
+ * @return Success
+ */
+static bool ctune_UI_Dialog_OptionsMenu_populateRecorderPluginsMenu( ctune_UI_OptionsMenu_t * om, ctune_UI_SlideMenu_Item_t * root ) {
+    bool error_state = false;
+
+    if( ctune_UI_SlideMenu.createMenu( &root->sub_menu, root->parent_menu, root->index ) == NULL ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_UI_Dialog_OptionsMenu_populateRecorderPluginsMenu( %p, %p )] "
+                   "Failed to create sub menu for item ('%s').",
+                   om, root, root->text._raw
+        );
+
+        error_state = true;
+        goto end;
+    }
+
+    size_t max_text_width = om->cache.slide_menu_property.cols;
+
+    { //"Go back" entry
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_PLUGINS );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_PARENT, text, NULL, NULL );
+
+        if( menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateRecorderPluginsMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
+            );
+
+            error_state = true;
+            goto end;
+        }
+    }
+
+    { //Player plugins
+        const Vector_t * list = om->cb.pluginList( CTUNE_PLUGIN_OUT_AUDIO_RECORDER );
+
+        for( size_t i = 0; i < Vector.size( list ); ++i ) {
+            ctune_PluginInfo_t * info = Vector.at( (Vector_t *) list, i );
+            String_t             text = String.init();
+
+            String.set( &text, info->name );
+
+            if( info->selected ) {
+                String.append_back( &text, " *" );
+            }
+
+            CbPayload_t               * payload   = createCbPayload( om, &om->cache.payloads, om->cb.setRecPlugin, (int) info->id );
+            ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, text._raw, payload, ctrlMenuFunctionCb );
+
+            if( payload && menu_item ) {
+                max_text_width = ctune_max_ul( max_text_width, String.length( &text ) );
+
+            } else {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[ctune_UI_Dialog_OptionsMenu_populateRecorderPluginsMenu( %p )] Failed creation of menu item '%s'.",
+                           om, text._raw
+                );
+                error_state = true;
+            }
+
+            String.free( &text );
+        }
+    }
+
+    if( !ctune_utoi( max_text_width, &om->cache.slide_menu_property.cols ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL,
+                   "[ctune_UI_Dialog_OptionsMenu_populateRecorderPluginsMenu( %p, %p )] Failed to cast to integer (%lu).",
+                   om, root, max_text_width
+        );
+        error_state = true;
+    }
+
+    end:
+        return !( error_state );
+}
+
+/**
+ * [PRIVATE] Populates the "Plugins" sub-menu
+ * @param om Pointer to ctune_UI_OptionsMenu_t object
+ * @param root Pointer to SlideMenu item from which to spawn the menu from
+ * @return Success
+ */
+static bool ctune_UI_Dialog_OptionsMenu_populatePluginsMenu( ctune_UI_OptionsMenu_t * om, ctune_UI_SlideMenu_Item_t * root ) {
+    bool error_state = false;
+
+    if( ctune_UI_SlideMenu.createMenu( &root->sub_menu, root->parent_menu, root->index ) == NULL ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_UI_Dialog_OptionsMenu_populatePluginsMenu( %p, %p )] "
+                   "Failed to create sub menu for item ('%s').",
+                   om, root, root->text._raw
+        );
+
+        error_state = true;
+        goto end;
+    }
+
+    size_t max_text_width = om->cache.slide_menu_property.cols;
+
+    { //"Go back" entry
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_OPTIONS );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_PARENT, text, NULL, NULL );
+
+        if( menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populatePluginsMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
+            );
+
+            error_state = true;
+            goto end;
+        }
+    }
+
+    if( om->cb.pluginList != NULL ) { //Plugin menu
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_PLUGINS_PLAYERS );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_MENU, text, NULL, NULL );
+
+        if( menu_item && ctune_UI_Dialog_OptionsMenu_populatePlayerPluginsMenu( om, menu_item ) ) {
+            //max_text_width must be reloaded since it might have been changed in the "populate" call
+            max_text_width = ctune_max_ul( om->cache.slide_menu_property.cols, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populatePluginsMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
+            );
+            error_state = true;
+        }
+    }
+
+    if( om->cb.pluginList != NULL ) { //Plugin menu
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_PLUGINS_SOUND_SERVER );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_MENU, text, NULL, NULL );
+
+        if( menu_item && ctune_UI_Dialog_OptionsMenu_populateSoundServerPluginsMenu( om, menu_item ) ) {
+            //max_text_width must be reloaded since it might have been changed in the "populate" call
+            max_text_width = ctune_max_ul( om->cache.slide_menu_property.cols, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populatePluginsMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
+            );
+            error_state = true;
+        }
+    }
+
+    if( om->cb.pluginList != NULL ) { //Plugin menu
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_PLUGINS_RECORDING );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_MENU, text, NULL, NULL );
+
+        if( menu_item && ctune_UI_Dialog_OptionsMenu_populateRecorderPluginsMenu( om, menu_item ) ) {
+            //max_text_width must be reloaded since it might have been changed in the "populate" call
+            max_text_width = ctune_max_ul( om->cache.slide_menu_property.cols, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populatePluginsMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
+            );
+            error_state = true;
+        }
+    }
+
+
+    if( !ctune_utoi( max_text_width, &om->cache.slide_menu_property.cols ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL,
+                   "[ctune_UI_Dialog_OptionsMenu_populatePluginsMenu( %p, %p )] Failed to cast to integer (%lu).",
+                   om, root, max_text_width
+        );
+        error_state = true;
+    }
+
+    end:
+        return !( error_state );
+}
+
+/**
  * [PRIVATE] Populates the "Stream timeout" sub-menu
  * @param om   Pointer to ctune_UI_OptionsMenu_t object
  * @param root Pointer to SlideMenu item from which to spawn the menu from
@@ -638,6 +992,23 @@ static bool ctune_UI_Dialog_OptionsMenu_populateConfigMenu( ctune_UI_OptionsMenu
         ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_MENU, text, NULL, NULL );
 
         if( menu_item && ctune_UI_Dialog_OptionsMenu_populateMouseMenu( om, menu_item ) ) {
+            //max_text_width must be reloaded since it might have been changed in the "populate" call
+            max_text_width = ctune_max_ul( om->cache.slide_menu_property.cols, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateConfigMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
+            );
+            error_state = true;
+        }
+    }
+
+    if( om->cb.pluginList != NULL ) { //Plugin menu
+        const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_PLUGINS );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_MENU, text, NULL, NULL );
+
+        if( menu_item && ctune_UI_Dialog_OptionsMenu_populatePluginsMenu( om, menu_item ) ) {
             //max_text_width must be reloaded since it might have been changed in the "populate" call
             max_text_width = ctune_max_ul( om->cache.slide_menu_property.cols, strlen( text ) );
 
@@ -1362,6 +1733,36 @@ static void ctune_UI_Dialog_OptionsMenu_cb_setStreamTimeoutValueCallback( ctune_
 }
 
 /**
+ * Sets the callback method to get a list of plugins
+ * @param om       Pointer to ctune_UI_OptionsMenu_t object
+ * @param callback Callback function
+ */
+static void ctune_UI_Dialog_OptionsMenu_cb_setPluginListCallback( ctune_UI_OptionsMenu_t * om, const Vector_t * (* callback)( ctune_PluginType_e ) ) {
+    if( om != NULL ) {
+        om->cb.pluginList = callback;
+    }
+}
+
+/**
+ * Sets the callback methods to set plugins in the configuration
+ * @param om                       Pointer to ctune_UI_OptionsMenu_t object
+ * @param setPlayPlugin_callback   Plugin setter callback function
+ * @param setSndSrvPlugin_callback Plugin setter callback function
+ * @param setRecPlugin_callback    Plugin setter callback function
+ */
+static void ctune_UI_Dialog_OptionsMenu_cb_setPluginSetterCallbacks( ctune_UI_OptionsMenu_t * om,
+                                                                     OptionsMenuCb_fn setPlayPlugin_callback,
+                                                                     OptionsMenuCb_fn setSndSrvPlugin_callback,
+                                                                     OptionsMenuCb_fn setRecPlugin_callback )
+{
+    if( om != NULL ) {
+        om->cb.setPlayPlugin = setPlayPlugin_callback;
+        om->cb.setSrvPlugin  = setSndSrvPlugin_callback;
+        om->cb.setRecPlugin  = setRecPlugin_callback;
+    }
+}
+
+/**
  * Namespace constructor
  */
 const struct ctune_UI_Dialog_OptionsMenu_Namespace ctune_UI_OptionsMenu = {
@@ -1388,5 +1789,7 @@ const struct ctune_UI_Dialog_OptionsMenu_Namespace ctune_UI_OptionsMenu = {
         .setMouseResolutionCallback         = &ctune_UI_Dialog_OptionsMenu_cb_setMouseResolutionCallback,
         .setUnicodeIconsCallback            = &ctune_UI_Dialog_OptionsMenu_cb_setUnicodeIconsCallback,
         .setStreamTimeoutValueCallback      = &ctune_UI_Dialog_OptionsMenu_cb_setStreamTimeoutValueCallback,
+        .setPluginListCallback              = &ctune_UI_Dialog_OptionsMenu_cb_setPluginListCallback,
+        .setPluginSetterCallbacks           = &ctune_UI_Dialog_OptionsMenu_cb_setPluginSetterCallbacks,
     },
 };

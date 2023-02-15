@@ -102,7 +102,7 @@ static struct ctune_UI {
         //vars for painting back previous state post-resizing
         String_t                   curr_song;
         int                        curr_vol;
-        bool                       playback_state;
+        ctune_PlaybackCtrl_e       playback_state;
 
     } cache;
 
@@ -128,7 +128,7 @@ static struct ctune_UI {
         .curr_radio_station_hash = 0,
         .curr_song               = { ._raw = NULL, ._length = 0 },
         .curr_vol                = -1,
-        .playback_state          = false,
+        .playback_state          = CTUNE_PLAYBACK_CTRL_OFF,
     },
 };
 
@@ -388,6 +388,17 @@ static void ctune_UI_startQueuedStationPlayback() {
 }
 
 /**
+ * [PRIVATE] Toggles recording of currently playing stream
+ */
+static void ctune_UI_recordPlayingStream() {
+    if( ctune_Controller.recording.isRecording() ) {
+        ctune_Controller.recording.stop();
+    } else {
+        ctune_Controller.recording.start();
+    }
+}
+
+/**
  * [PRIVATE] Sorts the on-screen list of radio stations
  * @param tab  PanelID of the current tab
  * @param attr Sorting attribute ID
@@ -638,7 +649,7 @@ static int ctune_UI_setMouseIntervalResolution( ctune_UI_PanelID_e tab, int pres
 
     if( !ctune_UIConfig.mouse.setResolutionPreset( ui_config, preset_e ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_UI_setMouseIntervalResolution( '%d', %d )] Failed to set the mouse click interval resolution ('%s').",
+                   "[ctune_UI_setMouseIntervalResolution( '%s', %d )] Failed to set the mouse click interval resolution ('%s').",
                    ctune_UI_PanelID.str( tab ), preset_e, ctune_MouseInterval.str( preset_e )
         );
 
@@ -648,7 +659,7 @@ static int ctune_UI_setMouseIntervalResolution( ctune_UI_PanelID_e tab, int pres
     mouseinterval( ctune_UIConfig.mouse.clickIntervalResolution( ui_config ) );
 
     CTUNE_LOG( CTUNE_LOG_ERROR,
-               "[ctune_UI_setMouseIntervalResolution( '%d', %d )] Mouse click interval resolution preset '%s' set.",
+               "[ctune_UI_setMouseIntervalResolution( '%s', %d )] Mouse click interval resolution preset '%s' set.",
                ctune_UI_PanelID.str( tab ), preset_e, ctune_MouseInterval.str( preset_e )
     );
 
@@ -668,7 +679,7 @@ static int ctune_UI_setUITheme( ctune_UI_PanelID_e tab, int ui_preset_enum ) {
 
     if( !ctune_UIConfig.theming.setPreset( ui_config, ui_preset_enum ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_UI_setUITheme( '%d', %d )] Failed to set UI colour pallet preset '%s'.",
+                   "[ctune_UI_setUITheme( '%s', %d )] Failed to set UI colour pallet preset '%s'.",
                    ctune_UI_PanelID.str( tab ), ui_preset_enum, ctune_UIPreset.str( ui_preset_enum )
         );
 
@@ -676,7 +687,7 @@ static int ctune_UI_setUITheme( ctune_UI_PanelID_e tab, int ui_preset_enum ) {
     }
 
     CTUNE_LOG( CTUNE_LOG_MSG,
-               "[ctune_UI_setUITheme( '%d', %d )] UI colour pallet preset '%s' set.",
+               "[ctune_UI_setUITheme( '%s', %d )] UI colour pallet preset '%s' set.",
                ctune_UI_PanelID.str( tab ), ui_preset_enum, ctune_UIPreset.str( ui_preset_enum )
     );
 
@@ -722,6 +733,69 @@ static int ctune_UI_setStreamTimeOut( ctune_UI_PanelID_e tab, int value ) {
     }
 
     return curr;
+}
+
+/**
+ * [PRIVATE] Sets a player plugin
+ * @param tab       PanelID of the current tab
+ * @param plugin_id Plugin ID
+ * @return Success
+ */
+static int ctune_UI_setPlayerPlugin( ctune_UI_PanelID_e tab, int plugin_id ) {
+    ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
+
+    if( !ctune_Controller.plugins.changePlugin( CTUNE_PLUGIN_IN_STREAM_PLAYER, plugin_id ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_UI_setPlayerPlugin( '%s', %d )] Failed to change plugin.",
+                   ctune_UI_PanelID.str( tab ), plugin_id
+        );
+
+        return 0; //EARLY RETURN
+    }
+
+    return 1;
+}
+
+/**
+ * [PRIVATE] Sets a sound server plugin
+ * @param tab       PanelID of the current tab
+ * @param plugin_id Plugin ID
+ * @return Success
+ */
+static int ctune_UI_setSoundServerPlugin( ctune_UI_PanelID_e tab, int plugin_id ) {
+    ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
+
+    if( !ctune_Controller.plugins.changePlugin( CTUNE_PLUGIN_OUT_AUDIO_SERVER, plugin_id ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_UI_setSoundServerPlugin( '%s', %d )] Failed to change plugin.",
+                   ctune_UI_PanelID.str( tab ), plugin_id
+        );
+
+        return 0; //EARLY RETURN
+    }
+
+    return 1;
+}
+
+/**
+ * [PRIVATE] Sets a recorder plugin
+ * @param tab       PanelID of the current tab
+ * @param plugin_id Plugin ID
+ * @return Success
+ */
+static int ctune_UI_setRecorderPlugin( ctune_UI_PanelID_e tab, int plugin_id ) {
+    ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
+
+    if( !ctune_Controller.plugins.changePlugin( CTUNE_PLUGIN_OUT_AUDIO_RECORDER, plugin_id ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_UI_setRecorderPlugin( '%s', %d )] Failed to change plugin.",
+                   ctune_UI_PanelID.str( tab ), plugin_id
+        );
+
+        return 0; //EARLY RETURN
+    }
+
+    return 1;
 }
 
 /**
@@ -989,6 +1063,8 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_OptionsMenu.cb.setMouseResolutionCallback( &ui.dialogs.optmenu, ctune_UI_setMouseIntervalResolution );
             ctune_UI_OptionsMenu.cb.setUnicodeIconsCallback( &ui.dialogs.optmenu, ctune_UI_setUnicodeIcons );
             ctune_UI_OptionsMenu.cb.setStreamTimeoutValueCallback( &ui.dialogs.optmenu, ctune_UI_setStreamTimeOut );
+            ctune_UI_OptionsMenu.cb.setPluginListCallback( &ui.dialogs.optmenu, ctune_Controller.plugins.getPluginList );
+            ctune_UI_OptionsMenu.cb.setPluginSetterCallbacks( &ui.dialogs.optmenu, ctune_UI_setPlayerPlugin, ctune_UI_setSoundServerPlugin, ctune_UI_setRecorderPlugin );
 
             if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu, ctune_UIConfig.mouse.enabled( ui_config, FLAG_GET_VALUE ) ) ) {
                 ctune_UI_OptionsMenu.show( &ui.dialogs.optmenu );
@@ -1016,6 +1092,8 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_OptionsMenu.cb.setMouseResolutionCallback( &ui.dialogs.optmenu, ctune_UI_setMouseIntervalResolution );
             ctune_UI_OptionsMenu.cb.setUnicodeIconsCallback( &ui.dialogs.optmenu, ctune_UI_setUnicodeIcons );
             ctune_UI_OptionsMenu.cb.setStreamTimeoutValueCallback( &ui.dialogs.optmenu, ctune_UI_setStreamTimeOut );
+            ctune_UI_OptionsMenu.cb.setPluginListCallback( &ui.dialogs.optmenu, ctune_Controller.plugins.getPluginList );
+            ctune_UI_OptionsMenu.cb.setPluginSetterCallbacks( &ui.dialogs.optmenu, ctune_UI_setPlayerPlugin, ctune_UI_setSoundServerPlugin, ctune_UI_setRecorderPlugin );
 
             if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu, ctune_UIConfig.mouse.enabled( ui_config, FLAG_GET_VALUE ) ) ) {
                 ctune_UI_OptionsMenu.show( &ui.dialogs.optmenu );
@@ -1661,6 +1739,11 @@ static void ctune_UI_runKeyInterfaceLoop() {
                 ctune_UI_playSelectedStation( ui.cache.curr_panel );
             } break;
 
+            case CTUNE_UI_ACTION_RECORD: {
+                ctune_UI_clearMsgLine();
+                ctune_UI_recordPlayingStream();
+            } break;
+
             case CTUNE_UI_ACTION_STOP: {
                 ctune_UI_clearMsgLine();
                 ctune_Controller.playback.stop();
@@ -2245,24 +2328,25 @@ static void ctune_UI_printVolume( const int vol ) {
  * Prints the playback state to the screen
  * @param state Playback state
  */
-static void ctune_UI_printPlaybackState( const bool state ) {
+static void ctune_UI_printPlaybackState( const ctune_PlaybackCtrl_e state ) {
     if( !ui.init_stages[CTUNE_UI_INITSTAGE_COMPLETE] )
         return; //EARLY RETURN
 
     ui.cache.playback_state = state;
 
-    wbkgd( ui.panel_windows[CTUNE_UI_PANEL_STATUS_1],
-           ( state
-             ? ctune_UI_Theme.color( CTUNE_UI_ITEM_PLAYBACK_ON )
-             : ctune_UI_Theme.color( CTUNE_UI_ITEM_PLAYBACK_OFF )
-           )
-    );
+    if( ctune_PlaybackCtrl.isRecording( state ) ) { //recording + playing
+        wbkgd( ui.panel_windows[CTUNE_UI_PANEL_STATUS_1], ctune_UI_Theme.color( CTUNE_UI_ITEM_PLAYBACK_REC ) );
+        mvwprintw( ui.panel_windows[CTUNE_UI_PANEL_STATUS_1], 0, 1, "%s", ctune_UI_Icons.icon( CTUNE_UI_ICON_RECORDING ) );
 
-    const char * icon = ( state
-                          ? ctune_UI_Icons.icon( CTUNE_UI_ICON_PLAYING )
-                          : ctune_UI_Icons.icon( CTUNE_UI_ICON_STOPPED ) );
+    } else if( ctune_PlaybackCtrl.isOn( state ) ) { //playing
+        wbkgd( ui.panel_windows[CTUNE_UI_PANEL_STATUS_1], ctune_UI_Theme.color( CTUNE_UI_ITEM_PLAYBACK_ON ) );
+        mvwprintw( ui.panel_windows[CTUNE_UI_PANEL_STATUS_1], 0, 1, "%s", ctune_UI_Icons.icon( CTUNE_UI_ICON_PLAYING ) );
 
-    mvwprintw( ui.panel_windows[CTUNE_UI_PANEL_STATUS_1], 0, 1, "%s", icon );
+    } else if( ctune_PlaybackCtrl.isOff( state ) ) { //off
+        wbkgd( ui.panel_windows[CTUNE_UI_PANEL_STATUS_1], ctune_UI_Theme.color( CTUNE_UI_ITEM_PLAYBACK_OFF ) );
+        mvwprintw( ui.panel_windows[CTUNE_UI_PANEL_STATUS_1], 0, 1, "%s", ctune_UI_Icons.icon( CTUNE_UI_ICON_STOPPED ) );
+    }
+
     update_panels();
     refresh();
     doupdate();

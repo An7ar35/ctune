@@ -3,6 +3,7 @@
 
 #include "Player.h"
 #include "../audio/AudioOut.h"
+#include "../audio/FileOut.h"
 #include "../audio/OutputFormat.h"
 
 extern const struct ctune_RadioPlayer_Namespace {
@@ -19,7 +20,7 @@ extern const struct ctune_RadioPlayer_Namespace {
      * Sets a playback state change callback method
      * @param playback_state_change_cb Callback function
      */
-    void (* setStateChangeCallback)( void (* playback_state_change_cb)( bool ) );
+    void (* setStateChangeCallback)( void (* playback_state_change_cb)( ctune_PlaybackCtrl_e ) );
 
     /**
      * Loads a player plugin
@@ -50,10 +51,29 @@ extern const struct ctune_RadioPlayer_Namespace {
     void (* stopPlayback)( void );
 
     /**
-     * [THREAD SAFE] Gets the playback state variable's value
-     * @return Playback state value
+     * [THREAD SAFE] Gets the playback state
+     * @return Playback state (boolean)
      */
     bool (* getPlaybackState)( void );
+
+    /**
+     * [THREAD SAFE] Starts stream recording
+     * @param filepath Output filepath
+     * @param plugin   File recording plugin
+     * @return Success
+     */
+    bool (* startRecording)( const char * filepath, ctune_FileOut_t * plugin );
+
+    /**
+     * [THREAD SAFE] Stops the stream recording
+     */
+    void (* stopRecording)( void );
+
+    /**
+     * [THREAD SAFE] Gets the recording state variable's value
+     * @return Recording state value
+     */
+    bool (* getRecordingState)( void );
 
     /**
      * [THREAD SAFE] Changes playback volume by a specified amount

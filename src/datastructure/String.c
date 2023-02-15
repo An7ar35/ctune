@@ -83,6 +83,32 @@ static size_t String_length( const struct String * self ) {
 }
 
 /**
+ * Gets a pointer to the first character in the string
+ * @param self String instance
+ * @return Pointer to first character or NULL
+ */
+char * String_front( struct String * self ) {
+    if( self && String.length( self ) > 0 ) {
+        return &self->_raw[0];
+    }
+
+    return NULL;
+}
+
+/**
+ * Gets a pointer to the last character in the string
+ * @param self String instance
+ * @return Pointer to last character or NULL
+ */
+char * String_back( struct String * self ) {
+    if( self && String.length( self ) > 0 ) {
+        return &self->_raw[ ( String.length( self ) - 1 ) ];
+    }
+
+    return NULL;
+}
+
+/**
  * Gets the number of code points for a UTF-8 string (not validated)
  * @param str Null terminated UTF-8 formatted string
  * @return Code point length
@@ -229,6 +255,8 @@ const struct ctune_String_Namespace String = {
     .copy           = &String_copy,
     .free           = &String_free,
     .length         = &String_length,
+    .front          = &String_front,
+    .back           = &String_back,
     .u8strlen       = &String_u8strlen,
     .u8length       = &String_u8length,
     .empty          = &String_empty,

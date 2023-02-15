@@ -9,6 +9,8 @@ set(CTUNE_SOURCE_FILES
         ../../../libraries/logger/src/Logger.h
         ../../../src/ctune_err.h
         ../../../src/ctune_err.c
+        ../../../src/datastructure/String.h
+        ../../../src/datastructure/String.c
         ../../../src/audio/FileOut.h)
 
 set(WAVE_SOURCE_FILES

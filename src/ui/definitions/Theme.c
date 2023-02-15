@@ -25,6 +25,7 @@ enum Theme_Item {
     THEME_QUEUED_INV_UNFOCUSED,
     THEME_ICON_ON,
     THEME_ICON_OFF,
+    THEME_ICON_REC,
     THEME_FIELD_DFLT,
     THEME_FIELD_INVALID,
     THEME_BUTTON_DFLT,
@@ -59,6 +60,7 @@ static int attributes[CTUNE_UI_ITEM_COUNT] = {
     [CTUNE_UI_ITEM_QUEUED_INV_UNFOCUSED             ] = COLOR_PAIR( THEME_QUEUED_INV_UNFOCUSED ),
     [CTUNE_UI_ITEM_PLAYBACK_ON                      ] = COLOR_PAIR( THEME_ICON_ON ),
     [CTUNE_UI_ITEM_PLAYBACK_OFF                     ] = COLOR_PAIR( THEME_ICON_OFF ),
+    [CTUNE_UI_ITEM_PLAYBACK_REC                     ] = COLOR_PAIR( THEME_ICON_REC ),
     [CTUNE_UI_ITEM_FIELD_DFLT                       ] = COLOR_PAIR( THEME_FIELD_DFLT ),
     [CTUNE_UI_ITEM_FIELD_INVALID                    ] = COLOR_PAIR( THEME_FIELD_INVALID ),
     [CTUNE_UI_ITEM_BUTTON_DFLT                      ] = COLOR_PAIR( THEME_BUTTON_DFLT ),
@@ -89,6 +91,7 @@ static void ctune_UI_Theme_set( ctune_UI_Theme_t * theme ) {
     init_pair( THEME_QUEUED_INV_UNFOCUSED,                  theme->icons.queued_station,       theme->rows.selected_unfocused_bg );
     init_pair( THEME_ICON_OFF,                              theme->icons.playback_off,         theme->foreground                 );
     init_pair( THEME_ICON_ON,                               theme->icons.playback_on,          theme->foreground                 );
+    init_pair( THEME_ICON_REC,                              theme->icons.playback_rec,         theme->foreground                 );
     init_pair( THEME_FIELD_DFLT,                            theme->foreground,                 theme->background                 );
     init_pair( THEME_FIELD_INVALID,                         theme->field.invalid_fg,           theme->background                 );
     init_pair( THEME_BUTTON_DFLT,                           theme->button.foreground,          theme->button.background          );

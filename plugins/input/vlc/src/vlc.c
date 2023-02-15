@@ -15,6 +15,7 @@ const ctune_PluginType_e plugin_type = CTUNE_PLUGIN_IN_STREAM_PLAYER;
  * Player plugin variables
  * @param error             ctune error no
  * @param audio_out         Pointer to the audio output to use
+ * @param record_plugin     Plugin to record the PCM audio data
  * @param out_sample_fmt    Sample format of the PCM data to be sent to the audio output
  * @param out_sample_rate   Sample rate in Hz of the PCM data to be sent to the audio output
  * @param out_channels      Number of channels of the PCM data to be sent to the audio output
@@ -22,6 +23,7 @@ const ctune_PluginType_e plugin_type = CTUNE_PLUGIN_IN_STREAM_PLAYER;
 struct ctune_RadioPlayer {
     int                     error;
     ctune_AudioOut_t      * audio_out;
+    ctune_FileOut_t       * record_plugin;
 
     struct {
         const char        * vlc;
@@ -40,14 +42,15 @@ struct ctune_RadioPlayer {
     } cb;
 
 } vlc_player = {
-    .error               = CTUNE_ERR_NONE,
-    .audio_out           = NULL,
-    .out_sample_fmt   = {
+    .error           = CTUNE_ERR_NONE,
+    .audio_out       = NULL,
+    .record_plugin   = NULL,
+    .out_sample_fmt  = {
         .vlc   = "s16l", //signed 16bit little endian ('s32n' on VLC v3.0.14 doesn't work as expected)
         .ctune = CTUNE_AUDIO_OUTPUT_FMT_S16, //equivalent of above
     },
-    .out_sample_rate     = 44100, //Hz
-    .out_channels        = 2,     //stereo
+    .out_sample_rate = 44100, //Hz
+    .out_channels    = 2,     //stereo
     .cb = {
         NULL,
         NULL,
@@ -118,7 +121,7 @@ static void ctune_Player_shutdownVLC( libvlc_instance_t ** instance_ptr, libvlc_
  * @param pts     Expected play time stamp (see libvlc_delay())
  */
 static void sendToSoundOutCallback( void * data, const void * samples, unsigned count, int64_t pts ) {
-    if( vlc_player.cb.playback_ctrl_callback( CTUNE_PLAYBACK_CTRL_STATE ) == CTUNE_PLAYER_STATE_PLAYING ) {
+    if( ctune_PlaybackCtrl.isOn( vlc_player.cb.playback_ctrl_callback( CTUNE_PLAYBACK_CTRL_STATE_REQ ) ) ) {
         const unsigned long bytes = ( count * 4 /* bytes (16bits * 2 channels) */ );
 
         if( bytes > INT_MAX ) {
@@ -130,6 +133,10 @@ static void sendToSoundOutCallback( void * data, const void * samples, unsigned 
             //     (break count into int manageable chunks and advance buff ptr accordingly as chunks are sent)
         } else {
             vlc_player.audio_out->write( samples, (int) bytes );
+
+            if( vlc_player.record_plugin ) {
+                vlc_player.record_plugin->write( samples, (int) bytes );
+            }
         }
     }
 }
@@ -352,7 +359,7 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
         goto end;
     }
 
-    while( vlc_player.cb.playback_ctrl_callback( CTUNE_PLAYBACK_CTRL_STATE ) == CTUNE_PLAYER_STATE_PLAYING ) {
+    while( vlc_player.cb.playback_ctrl_callback( CTUNE_PLAYBACK_CTRL_STATE_REQ ) ) {
         /**
          * FIXME Since LibVLC does not trigger a `libvlc_MediaPlayerTitleChanged` event after the initial start of the
          *       stream there is no way to have the current song properly displayed after that save from checking at
@@ -376,7 +383,10 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
         );
 
         ctune_Player_shutdownVLC( &vlc_player.vlc_instance, &vlc_player.vlc_media_player );
+
         vlc_player.audio_out->shutdown();
+        vlc_player.record_plugin->close();
+        vlc_player.record_plugin = NULL;
 
         if( error_state ) {
             ctune_err.set( vlc_player.error );
@@ -386,14 +396,59 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
 
         vlc_player.cb.playback_ctrl_callback( CTUNE_PLAYBACK_CTRL_OFF );
 
-        return !(error_state);
+        return !( error_state );
+}
+
+/**
+ * Attach a callback that copies the raw PCM buffer of the decoded stream
+ * @param filepath Output filepath
+ * @param plugin   File recording plugin
+ * @return Success
+ */
+static bool ctune_Player_startRecording( const char * filepath, ctune_FileOut_t * plugin ) {
+    if( vlc_player.record_plugin == NULL ) {
+        const int ret = plugin->init( filepath, vlc_player.out_sample_fmt.ctune, vlc_player.out_sample_rate, vlc_player.out_channels, 0, 0 );
+
+        if( ret == CTUNE_ERR_NONE ) {
+            vlc_player.record_plugin = plugin;
+            vlc_player.cb.playback_ctrl_callback( CTUNE_PLAYBACK_CTRL_SWITCH_REC_REQ );
+
+            return true; //EARLY RETURN
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_Player_startRecording( \"%s\", %p )] Failed to initialise plugin '%s'",
+                       filepath, plugin, plugin->name()
+            );
+
+            ctune_err.set( abs( ret ) );
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Stops the recording and closes the output file
+ */
+static void ctune_Player_stopRecording( void ) {
+    ctune_FileOut_t * plugin = vlc_player.record_plugin;
+    vlc_player.record_plugin = NULL;
+    //TODO check return number and set (create) a local errno + add an API method to fetch that
+    const int ret = plugin->close();
+
+    if( ret != CTUNE_ERR_NONE ) {
+        ctune_err.set( ret );
+    }
+
+    vlc_player.cb.playback_ctrl_callback( CTUNE_PLAYBACK_CTRL_SWITCH_REC_REQ );
 }
 
 /**
  * Gets the plugin's name
  * @return Plugin name string
  */
-static const char * ctune_FileOut_name( void ) {
+static const char * ctune_Player_name( void ) {
     return "vlc";
 }
 
@@ -401,7 +456,7 @@ static const char * ctune_FileOut_name( void ) {
  * Gets the plugin's description
  * @return Plugin description string
  */
-static const char * ctune_FileOut_description( void ) {
+static const char * ctune_Player_description( void ) {
     return "VLC player";
 }
 
@@ -565,10 +620,12 @@ bool ctune_Player_testStream( const char * url, int timeout_val, String_t * code
  * Constructor
  */
 const struct ctune_Player_Interface ctune_Player = {
-    .name            = &ctune_FileOut_name,
-    .description     = &ctune_FileOut_description,
+    .name            = &ctune_Player_name,
+    .description     = &ctune_Player_description,
     .init            = &ctune_Player_init,
     .getError        = &ctune_Player_errno,
     .playRadioStream = &ctune_Player_playRadioStream,
+    .startRecording  = &ctune_Player_startRecording,
+    .stopRecording   = &ctune_Player_stopRecording,
     .testStream      = &ctune_Player_testStream,
 };

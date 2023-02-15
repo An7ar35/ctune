@@ -5,9 +5,11 @@
 
 #include "datastructure/Vector.h"
 #include "dto/ArgOptions.h"
+#include "dto/PluginInfo.h"
 #include "dto/RadioBrowserFilter.h"
 #include "dto/RadioStationInfo.h"
 #include "dto/UIConfig.h"
+#include "enum/PluginType.h"
 #include "enum/StationSrc.h"
 #include "enum/PlaybackCtrl.h"
 #include "enum/SearchCtrl.h"
@@ -82,6 +84,43 @@ extern const struct ctune_Controller_Instance {
         bool (* validateURL)( const char * url );
 
     } playback;
+
+    /**
+     * Recording controls
+     */
+    struct {
+        /**
+         * Starts recording
+         * @param station
+         * @return Success
+         */
+        bool (* start)( void );
+
+        /**
+         * Stops recording
+         */
+        void (* stop)( void );
+
+        /**
+         * Check if stream is being recorded
+         * @return Live recording state
+         */
+        bool (* isRecording)( void );
+
+        /**
+         * Sets the output path directory for recordings
+         * @param path Directory path
+         * @return Success
+         */
+        bool (* setPath)( const char * path );
+
+        /**
+         * Gets the current recording output directory path
+         * @return Directory path string
+         */
+        const char * (* path)( void );
+
+    } recording;
 
     /**
      * Information download control
@@ -201,6 +240,27 @@ extern const struct ctune_Controller_Instance {
     } cfg;
 
     /**
+     * Plugin related configuration transparency access methods
+     */
+    struct {
+        /**
+         * Changes the selected plugin of a given type
+         * @param type Plugin type enum
+         * @param id   Plugin ID
+         * @return Success
+         */
+        bool (* changePlugin)( ctune_PluginType_e type, size_t id );
+
+        /**
+         * Gets a list of all the loaded plugins of a specified type
+         * @param type Plugin type enum
+         * @return Pointer to a heap allocated list of ids, names, descriptions and 'selected' flags
+         */
+        const Vector_t * (* getPluginList)( ctune_PluginType_e type );
+
+    } plugins;
+
+    /**
      * Sets a callback for resize events
      * @param cb Callback method
      */
@@ -228,7 +288,7 @@ extern const struct ctune_Controller_Instance {
      * [OPTIONAL] Assigns a function as the playback state change callback
      * @param cb Callback function pointer
      */
-    void (* setPlaybackStateChangeEventCallback)( void(* cb)( bool ) );
+    void (* setPlaybackStateChangeEventCallback)( void(* cb)( ctune_PlaybackCtrl_e ) );
 
     /**
      * [OPTIONAL] Assigns a function as the search state change callback
