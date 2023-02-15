@@ -24,14 +24,12 @@ const ctune_PluginType_e plugin_type = CTUNE_PLUGIN_OUT_AUDIO_RECORDER;
  * Output variables
  * @param path       File path + root name + count + extension
  * @param file       File handle
- * @param file_count Count of files generated in recording session
  * @param info       Output information
  * @param buffer     PCM data buffer
  */
 static struct {
     String_t path;
     FILE   * file;
-    size_t   file_count;
 
     /**
      * Output information
@@ -49,9 +47,9 @@ static struct {
 
     /**
      * Output buffer
-     * @param size               Size of buffer in Bytes
-     * @param i                  Current index
-     * @param data               Data buffer
+     * @param size Size of buffer in Bytes
+     * @param i    Current index
+     * @param data Data buffer
      */
     struct Buffer {
         size_t    size;
@@ -62,7 +60,6 @@ static struct {
 } output = {
     .file                = NULL,
     .path                = { NULL, 0 },
-    .file_count          = 0,
 
     .info = {
         .nb_channels     = 0,
@@ -78,26 +75,6 @@ static struct {
         .data            = NULL,
     }
 };
-
-///* Public API method pre-declarations */
-//static const char * ctune_FileOut_name( void );
-//static const char * ctune_FileOut_description( void );
-//static const char * ctune_FileOut_extension( void );
-//static int          ctune_FileOut_init( const char * path, ctune_OutputFmt_e fmt, int sample_rate, uint channels, uint samples, uint8_t buff_size_MB );
-//static int          ctune_FileOut_write( const void * buffer, int buff_size );
-//static int          ctune_FileOut_close( void );
-//
-///* Private method pre-declarations */
-//static size_t       write16LSB( uint8_t * buffer, uint16_t data );
-//static size_t       write16MSB( uint8_t * buffer, uint16_t data );
-//static size_t       write32LSB( uint8_t * buffer, uint32_t data );
-//static size_t       write32MSB( uint8_t * buffer, uint32_t data );
-//static uint32_t     calcByteRate( const struct Info * info );
-//static uint16_t     calcBlockAlignment( const struct Info * info );
-//static size_t       packHeader( uint8_t * buffer, struct Info * info );
-//static int          hasAvailableSpace( const char * path, size_t req_bytes );
-//static size_t       flushBufferToFile( FILE * out, int * err );
-//static bool         writeSizeToFile( FILE * out, struct Buffer * buffer, size_t data_size );
 
 /**
  * [PRIVATE] Writes a u16 into a u8 buffer in LSB order
@@ -237,33 +214,34 @@ static int hasAvailableSpace( const char * path, size_t req_bytes ) {
 
 /**
  * [PRIVATE] Flushed content of buffer to a file
- * @param out Pointer to file handler
- * @param err Pointer to variable to set in case of error
+ * @param out    Pointer to file handler
+ * @param buffer Buffer container
+ * @param err    Pointer to variable to set in case of error
  * @return Bytes written
  */
-static size_t flushBufferToFile( FILE * out, int * err ) {
+static size_t flushBufferToFile( FILE * out, struct Buffer * buffer, int * err ) {
     const size_t free_to_write = ( ULONG_MAX - output.info.data_size );
-    const size_t to_write      = output.buffer.i;
+    const size_t to_write      = buffer->i;
 
     size_t written = 0;
 
     if( to_write > free_to_write ) {
-        written = fwrite( output.buffer.data, sizeof( uint8_t ), free_to_write, out );
+        written = fwrite( buffer->data, sizeof( uint8_t ), free_to_write, out );
 
         if( err ) {
             (*err) = CTUNE_ERR_IO_FILE_FULL;
         }
 
     } else {
-        written = fwrite( output.buffer.data, sizeof( uint8_t ), to_write, out );
+        written = fwrite( buffer->data, sizeof( uint8_t ), to_write, out );
     }
 
     CTUNE_LOG( CTUNE_LOG_TRACE,
-               "[flushBufferToFile( %p, %p )] Flushing buffer to file: writen %lu/%lu bytes.",
-               out, err, written, to_write );
+               "[flushBufferToFile( %p, %p, %p )] Flushing buffer to file: writen %lu/%lu bytes.",
+               out, buffer, err, written, to_write );
 
     fflush( out );
-    output.buffer.i = 0;
+    buffer->i = 0;
     return written;
 }
 
@@ -326,7 +304,7 @@ static bool writeSizeToFile( FILE * out, struct Buffer * buffer, size_t data_siz
             goto end;
         }
 
-        if( fwrite( &buffer[i], sizeof( uint8_t ), bytes, out ) != bytes ) {
+        if( fwrite( &buffer->data[i], sizeof( uint8_t ), bytes, out ) != bytes ) {
             CTUNE_LOG( CTUNE_LOG_ERROR,
                        "[writeSizeToFile( %p, %p, %lu )] Failed to write 'SubChunk2Size' in output file: %s",
                        out, buffer, data_size, strerror( errno )
@@ -389,7 +367,7 @@ static int ctune_FileOut_init( const char * path, ctune_OutputFmt_e fmt, int sam
         goto fail;
     }
 
-    output.file_count           = 0;
+    output.info.data_size       = 0;
     output.info.sample_rate     = sample_rate;
     output.info.nb_channels     = (uint16_t)( channels & 0xFFFF );
     output.info.bits_per_sample = fmt;
@@ -434,7 +412,7 @@ static int ctune_FileOut_init( const char * path, ctune_OutputFmt_e fmt, int sam
         goto fail;
     }
 
-    flushBufferToFile( output.file, &error );
+    flushBufferToFile( output.file, &output.buffer, &error );
 
     if( error != CTUNE_ERR_NONE ) {
         goto fail;
@@ -442,7 +420,7 @@ static int ctune_FileOut_init( const char * path, ctune_OutputFmt_e fmt, int sam
 
     CTUNE_LOG( CTUNE_LOG_MSG,
                "[ctune_FileOut_init( \"%s\", %d, %d, %d, %d, %dMB )] Wave recorder initialised (buffer = %luMB).",
-               path, fmt, sample_rate, channels, samples, buff_size_MB, ( output.buffer.size / 10000000 )
+               path, fmt, sample_rate, channels, samples, buff_size_MB, ( output.buffer.size / 1000000 )
     );
 
     return 0;
@@ -488,7 +466,7 @@ static int ctune_FileOut_write( const void * buffer, int buff_size ) {
     if( ( output.buffer.size - buff_size ) < output.buffer.i &&
         ( error = hasAvailableSpace( output.path._raw, output.buffer.i ) ) == 0 )
     {
-        output.info.data_size += flushBufferToFile( output.file, &error );
+        output.info.data_size += flushBufferToFile( output.file, &output.buffer, &error );
 
         if( error != CTUNE_ERR_NONE ) {
             goto end;
@@ -521,8 +499,7 @@ static int ctune_FileOut_close( void ) {
 
     if( output.file != NULL ) {
         if( output.buffer.i != 0 ) {
-
-            output.info.data_size += flushBufferToFile( output.file, &error );
+            output.info.data_size += flushBufferToFile( output.file, &output.buffer, &error );
 
             if( error != CTUNE_ERR_NONE ) {
                 CTUNE_LOG( CTUNE_LOG_ERROR,
