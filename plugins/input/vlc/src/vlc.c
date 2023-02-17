@@ -407,7 +407,7 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
  */
 static bool ctune_Player_startRecording( const char * filepath, ctune_FileOut_t * plugin ) {
     if( vlc_player.record_plugin == NULL ) {
-        const int ret = plugin->init( filepath, vlc_player.out_sample_fmt.ctune, vlc_player.out_sample_rate, vlc_player.out_channels, 0, 0 );
+        const int ret = plugin->init( filepath, vlc_player.out_sample_fmt.ctune, vlc_player.out_sample_rate, vlc_player.out_channels, 0 );
 
         if( ret == CTUNE_ERR_NONE ) {
             vlc_player.record_plugin = plugin;
