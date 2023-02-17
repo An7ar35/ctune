@@ -133,7 +133,7 @@ static void ctune_Logger_close() {
  * @param format   String format (similar to `printf`)
  * @param ...      Arguments (similar to `printf`)
  */
-void ctune_Logger_log( enum ctune_LogLevel lvl, const char * format, ... ) {
+static void ctune_Logger_log( enum ctune_LogLevel lvl, const char * format, ... ) {
     if( lvl > logger.level )
         return; //discard
 
@@ -181,13 +181,62 @@ void ctune_Logger_log( enum ctune_LogLevel lvl, const char * format, ... ) {
 
 /**
  * Sends a message to the log
+ * @param lvl    Message log level
+ * @param format String format (similar to `vprintf`)
+ * @param args   List of arguments (similar to `vprintf`)
+ */
+static void ctune_logger_vlog( enum ctune_LogLevel lvl, const char * format, va_list args ) {
+    if( lvl > logger.level )
+        return; //discard
+
+    int      ret = 0;
+    String_t str = String.init();
+
+    ctune_Logger_getTime( &str );
+
+    va_list args_cp;
+
+    va_copy( args_cp, args );
+    size_t req_size  = vsnprintf( NULL, 0, format, args_cp ) + 1; //OK with C99, not with older versions!
+    size_t buff_size = ( CTUNE_LOGGER_MSG_MAX_SIZE < req_size ? req_size : CTUNE_LOGGER_MSG_MAX_SIZE );
+    va_end( args_cp );
+
+    char buffer[buff_size];
+
+    if( ( ret = vsprintf( buffer, format, args ) ) < 0 ) {
+        syslog( LOG_ERR,
+                "[ctune_Logger_vlog( %i, \"%s\", ... )] "
+                "Could not parse into string buffer (ret=%i).",
+                (int) lvl, format, ret
+        );
+
+        goto end;
+    }
+
+    String.append_back( &str, log_level[(int) lvl] );
+    String.append_back( &str, buffer );
+
+    if( logger.init_success ) {
+        ctune_LogQueue.enqueue( &logger.message_queue, str._raw );
+
+    } else { //syslog
+        if( lvl < CTUNE_LOG_TRACE ) //lvl>=8 not supported by syslog
+           syslog( lvl, "%s", buffer );
+    }
+
+    end:
+        String.free( &str );
+}
+
+/**
+ * Sends a message to the log
  * @param lvl      Message log level
  * @param filename Source file name
  * @param line_num Line number in source file
  * @param format   String format (similar to `printf`)
  * @param ...      Arguments (similar to `printf`)
  */
-void ctune_Logger_logDBG( enum ctune_LogLevel lvl, char * filename, int line_num, const char * format, ... ) {
+static void ctune_Logger_logDBG( enum ctune_LogLevel lvl, char * filename, int line_num, const char * format, ... ) {
     static const char * file_info_format = "(%s:%i) ";
 
     if( lvl > logger.level )
@@ -256,6 +305,79 @@ void ctune_Logger_logDBG( enum ctune_LogLevel lvl, char * filename, int line_num
 }
 
 /**
+ * Sends a message to the log
+ * @param lvl      Message log level
+ * @param filename Source file name
+ * @param line_num Line number in source file
+ * @param format   String format (similar to `vprintf`)
+ * @param args     List of arguments (similar to `vprintf`)
+ */
+static void ctune_Logger_vlogDBG( enum ctune_LogLevel lvl, char * filename, int line_num, const char * format, va_list args ) {
+    static const char * file_info_format = "(%s:%i) ";
+
+    if( lvl > logger.level )
+        return; //discard
+
+    int      ret = 0;
+    String_t str = String.init();
+
+    ctune_Logger_getTime( &str );
+
+    String.append_back( &str, log_level[(int) lvl] );
+
+    if( filename != NULL ) {
+        size_t req_size  = snprintf( NULL, 0, file_info_format, filename, line_num ); //OK with C99, not with older versions!
+        size_t buff_size = ( CTUNE_LOGGER_MSG_MAX_SIZE < req_size ? req_size : CTUNE_LOGGER_MSG_MAX_SIZE ) + 1;
+
+        char buffer[buff_size];
+        size_t written = snprintf( buffer, ( buff_size - 1 ), file_info_format, filename, line_num );
+
+        if( written > 0 && written < buff_size ) {
+            String.append_back( &str, buffer );
+
+        } else { //should not happen but just in case...
+            syslog( LOG_ERR,
+                    "[ctune_Logger_vlogDBG( %i, %s, %i, \"%s\", ... )] "
+                    "Could not parse filename:line_no into string buffer (ret=%zu).",
+                    (int) lvl, filename, line_num, format, written
+            );
+        }
+    }
+
+    va_list args_cp;
+
+    va_copy( args_cp, args );
+    size_t req_size  = vsnprintf( NULL, 0, format, args_cp ) + 1; //OK with C99, not with older versions!
+    size_t buff_size = ( CTUNE_LOGGER_MSG_MAX_SIZE < req_size ? req_size : CTUNE_LOGGER_MSG_MAX_SIZE );
+    va_end( args_cp );
+
+    char buffer[buff_size];
+
+    if( ( ret = vsprintf( buffer, format, args ) ) < 0 ) {
+        syslog( LOG_ERR,
+                "[ctune_Logger_vlogDBG( %i, %s, %i, \"%s\", ... )] "
+                "Could not parse into string buffer (ret=%i).",
+                (int) lvl, filename, line_num, format, ret
+        );
+
+        goto end;
+    }
+
+    String.append_back( &str, buffer );
+
+    if( logger.init_success ) {
+        ctune_LogQueue.enqueue( &logger.message_queue, str._raw );
+
+    } else { //syslog
+        if( lvl < CTUNE_LOG_TRACE ) //lvl>=8 not supported by syslog
+            syslog( lvl, "%s", buffer );
+    }
+
+    end:
+        String.free( &str );
+}
+
+/**
  * Namespace constructor
  */
 const struct ctune_Logger_Singleton ctune_Logger = {
@@ -263,5 +385,7 @@ const struct ctune_Logger_Singleton ctune_Logger = {
     .logLevel = &ctune_Logger_logLevel,
     .close    = &ctune_Logger_close,
     .log      = &ctune_Logger_log,
-    .logDBG   = &ctune_Logger_logDBG
+    .vlog     = &ctune_logger_vlog,
+    .logDBG   = &ctune_Logger_logDBG,
+    .vlogDBG  = &ctune_Logger_vlogDBG,
 };

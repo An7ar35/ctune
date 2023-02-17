@@ -5,11 +5,13 @@
 #include <stdbool.h>
 #include <pthread.h>
 
-#ifndef NDEBUG
+#ifdef DEBUG
     #include <libgen.h>
     #define CTUNE_LOG( lvl, fmt, args... ) ctune_Logger.logDBG( lvl, basename(__FILE__), __LINE__, fmt, ##args );
+    #define CTUNE_VLOG( lvl, fmt, args ) ctune_Logger.logDBG( lvl, basename(__FILE__), __LINE__, fmt, args );
 #else
     #define CTUNE_LOG( lvl, fmt, args... ) ctune_Logger.log( lvl, fmt, ##args );
+    #define CTUNE_VLOG( lvl, fmt, args ) ctune_Logger.log( lvl, fmt, args );
 #endif
 
 enum ctune_LogLevel {
@@ -46,11 +48,19 @@ extern const struct ctune_Logger_Singleton {
 
     /**
      * Sends a message to the log
-     * @param lvl      Message log level
-     * @param format   String format (similar to `printf`)
-     * @param ...      Arguments (similar to `printf`)
+     * @param lvl    Message log level
+     * @param format String format (similar to `printf`)
+     * @param ...    Arguments (similar to `printf`)
      */
     void (* log)( enum ctune_LogLevel lvl, const char * format, ... );
+
+    /**
+     * Sends a message to the log
+     * @param lvl    Message log level
+     * @param format String format (similar to `vprintf`)
+     * @param args   List of arguments (similar to `vprintf`)
+     */
+    void (* vlog)( enum ctune_LogLevel lvl, const char * format, va_list args );
 
     /**
      * Sends a message to the log
@@ -61,6 +71,16 @@ extern const struct ctune_Logger_Singleton {
      * @param ...      Arguments (similar to `printf`)
      */
     void (* logDBG)( enum ctune_LogLevel lvl, char * filename, int line_number, const char * format, ... );
+
+    /**
+     * Sends a message to the log
+     * @param lvl      Message log level
+     * @param filename Source file name
+     * @param line_num Line number in source file
+     * @param format   String format (similar to `vprintf`)
+     * @param args     List of arguments (similar to `vprintf`)
+     */
+    void (* vlogDBG)( enum ctune_LogLevel lvl, char * filename, int line_number, const char * format, va_list args );
 
 } ctune_Logger;
 
