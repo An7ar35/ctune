@@ -479,7 +479,7 @@ static bool ctune_Plugin_setPluginByID( ctune_PluginType_e type, size_t id ) {
     switch( type ) {
         case CTUNE_PLUGIN_IN_STREAM_PLAYER: {
             if( id < Vector.size( &private.audio_players.list ) ) {
-                ctune_Player_t * p = Vector.at( &private.audio_recorders.list, id );
+                ctune_Player_t * p = Vector.at( &private.audio_players.list, id );
 
                 private.audio_players.selected = p;
 

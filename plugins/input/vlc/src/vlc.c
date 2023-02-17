@@ -129,7 +129,7 @@ static void sendToSoundOutCallback( void * data, const void * samples, unsigned 
                        "[sendToSoundOutCallback( %p, %p, %ud, %ld )] Cast error: sample count (%ud) > INT_MAX (%d)",
                        data, samples, count, pts, count, INT_MAX
             );
-            //TODO implement if this comes up as an issue.
+            //TODO implement a fix if this comes up as an issue.
             //     (break count into int manageable chunks and advance buff ptr accordingly as chunks are sent)
         } else {
             vlc_player.audio_out->write( samples, (int) bytes );
@@ -221,7 +221,7 @@ static void ctune_Player_attachEventCallbacks( libvlc_media_player_t * media_pla
     libvlc_event_attach( event_manager, libvlc_MediaMetaChanged, cb, media_player );
     libvlc_event_attach( event_manager, libvlc_MediaPlayerTitleChanged, cb, media_player );
 
-#ifndef NDEBUG
+#ifdef DEBUG
     libvlc_event_attach( event_manager, libvlc_MediaSubItemAdded, cb, media_player );
     libvlc_event_attach( event_manager, libvlc_MediaDurationChanged, cb, media_player );
     libvlc_event_attach( event_manager, libvlc_MediaParsedChanged, cb, media_player );
@@ -359,7 +359,7 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
         goto end;
     }
 
-    while( vlc_player.cb.playback_ctrl_callback( CTUNE_PLAYBACK_CTRL_STATE_REQ ) ) {
+    while( ctune_PlaybackCtrl.isOn( vlc_player.cb.playback_ctrl_callback( CTUNE_PLAYBACK_CTRL_STATE_REQ ) ) ) {
         /**
          * FIXME Since LibVLC does not trigger a `libvlc_MediaPlayerTitleChanged` event after the initial start of the
          *       stream there is no way to have the current song properly displayed after that save from checking at
@@ -385,8 +385,14 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
         ctune_Player_shutdownVLC( &vlc_player.vlc_instance, &vlc_player.vlc_media_player );
 
         vlc_player.audio_out->shutdown();
-        vlc_player.record_plugin->close();
-        vlc_player.record_plugin = NULL;
+
+        if( vlc_player.record_plugin ) {
+            if( ( ret = vlc_player.record_plugin->close() ) != CTUNE_ERR_NONE ) {
+                ctune_err.set( ret );
+            }
+
+            vlc_player.record_plugin = NULL;
+        }
 
         if( error_state ) {
             ctune_err.set( vlc_player.error );

@@ -210,6 +210,8 @@ static bool ctune_init( const ctune_ArgOptions_t * options ) {
  * Shutdown and cleanup cTune
  */
 static void ctune_shutdown() {
+    CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_shutdown()] Initiating shutdown..." );
+
     static bool initiated = false;
 
     if( initiated ) {
