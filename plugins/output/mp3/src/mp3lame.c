@@ -259,7 +259,7 @@ static int ctune_FileOut_write( const void * buffer, int buff_size ) {
  * @return 0 on success or negative ctune error number
  */
 static int ctune_FileOut_close( void ) {
-    CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_FileOut_close()] Closing wave recorder." );
+    CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_FileOut_close()] Closing MP3 recorder." );
 
     int error = CTUNE_ERR_NONE;
 

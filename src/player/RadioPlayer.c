@@ -249,7 +249,7 @@ static bool ctune_RadioPlayer_loadPlayerPlugin( ctune_Player_t * player ) {
         CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_RadioPlayer_loadSoundServerPlugin( %p )] New sound server set: %s", sound_server, sound_server->name() );
         radio_player.output_plugin = sound_server;
     } else {
-        CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_RadioPlayer_loadSoundServerPlugin( %p )] Sound server replaced: %s", sound_server, sound_server->name() );
+        CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_RadioPlayer_loadSoundServerPlugin( %p )] Sound server: %s", sound_server, sound_server->name() );
         radio_player.output_plugin->shutdown();
         radio_player.output_plugin = sound_server;
     }
