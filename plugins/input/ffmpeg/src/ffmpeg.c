@@ -55,6 +55,7 @@ struct {
     .audio_out          = NULL,
     .record_plugin      = NULL,
     .out_channel_layout = AV_CH_LAYOUT_STEREO,
+    .out_sample_rate    = 44100, //initial value but will be overwritten anyway
     .out_sample_fmt     = {
         .ffmpeg = AV_SAMPLE_FMT_S32,
         .ctune  = CTUNE_AUDIO_OUTPUT_FMT_S32,  //equivalent of above
@@ -647,7 +648,7 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
  */
 static bool ctune_Player_startRecording( const char * filepath, ctune_FileOut_t * plugin ) {
     if( ffmpeg_player.record_plugin == NULL ) {
-        const int ret = plugin->init( filepath, ffmpeg_player.out_sample_fmt.ctune, ffmpeg_player.out_sample_rate, ffmpeg_player.out_channel_layout.nb_channels, 0, 0 );
+        const int ret = plugin->init( filepath, ffmpeg_player.out_sample_fmt.ctune, ffmpeg_player.out_sample_rate, ffmpeg_player.out_channel_layout.nb_channels, 0 );
 
         if( ret == CTUNE_ERR_NONE ) {
             ffmpeg_player.record_plugin = plugin;

@@ -51,11 +51,10 @@ typedef struct ctune_FileOut {
      * @param fmt          Output format
      * @param sample_rate  DSP frequency (samples per second)
      * @param channels     Number of separate sound channels
-     * @param samples      Audio buffer size in samples (i.e. frame size)
      * @param buff_size_MB Size of the file buffer in Megabytes (0: set to default)
      * @return 0 on success or negative ctune error number
      */
-    int (* init)( const char * path, ctune_OutputFmt_e fmt, int sample_rate, uint channels, uint samples, uint8_t buff_size_MB );
+    int (* init)( const char * path, ctune_OutputFmt_e fmt, int sample_rate, uint channels, uint8_t buff_size_MB );
 
     /**
      * Sends PCM data to sink buffer

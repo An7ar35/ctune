@@ -349,18 +349,17 @@ static const char * ctune_FileOut_extension( void ) {
  * @param fmt          Output format
  * @param sample_rate  DSP frequency (samples per second)
  * @param channels     Number of separate sound channels
- * @param samples      Audio buffer size in samples (i.e. frame size)
  * @param buff_size_MB Size of the file buffer in Megabytes (0: set to default)
  * @return 0 on success or negative ctune error number
  */
-static int ctune_FileOut_init( const char * path, ctune_OutputFmt_e fmt, int sample_rate, uint channels, uint samples, uint8_t buff_size_MB ) {
+static int ctune_FileOut_init( const char * path, ctune_OutputFmt_e fmt, int sample_rate, uint channels, uint8_t buff_size_MB ) {
     int error = CTUNE_ERR_NONE;
 
     if( output.file ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_FileOut_init( \"%s\", %d, %d, %d, %d, %dMB )] "
+                   "[ctune_FileOut_init( \"%s\", %d, %d, %d, %dMB )] "
                    "Previous opened 'wav' file handle not closed.",
-                   path, fmt, sample_rate, channels, samples, buff_size_MB
+                   path, fmt, sample_rate, channels, buff_size_MB
         );
 
         error = CTUNE_ERR_IO_AUDIOFILE_OPENED;
@@ -378,9 +377,9 @@ static int ctune_FileOut_init( const char * path, ctune_OutputFmt_e fmt, int sam
 
     if( buff_size_MB && buff_size_B <= bytes_per_second ) {
         CTUNE_LOG( CTUNE_LOG_WARNING,
-                   "[ctune_FileOut_init( \"%s\", %d, %d, %d, %d, %dMB )] "
+                   "[ctune_FileOut_init( \"%s\", %d, %d, %d, %dMB )] "
                    "Custom buffer size too small (<= 1s).",
-                   path, fmt, sample_rate, channels, samples, buff_size_MB
+                   path, fmt, sample_rate, channels, buff_size_MB
         );
 
         buff_size_MB = 0; //force to auto-calculated buffer size
@@ -392,9 +391,9 @@ static int ctune_FileOut_init( const char * path, ctune_OutputFmt_e fmt, int sam
 
     if( output.buffer.data == NULL ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_FileOut_init( \"%s\", %d, %d, %d, %d, %dMB )] "
+                   "[ctune_FileOut_init( \"%s\", %d, %d, %d, %dMB )] "
                    "Failed allocation of PCM data buffer.",
-                   path, fmt, sample_rate, channels, samples, buff_size_MB
+                   path, fmt, sample_rate, channels, buff_size_MB
         );
 
         error = CTUNE_ERR_BUFF_ALLOC;
@@ -419,16 +418,16 @@ static int ctune_FileOut_init( const char * path, ctune_OutputFmt_e fmt, int sam
     }
 
     CTUNE_LOG( CTUNE_LOG_MSG,
-               "[ctune_FileOut_init( \"%s\", %d, %d, %d, %d, %dMB )] Wave recorder initialised (buffer = %luMB).",
-               path, fmt, sample_rate, channels, samples, buff_size_MB, ( output.buffer.size / 1000000 )
+               "[ctune_FileOut_init( \"%s\", %d, %d, %d, %dMB )] Wave recorder initialised (buffer = %luMB).",
+               path, fmt, sample_rate, channels, buff_size_MB, ( output.buffer.size / 1000000 )
     );
 
     return 0;
 
     fail:
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_FileOut_init( \"%s\", %d, %d, %d, %d, %dMB )] Failed to initialise wave plugin: %s (%d)",
-                   path, fmt, sample_rate, channels, samples, buff_size_MB, ctune_err.print( error ), error
+                   "[ctune_FileOut_init( \"%s\", %d, %d, %d, %dMB )] Failed to initialise wave plugin: %s (%d)",
+                   path, fmt, sample_rate, channels, buff_size_MB, ctune_err.print( error ), error
         );
 
         String.free( &output.path );
@@ -463,12 +462,10 @@ static int ctune_FileOut_write( const void * buffer, int buff_size ) {
 
     int error = CTUNE_ERR_NONE;
 
-    if( ( output.buffer.size - buff_size ) < output.buffer.i &&
-        ( error = hasAvailableSpace( output.path._raw, output.buffer.i ) ) == 0 )
-    {
-        output.info.data_size += flushBufferToFile( output.file, &output.buffer, &error );
-
-        if( error != CTUNE_ERR_NONE ) {
+    if( ( output.buffer.size - buff_size ) < output.buffer.i ) {
+        if( ( error = hasAvailableSpace( output.path._raw, output.buffer.i ) ) == CTUNE_ERR_NONE ) {
+            output.info.data_size += flushBufferToFile( output.file, &output.buffer, &error );
+        } else {
             goto end;
         }
     }
@@ -509,29 +506,27 @@ static int ctune_FileOut_close( void ) {
             }
         }
 
-        if( output.file != NULL ) {
-            if( !writeSizeToFile( output.file, &output.buffer, output.info.data_size ) ) {
-                CTUNE_LOG( CTUNE_LOG_ERROR,
-                           "[closeCurrFile()] Failed to write size to file: %s",
-                           output.path._raw
-                );
+        if( !writeSizeToFile( output.file, &output.buffer, output.info.data_size ) ) {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[closeCurrFile()] Failed to write size to file: %s",
+                       output.path._raw
+            );
 
-                error = CTUNE_ERR_IO_FILE_WRITE_FAIL;
-            }
-
-            fflush( output.file );
-
-            if( fclose( output.file ) != 0 ) {
-                CTUNE_LOG( CTUNE_LOG_ERROR,
-                           "[closeCurrFile()] Failed to close file: %s",
-                           output.path._raw
-                );
-
-                error = CTUNE_ERR_IO_FILE_CLOSE_FAIL;
-            };
-
-            output.file = NULL;
+            error = CTUNE_ERR_IO_FILE_WRITE_FAIL;
         }
+
+        fflush( output.file );
+
+        if( fclose( output.file ) != 0 ) {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[closeCurrFile()] Failed to close file: %s",
+                       output.path._raw
+            );
+
+            error = CTUNE_ERR_IO_FILE_CLOSE_FAIL;
+        };
+
+        output.file = NULL;
     }
 
     String.free( &output.path );
