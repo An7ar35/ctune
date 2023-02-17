@@ -305,13 +305,13 @@ static bool ctune_Controller_playback_startPlayback( const ctune_RadioStationInf
 
     if( !ctune_RadioPlayer.loadSoundServerPlugin( ctune_Settings.plugins.getPlugin( CTUNE_PLUGIN_OUT_AUDIO_SERVER ) ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Controller_playback_startPlayback( %p )] Failed to load a sound server plugin." );
-        //TODO ctune_err so that there is a UI message?
+        ctune_err.set( CTUNE_ERR_IO_PLUGIN_LOAD );
         return false; //EARLY RETURN
     };
 
     if( !ctune_RadioPlayer.loadPlayerPlugin( ctune_Settings.plugins.getPlugin( CTUNE_PLUGIN_IN_STREAM_PLAYER ) ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Controller_playback_startPlayback( %p )] Failed to load a player plugin." );
-        //TODO ctune_err so that there is a UI message?
+        ctune_err.set( CTUNE_ERR_IO_PLUGIN_LOAD );
         return false; //EARLY RETURN
     };
 
@@ -481,6 +481,7 @@ static bool ctune_Controller_recording_start( void ) {
                    "[ctune_Controller_recording_start()] Failed to get a file output plugin to use for recording."
         );
 
+        ctune_err.set( CTUNE_ERR_IO_PLUGIN_LOAD );
         error_state = true;
         goto end;
     }

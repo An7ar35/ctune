@@ -43,6 +43,7 @@ static const struct ctune_error ctune_error_descs[] = {
     { CTUNE_ERR_IO_PLUGIN_LINK,        "Failed linking to plugin" },
     { CTUNE_ERR_IO_PLUGIN_ABI,         "Plugin ABI version mismatch" },
     { CTUNE_ERR_IO_PLUGIN_NULL,        "No plugin set" },
+    { CTUNE_ERR_IO_PLUGIN_LOAD,        "Could not load plugin - see log" },
     { CTUNE_ERR_IO_DISK_ACCESS_FAIL,   "Disk access failed - see log" },
     { CTUNE_ERR_IO_DISK_FULL,          "Disk is full" },
     { CTUNE_ERR_IO_FILE_FULL,          "File has reached max size" },
