@@ -181,16 +181,17 @@ extern const struct ctune_Settings_Instance {
         int (* getNetworkTimeoutVal)( void );
 
         /**
-         * Get the output path
-         * @return Output path
+         * Get the recording directory path
+         * @return Directory path
          */
-        const char * (* outputPath)( void );
+        const char * (* recordingDirectory)( void );
 
         /**
-         * Sets the output path
-         * @param path Output path
+         * Sets the recording directory path
+         * @param path Directory path
+         * @return Validate and set result
          */
-        bool (* setOutputPath)( const char * path );
+        bool (* setRecordingDirectory)( const char * path );
 
         /**
          * Gets the UI configuration

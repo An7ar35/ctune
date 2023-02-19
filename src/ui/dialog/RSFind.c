@@ -4,7 +4,6 @@
 #include "../definitions/KeyBinding.h"
 #include "../definitions/Theme.h"
 #include "ContextHelp.h"
-//#include "../Resizer.h"
 
 typedef enum {
     LABEL_NAME = 0,

@@ -10,6 +10,7 @@ typedef enum ctune_UI_Context {
     CTUNE_UI_CTX_RSINFO,
     CTUNE_UI_CTX_RSEDIT,
     CTUNE_UI_CTX_OPT_MENU,
+    CTUNE_UI_CTX_SETOUTDIR,
 
     CTUNE_UI_CTX_COUNT,
 } ctune_UI_Context_e;

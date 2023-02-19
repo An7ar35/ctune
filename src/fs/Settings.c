@@ -434,8 +434,14 @@ static bool ctune_Settings_loadCfg() {
                     }
                 }
 
-                //TODO check it is a valid path string
-                //if( !valid ) { String.free( &config.recording_path ); config.recording_path = String.init(); }
+                if( !ctune_fs.isDirectory( config.recording_path._raw ) ) {
+                    CTUNE_LOG( CTUNE_LOG_ERROR,
+                               "[ctune_Settings_loadCfg()] Invalid recording directory path in config: \"%s\"",
+                               config.recording_path._raw
+                    );
+
+                    String.free( &config.recording_path );
+                }
 
                 if( String.empty( &config.recording_path ) ) { //fallback
                     ctune_XDG.resolveMusicOutputFilePath( &config.recording_path );
@@ -715,15 +721,15 @@ static int ctune_Settings_getNetworkTimeoutVal( void ) {
 }
 
 /**
- * Get the output path
- * @return Output path
+ * Get the recording directory path
+ * @return Directory path
  */
-static const char * ctune_Settings_outputPath( void ) {
+static const char * ctune_Settings_recordingDir( void ) {
     if( String.empty( &config.recording_path ) ) {
         ctune_XDG.resolveMusicOutputFilePath( &config.recording_path );
 
         CTUNE_LOG( CTUNE_LOG_MSG,
-                   "[ctune_Settings_outputPath()] No recording path set - using default: %s",
+                   "[ctune_Settings_recordingDir()] No recording path set - using default: %s",
                    config.recording_path._raw
         );
     }
@@ -732,12 +738,35 @@ static const char * ctune_Settings_outputPath( void ) {
 }
 
 /**
- * Sets the output path
- * @param path Output path
+ * Sets the recording directory path
+ * @param path Directory path
+ * @return Validate and set result
  */
-static bool ctune_Settings_setOutputPath( const char * path ) {
-    //TODO check path is valid
-    return String.set( &config.recording_path, path );
+static bool ctune_Settings_setRecordingDir( const char * path ) {
+    if( !ctune_fs.isDirectory( path ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_Settings_setRecordingDir( \"%s\" )] Path not accessible and/or a directory.",
+                   path
+        );
+
+        return false; //EARLY RETURN
+    }
+
+    if( !String.set( &config.recording_path, path ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_Settings_setRecordingDir( \"%s\" )] Failed to save directory path.",
+                   path, path
+        );
+
+        return false; //EARLY RETURN
+    }
+
+    CTUNE_LOG( CTUNE_LOG_MSG,
+               "[ctune_Settings_setRecordingDir( \"%s\" )] Recording directory path saved.",
+               path
+    );
+
+    return true;
 }
 
 /**
@@ -1156,45 +1185,45 @@ const struct ctune_Settings_Instance ctune_Settings = {
     .free = &ctune_Settings_free,
 
     .rtlock = {
-        .lock                 = &ctune_Settings_rtlock_lock,
-        .unlock               = &ctune_Settings_rtlock_unlock,
+        .lock                  = &ctune_Settings_rtlock_lock,
+        .unlock                = &ctune_Settings_rtlock_unlock,
     },
 
     .favs = {
-        .loadFavourites       = &ctune_Settings_loadFavourites,
-        .saveFavourites       = &ctune_Settings_saveFavourites,
-        .isFavourite          = &ctune_Settings_isFavourite,
-        .getFavourite         = &ctune_Settings_getFavourite,
-        .refreshView          = &ctune_Settings_refreshFavourites,
-        .setSortingAttribute  = &ctune_Settings_setSortingAttribute,
-        .addStation           = &ctune_Settings_addStation,
-        .removeStation        = &ctune_Settings_removeStation
+        .loadFavourites        = &ctune_Settings_loadFavourites,
+        .saveFavourites        = &ctune_Settings_saveFavourites,
+        .isFavourite           = &ctune_Settings_isFavourite,
+        .getFavourite          = &ctune_Settings_getFavourite,
+        .refreshView           = &ctune_Settings_refreshFavourites,
+        .setSortingAttribute   = &ctune_Settings_setSortingAttribute,
+        .addStation            = &ctune_Settings_addStation,
+        .removeStation         = &ctune_Settings_removeStation
     },
 
     .cfg = {
-        .loadCfg              = &ctune_Settings_loadCfg,
-        .isLoaded             = &ctune_Settings_isLoaded,
-        .writeCfg             = &ctune_Settings_writeCfg,
-        .getVolume            = &ctune_Settings_getVolume,
-        .setVolume            = &ctune_Settings_setVolume,
-        .modVolume            = &ctune_Settings_modVolume,
-        .getLastPlayedUUID    = &ctune_Settings_getLastPlayedUUID,
-        .getLastPlayedSrc     = &ctune_Settings_getLastPlayedSrc,
-        .setLastPlayedStation = &ctune_Settings_setLastPlayedStation,
-        .playbackLogOverwrite = &ctune_Settings_playbackLogOverwrite,
-        .getStreamTimeoutVal  = &ctune_Settings_getStreamTimeoutVal,
-        .setStreamTimeoutVal  = &ctune_Settings_setStreamTimeoutVal,
-        .getNetworkTimeoutVal = &ctune_Settings_getNetworkTimeoutVal,
-        .outputPath           = &ctune_Settings_outputPath,
-        .setOutputPath        = &ctune_Settings_setOutputPath,
-        .getUIConfig          = &ctune_Settings_getUIConfig,
-        .setUIConfig          = &ctune_Settings_setUIConfig,
+        .loadCfg               = &ctune_Settings_loadCfg,
+        .isLoaded              = &ctune_Settings_isLoaded,
+        .writeCfg              = &ctune_Settings_writeCfg,
+        .getVolume             = &ctune_Settings_getVolume,
+        .setVolume             = &ctune_Settings_setVolume,
+        .modVolume             = &ctune_Settings_modVolume,
+        .getLastPlayedUUID     = &ctune_Settings_getLastPlayedUUID,
+        .getLastPlayedSrc      = &ctune_Settings_getLastPlayedSrc,
+        .setLastPlayedStation  = &ctune_Settings_setLastPlayedStation,
+        .playbackLogOverwrite  = &ctune_Settings_playbackLogOverwrite,
+        .getStreamTimeoutVal   = &ctune_Settings_getStreamTimeoutVal,
+        .setStreamTimeoutVal   = &ctune_Settings_setStreamTimeoutVal,
+        .getNetworkTimeoutVal  = &ctune_Settings_getNetworkTimeoutVal,
+        .recordingDirectory    = &ctune_Settings_recordingDir,
+        .setRecordingDirectory = &ctune_Settings_setRecordingDir,
+        .getUIConfig           = &ctune_Settings_getUIConfig,
+        .setUIConfig           = &ctune_Settings_setUIConfig,
     },
 
     .plugins = {
-        .loadPlugins          = &ctune_Settings_plugin_loadPlugins,
-        .setPlugin            = &ctune_Settings_plugin_setPlugin,
-        .getPlugin            = &ctune_Settings_plugin_getPlugin,
-        .getPluginList        = &ctune_Settings_plugin_getPluginList,
+        .loadPlugins           = &ctune_Settings_plugin_loadPlugins,
+        .setPlugin             = &ctune_Settings_plugin_setPlugin,
+        .getPlugin             = &ctune_Settings_plugin_getPlugin,
+        .getPluginList         = &ctune_Settings_plugin_getPluginList,
     },
 };

@@ -4,6 +4,7 @@
 #include "../definitions/KeyBinding.h"
 #include "../definitions/Theme.h"
 #include "../Resizer.h"
+#include "ContextHelp.h"
 
 /**
  * Generic payload package
@@ -1021,6 +1022,24 @@ static bool ctune_UI_Dialog_OptionsMenu_populateConfigMenu( ctune_UI_OptionsMenu
         }
     }
 
+    if( om->cb.setRecDir != NULL ) { //"Set recording directory" menu item
+        const char * text = om->cb.getDisplayText( CTUNE_UI_TEXT_SET_RECORDING_PATH );
+
+        CbPayload_t               * payload   = createCbPayload( om, &om->cache.payloads, om->cb.setRecDir, 0 );
+        ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_LEAF, text, payload, ctrlMenuFunctionCb );
+
+        if( payload && menu_item ) {
+            max_text_width = ctune_max_ul( max_text_width, strlen( text ) );
+
+        } else {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_UI_Dialog_OptionsMenu_populateConfigMenu( %p, %p )] Failed creation of menu item '%s'.",
+                       om, root, text
+            );
+            error_state = true;
+        }
+    }
+
     if( om->cb.streamTimeout != NULL ) { //Stream timeout menu
         const char                * text      = om->cb.getDisplayText( CTUNE_UI_TEXT_MENU_STREAM_TIMEOUT );
         ctune_UI_SlideMenu_Item_t * menu_item = ctune_UI_SlideMenu.createMenuItem( root->sub_menu, CTUNE_UI_SLIDEMENU_MENU, text, NULL, NULL );
@@ -1515,6 +1534,12 @@ static void ctune_UI_Dialog_OptionsMenu_captureInput( ctune_UI_OptionsMenu_t * o
         switch( ctune_UI_KeyBinding.getAction( CTUNE_UI_CTX_OPT_MENU, character ) ) {
             case CTUNE_UI_ACTION_ERR         : //fallthrough
             case CTUNE_UI_ACTION_RESIZE      : break;
+
+            case CTUNE_UI_ACTION_HELP: {
+                ctune_UI_ContextHelp.show( CTUNE_UI_CTX_OPT_MENU );
+                ctune_UI_ContextHelp.captureInput();
+            } break;
+
             case CTUNE_UI_ACTION_ESC         : { om->cache.input_captured = false;               } break;
             case CTUNE_UI_ACTION_SELECT_PREV : { ctune_UI_SlideMenu.navKeyUp( &om->menu );       } break;
             case CTUNE_UI_ACTION_SELECT_NEXT : { ctune_UI_SlideMenu.navKeyDown( &om->menu );     } break;
@@ -1763,6 +1788,17 @@ static void ctune_UI_Dialog_OptionsMenu_cb_setPluginSetterCallbacks( ctune_UI_Op
 }
 
 /**
+ * Sets the callback method to set the recording directory path
+ * @param om       Pointer to ctune_UI_OptionsMenu_t object
+ * @param callback Callback function
+ */
+static void ctune_UI_Dialog_OptionsMenu_cb_setRecordingDirPathCallback( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback ) {
+    if( om != NULL ) {
+        om->cb.setRecDir = callback;
+    }
+}
+
+/**
  * Namespace constructor
  */
 const struct ctune_UI_Dialog_OptionsMenu_Namespace ctune_UI_OptionsMenu = {
@@ -1791,5 +1827,6 @@ const struct ctune_UI_Dialog_OptionsMenu_Namespace ctune_UI_OptionsMenu = {
         .setStreamTimeoutValueCallback      = &ctune_UI_Dialog_OptionsMenu_cb_setStreamTimeoutValueCallback,
         .setPluginListCallback              = &ctune_UI_Dialog_OptionsMenu_cb_setPluginListCallback,
         .setPluginSetterCallbacks           = &ctune_UI_Dialog_OptionsMenu_cb_setPluginSetterCallbacks,
+        .setRecordingDirPathCallback        = &ctune_UI_Dialog_OptionsMenu_cb_setRecordingDirPathCallback,
     },
 };
