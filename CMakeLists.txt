@@ -239,6 +239,8 @@ set(SOURCE_FILES
         src/ui/dialog/RSEdit.h
         src/ui/dialog/OptionsMenu.c
         src/ui/dialog/OptionsMenu.h
+        src/ui/dialog/SetOutputDir.c
+        src/ui/dialog/SetOutputDir.h
         src/ui/window/RSListWin.c
         src/ui/window/RSListWin.h
         src/ui/window/BrowserWin.c
@@ -286,7 +288,6 @@ if(CTUNE_PLUGIN_LIST_AUDIO_PLAYER_COUNT EQUAL 0)
 else()
     list(GET CTUNE_PLUGIN_LIST_AUDIO_PLAYER 0 CTUNE_DEFAULT_PLAYER_PLUGIN)
     get_target_property(CTUNE_DEFAULT_PLAYER_PLUGIN_NAME ${CTUNE_DEFAULT_PLAYER_PLUGIN} OUTPUT_NAME)
-    message(NOTICE "Found ${CTUNE_INPUTS_COUNT} supported input libraries for the player.")
     message(NOTICE "Setting '${CTUNE_DEFAULT_PLAYER_PLUGIN_NAME}' as default player.")
 endif()
 
@@ -316,13 +317,13 @@ if(CTUNE_PLUGIN_LIST_AUDIO_FILE_COUNT EQUAL 0)
 else()
     list(GET CTUNE_PLUGIN_LIST_AUDIO_FILE 0 CTUNE_DEFAULT_AUDIO_FILE_PLUGIN)
     get_target_property(CTUNE_DEFAULT_AUDIO_FILE_PLUGIN_NAME ${CTUNE_DEFAULT_AUDIO_FILE_PLUGIN} OUTPUT_NAME)
-    message(NOTICE "Found ${CTUNE_RECORDER_COUNT} supported recording libraries for the player.")
     message(NOTICE "Setting '${CTUNE_DEFAULT_AUDIO_FILE_PLUGIN_NAME}' as default recorder.")
 endif()
 
 #==================================== AUDIO OUTPUT PLUGINS ========================================#
 set(CTUNE_PLUGIN_LIST_AUDIO_SRV "")
 
+add_subdirectory(plugins/output/pipewire)
 add_subdirectory(plugins/output/pulseaudio)
 add_subdirectory(plugins/output/alsa)
 add_subdirectory(plugins/output/sdl)
@@ -330,6 +331,7 @@ add_subdirectory(plugins/output/sndio)
 
 get_directory_property(ALSA_FOUND       DIRECTORY plugins/output/alsa       DEFINITION ALSA_FOUND)
 get_directory_property(PULSEAUDIO_FOUND DIRECTORY plugins/output/pulseaudio DEFINITION PULSEAUDIO_FOUND)
+get_directory_property(PIPEWIRE_FOUND   DIRECTORY plugins/output/pipewire   DEFINITION PIPEWIRE_FOUND)
 get_directory_property(SDL2_FOUND       DIRECTORY plugins/output/sdl        DEFINITION SDL2_FOUND)
 get_directory_property(SNDIO_FOUND      DIRECTORY plugins/output/sndio      DEFINITION SNDIO_FOUND)
 
@@ -360,7 +362,6 @@ if(CTUNE_PLUGIN_LIST_AUDIO_SRV_COUNT EQUAL 0)
 else()
     list(GET CTUNE_PLUGIN_LIST_AUDIO_SRV 0 CTUNE_DEFAULT_AUDIO_SRV_PLUGIN)
     get_target_property(CTUNE_DEFAULT_AUDIO_SRV_PLUGIN_NAME ${CTUNE_DEFAULT_AUDIO_SRV_PLUGIN} OUTPUT_NAME)
-    message(NOTICE "Found ${CTUNE_INPUTS_COUNT} supported sound server libraries.")
     message(NOTICE "Setting '${CTUNE_DEFAULT_AUDIO_SRV_PLUGIN_NAME}' as default sound server.")
 endif()
 

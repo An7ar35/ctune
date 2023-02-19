@@ -33,8 +33,6 @@ if(FFMPEG_FOUND)
             OUTPUT_NAME              ffmpeg
             LIBRARY_OUTPUT_DIRECTORY "${PLUGINS_OUTPUT_DIRECTORY}/input")
 
-#    list(APPEND CTUNE_PLUGIN_LIST_AUDIO_PLAYER ctune_plugin_ffmpeg)
-
     install(TARGETS     ctune_plugin_ffmpeg
             EXPORT      ctune_plugin_ffmpeg
             DESTINATION ${CTUNE_INSTALL_LIBDIR}/plugins/input)

@@ -486,7 +486,7 @@ static bool ctune_Controller_recording_start( void ) {
         goto end;
     }
 
-    String.append_back( &path, ctune_Settings.cfg.outputPath() );
+    String.append_back( &path, ctune_Settings.cfg.recordingDirectory() );
 
     if( !ctune_timestampLocal( &path, "%F-%H%M%S" ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
@@ -534,7 +534,7 @@ static bool ctune_Controller_recording_isRecording( void ) {
  * @return Success
  */
 static bool ctune_Controller_recording_setPath( const char * path ) {
-    return ctune_Settings.cfg.setOutputPath( path );
+    return ctune_Settings.cfg.setRecordingDirectory( path );
 }
 
 /**
@@ -542,7 +542,7 @@ static bool ctune_Controller_recording_setPath( const char * path ) {
  * @return Directory path string
  */
 static const char * ctune_Controller_recording_path( void ) {
-    return ctune_Settings.cfg.outputPath();
+    return ctune_Settings.cfg.recordingDirectory();
 }
 
 /**

@@ -50,7 +50,7 @@ static struct {
     Vector_t actionable_options;
 
 } cli;
-//TODO pre-generate in cmake_vars?
+
 /**
  * [PRIVATE] Gets the cTune version information string
  * @return information string

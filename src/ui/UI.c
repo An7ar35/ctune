@@ -20,6 +20,7 @@
 #include "dialog/RSInfo.h"
 #include "dialog/RSEdit.h"
 #include "dialog/OptionsMenu.h"
+#include "dialog/SetOutputDir.h"
 #include "window/RSListWin.h"
 #include "window/BrowserWin.h"
 
@@ -39,6 +40,7 @@ typedef enum ctune_UI_InitStages {
     CTUNE_UI_INITSTAGE_RSEDIT,
     CTUNE_UI_INITSTAGE_RSINFO,
     CTUNE_UI_INITSTAGE_OPTMENU,
+    CTUNE_UI_INITSTAGE_SETOUTDIR,
     CTUNE_UI_INITSTAGE_WINDOWS,
     CTUNE_UI_INITSTAGE_COMPLETE,
 
@@ -81,10 +83,11 @@ static struct ctune_UI {
     } tabs;
 
     struct { //each dialog object type is recycled after the 1st use
-        ctune_UI_RSInfo_t      rsinfo;
-        ctune_UI_RSFind_t      rsfind;
-        ctune_UI_RSEdit_t      rsedit;
-        ctune_UI_OptionsMenu_t optmenu;
+        ctune_UI_RSInfo_t       rsinfo;
+        ctune_UI_RSFind_t       rsfind;
+        ctune_UI_RSEdit_t       rsedit;
+        ctune_UI_OptionsMenu_t  optmenu;
+        ctune_UI_SetOutputDir_t setrecdir;
     } dialogs;
 
     struct {
@@ -718,24 +721,6 @@ static int ctune_UI_setUnicodeIcons( ctune_UI_PanelID_e tab, int action_flag_e )
 }
 
 /**
- * [PRIVATE] Sets the stream timeout value
- * @param tab   PanelID of the current tab
- * @param value Value in seconds (<0 will just return the current value without setting anything)
- * @return Current value
- */
-static int ctune_UI_setStreamTimeOut( ctune_UI_PanelID_e tab, int value ) {
-    ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
-
-    const int curr = ctune_Controller.cfg.getStreamTimeout();
-
-    if( value >= 0 && ctune_Controller.cfg.setStreamTimeout( value ) ) {
-        return value;
-    }
-
-    return curr;
-}
-
-/**
  * [PRIVATE] Sets a player plugin
  * @param tab       PanelID of the current tab
  * @param plugin_id Plugin ID
@@ -754,6 +739,47 @@ static int ctune_UI_setPlayerPlugin( ctune_UI_PanelID_e tab, int plugin_id ) {
     }
 
     return 1;
+}
+
+/**
+ * [PRIVATE] Sets the recording directory path
+ * @param tab (unused)
+ * @param arg (unused)
+ * @return Success
+ */
+static int ctune_UI_openRecordingOutputPathDialog( ctune_UI_PanelID_e tab, int arg ) {
+    //omitting closing options menu is not a mistake
+    if( !ctune_UI_SetOutputDir.show( &ui.dialogs.setrecdir ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_UI_openRecordingOutputPathDialog( '%s', %d )] Failed to show SetOutputDir window.",
+                   ctune_UI_PanelID.str( tab ), arg
+        );
+
+        ctune_err.set( CTUNE_ERR_UI );
+        return 0; //EARLY RETURN
+    }
+
+    ctune_UI_SetOutputDir.captureInput( &ui.dialogs.setrecdir ); //ignore return since the callbacks do the job
+
+    return 1;
+}
+
+/**
+ * [PRIVATE] Sets the stream timeout value
+ * @param tab   PanelID of the current tab
+ * @param value Value in seconds (<0 will just return the current value without setting anything)
+ * @return Current value
+ */
+static int ctune_UI_setStreamTimeOut( ctune_UI_PanelID_e tab, int value ) {
+    ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
+
+    const int curr = ctune_Controller.cfg.getStreamTimeout();
+
+    if( value >= 0 && ctune_Controller.cfg.setStreamTimeout( value ) ) {
+        return value;
+    }
+
+    return curr;
 }
 
 /**
@@ -1065,6 +1091,7 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_OptionsMenu.cb.setStreamTimeoutValueCallback( &ui.dialogs.optmenu, ctune_UI_setStreamTimeOut );
             ctune_UI_OptionsMenu.cb.setPluginListCallback( &ui.dialogs.optmenu, ctune_Controller.plugins.getPluginList );
             ctune_UI_OptionsMenu.cb.setPluginSetterCallbacks( &ui.dialogs.optmenu, ctune_UI_setPlayerPlugin, ctune_UI_setSoundServerPlugin, ctune_UI_setRecorderPlugin );
+            ctune_UI_OptionsMenu.cb.setRecordingDirPathCallback( &ui.dialogs.optmenu, ctune_UI_openRecordingOutputPathDialog );
 
             if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu, ctune_UIConfig.mouse.enabled( ui_config, FLAG_GET_VALUE ) ) ) {
                 ctune_UI_OptionsMenu.show( &ui.dialogs.optmenu );
@@ -1094,6 +1121,7 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
             ctune_UI_OptionsMenu.cb.setStreamTimeoutValueCallback( &ui.dialogs.optmenu, ctune_UI_setStreamTimeOut );
             ctune_UI_OptionsMenu.cb.setPluginListCallback( &ui.dialogs.optmenu, ctune_Controller.plugins.getPluginList );
             ctune_UI_OptionsMenu.cb.setPluginSetterCallbacks( &ui.dialogs.optmenu, ctune_UI_setPlayerPlugin, ctune_UI_setSoundServerPlugin, ctune_UI_setRecorderPlugin );
+            ctune_UI_OptionsMenu.cb.setRecordingDirPathCallback( &ui.dialogs.optmenu, ctune_UI_openRecordingOutputPathDialog );
 
             if( ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu, ctune_UIConfig.mouse.enabled( ui_config, FLAG_GET_VALUE ) ) ) {
                 ctune_UI_OptionsMenu.show( &ui.dialogs.optmenu );
@@ -1933,7 +1961,6 @@ static bool ctune_UI_setup( bool show_cursor ) {
 
     // OPTIONS MENU DIALOG (test build)
     ui.dialogs.optmenu = ctune_UI_OptionsMenu.create( &ui.size.screen, ui.cache.curr_panel, ctune_UI_Language.text );
-
     if( !ctune_UI_OptionsMenu.init( &ui.dialogs.optmenu, mouse_nav ) ) {
         CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i )] Could not init OptionsMenu_t dialog.", show_cursor );
         ctune_err.set( CTUNE_ERR_UI );
@@ -1941,6 +1968,20 @@ static bool ctune_UI_setup( bool show_cursor ) {
 
     } else {
         ui.init_stages[CTUNE_UI_INITSTAGE_OPTMENU] = true;
+    }
+
+    // SET OUTPUT PATH DIALOG
+    ui.dialogs.setrecdir = ctune_UI_SetOutputDir.create( &ui.size.screen,
+                                                         ctune_UI_Language.text,
+                                                         ctune_Controller.recording.setPath,
+                                                         ctune_Controller.recording.path );
+    if( !ctune_UI_SetOutputDir.init( &ui.dialogs.setrecdir, mouse_nav ) ) {
+        CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i )] Could not init SetOutputDir_t dialog.", show_cursor );
+        ctune_err.set( CTUNE_ERR_UI );
+        return false; //EARLY RETURN
+
+    } else {
+        ui.init_stages[CTUNE_UI_INITSTAGE_SETOUTDIR] = true;
     }
 
     ctune_UI_createPanels();
@@ -2001,7 +2042,7 @@ static bool ctune_UI_setup( bool show_cursor ) {
 //    nonl();
 
     CTUNE_LOG( CTUNE_LOG_DEBUG,
-               "[ctune_UI_setup( %i )] Init = [%i][%i][%i][%i][%i][%i][%i][%i][%i][%i]",
+               "[ctune_UI_setup( %i )] Init = [%i][%i][%i][%i][%i][%i][%i][%i][%i][%i][%i]",
                show_cursor,
                ui.init_stages[CTUNE_UI_INITSTAGE_KEYBINDS],
                ui.init_stages[CTUNE_UI_INITSTAGE_STDSCR],
@@ -2011,6 +2052,7 @@ static bool ctune_UI_setup( bool show_cursor ) {
                ui.init_stages[CTUNE_UI_INITSTAGE_RSEDIT],
                ui.init_stages[CTUNE_UI_INITSTAGE_RSINFO],
                ui.init_stages[CTUNE_UI_INITSTAGE_OPTMENU],
+               ui.init_stages[CTUNE_UI_INITSTAGE_SETOUTDIR],
                ui.init_stages[CTUNE_UI_INITSTAGE_WINDOWS],
                ui.init_stages[CTUNE_UI_INITSTAGE_COMPLETE]
     );
@@ -2056,6 +2098,11 @@ static void ctune_UI_teardown() {
         ui.init_stages[CTUNE_UI_INITSTAGE_OPTMENU] = false;
     }
 
+    if( ui.init_stages[CTUNE_UI_INITSTAGE_SETOUTDIR] ) {
+        ctune_UI_SetOutputDir.free( &ui.dialogs.setrecdir );
+        ui.init_stages[CTUNE_UI_INITSTAGE_SETOUTDIR] = false;
+    }
+
     if( ui.init_stages[CTUNE_UI_INITSTAGE_CTXHELP] ) {
         ctune_UI_ContextHelp.free();
         ui.init_stages[CTUNE_UI_INITSTAGE_CTXHELP] = false;
@@ -2097,7 +2144,7 @@ static void ctune_UI_teardown() {
     ui.init_stages[CTUNE_UI_INITSTAGE_COMPLETE] = false;
 
     CTUNE_LOG( CTUNE_LOG_DEBUG,
-               "[ctune_UI_teardown()] Init = [%i][%i][%i][%i][%i][%i][%i][%i][%i][%i]",
+               "[ctune_UI_teardown()] Init = [%i][%i][%i][%i][%i][%i][%i][%i][%i][%i][%i]",
                ui.init_stages[CTUNE_UI_INITSTAGE_KEYBINDS],
                ui.init_stages[CTUNE_UI_INITSTAGE_STDSCR],
                ui.init_stages[CTUNE_UI_INITSTAGE_THEME],
@@ -2106,6 +2153,7 @@ static void ctune_UI_teardown() {
                ui.init_stages[CTUNE_UI_INITSTAGE_RSEDIT],
                ui.init_stages[CTUNE_UI_INITSTAGE_RSINFO],
                ui.init_stages[CTUNE_UI_INITSTAGE_OPTMENU],
+               ui.init_stages[CTUNE_UI_INITSTAGE_SETOUTDIR],
                ui.init_stages[CTUNE_UI_INITSTAGE_WINDOWS],
                ui.init_stages[CTUNE_UI_INITSTAGE_COMPLETE]
     );

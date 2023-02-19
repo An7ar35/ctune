@@ -264,7 +264,7 @@ static int ctune_FileOut_close( void ) {
     int error = CTUNE_ERR_NONE;
 
     if( output.file != NULL ) {
-        output.buffer.i = lame_encode_flush( output.gfp, output.buffer.data, output.buffer.size ); //TODO check there is space in the buffer first!
+        output.buffer.i = lame_encode_flush( output.gfp, output.buffer.data, output.buffer.size );
 
         if( ( error = hasAvailableSpace( output.path._raw, output.buffer.i ) ) == CTUNE_ERR_NONE ) {
             writeBufferToFile( output.file, &output.buffer );

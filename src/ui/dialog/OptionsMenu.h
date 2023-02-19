@@ -62,6 +62,7 @@ typedef struct ctune_UI_Dialog_OptionsMenu {
         int                (* setPlayPlugin)( ctune_UI_PanelID_e tab, int id );
         int                (* setSrvPlugin)( ctune_UI_PanelID_e tab, int id );
         int                (* setRecPlugin)( ctune_UI_PanelID_e tab, int id );
+        int                (* setRecDir)( ctune_UI_PanelID_e tab, int /* unused */ );
     } cb;
 
 } ctune_UI_OptionsMenu_t;
@@ -241,6 +242,14 @@ extern const struct ctune_UI_Dialog_OptionsMenu_Namespace {
                                            OptionsMenuCb_fn setPlayPlugin_callback,
                                            OptionsMenuCb_fn setSndSrvPlugin_callback,
                                            OptionsMenuCb_fn setRecPlugin_callback );
+
+        /**
+         * Sets the callback method to set the recording directory path
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
+         */
+        void (* setRecordingDirPathCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
+
     } cb;
 
 } ctune_UI_OptionsMenu;

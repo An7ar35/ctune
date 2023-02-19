@@ -20,6 +20,13 @@ extern const struct ctune_fs_Namespace {
     ctune_FileState_e (* getFileState)( const char * filename, ssize_t * size );
 
     /**
+     * Get directory state
+     * @param dir_path Directory path
+     * @return CTUNE_FILE_*
+     */
+    bool (* isDirectory)( const char * dir_path );
+
+    /**
      * [PRIVATE] Checks and creates a directory path if absent
      * @param dir_path Directory path to create
      * @return Success/Path exists
