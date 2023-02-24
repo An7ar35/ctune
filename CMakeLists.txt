@@ -14,7 +14,7 @@ set(CMAKE_C_FLAGS "-Wextra"     CACHE INTERNAL "")
 set(CMAKE_C_FLAGS_RELEASE "-O2" CACHE INTERNAL "")
 
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
+    set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
 
 include(ExternalProject)
@@ -270,6 +270,11 @@ add_subdirectory(plugins/input/vlc)
 
 get_directory_property(FFMPEG_FOUND DIRECTORY plugins/input/ffmpeg DEFINITION FFMPEG_FOUND)
 get_directory_property(VLC_FOUND    DIRECTORY plugins/input/vlc    DEFINITION VLC_FOUND)
+
+#if(PIPEWIRE_FOUND)
+#    link_directories(plugins/output/pipewire)
+#    list(APPEND CTUNE_PLUGIN_LIST_AUDIO_SRV ctune_plugin_pipewire)
+#endif(PIPEWIRE_FOUND)
 
 if(FFMPEG_FOUND)
     link_directories(plugins/input/ffmpeg)
