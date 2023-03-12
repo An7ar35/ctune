@@ -31,7 +31,7 @@ struct {
 /**
  * Initialises the Resizer
  */
-void ctune_UI_Resizer_init( void ) {
+static void ctune_UI_Resizer_init( void ) {
     if( !resizer.initialised ) {
         resizer.queue       = Deque.init();
         resizer.initialised = true;
@@ -44,7 +44,7 @@ void ctune_UI_Resizer_init( void ) {
  * @param data      Pointer to pass to callback
  * @return Success
  */
-bool ctune_UI_Resizer_push( void(* resize_fn)( void * ), void * data ) {
+static bool ctune_UI_Resizer_push( void(* resize_fn)( void * ), void * data ) {
     if( !resizer.initialised ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_Resizer_push( %p, %p )] Resizer not initialised.", resize_fn, data );
         return false; //EARLY RETURN
@@ -78,7 +78,7 @@ bool ctune_UI_Resizer_push( void(* resize_fn)( void * ), void * data ) {
 /**
  * Removes the last resize callback from the list
  */
-void ctune_UI_Resizer_pop( void ) {
+static void ctune_UI_Resizer_pop( void ) {
     if( !resizer.initialised ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_Resizer_pop()] Resizer not initialised." );
         return; //EARLY RETURN
@@ -91,7 +91,7 @@ void ctune_UI_Resizer_pop( void ) {
 /**
  * Calls all callbacks stored in the list in FIFO order
  */
-void ctune_UI_Resizer_resize( void ) {
+static void ctune_UI_Resizer_resize( void ) {
     if( !resizer.initialised ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_UI_Resizer_resize()] Resizer not initialised." );
         return; //EARLY RETURN
@@ -120,7 +120,7 @@ void ctune_UI_Resizer_resize( void ) {
 /**
  * De-allocates internal variables and resets everything back to an initialised state
  */
-void ctune_UI_Resizer_free( void ) {
+static void ctune_UI_Resizer_free( void ) {
     if( resizer.initialised ) {
         Deque.free( &resizer.queue, free );
         resizer.initialised     = false;
