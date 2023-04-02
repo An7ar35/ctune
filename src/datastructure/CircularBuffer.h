@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <stdatomic.h>
 
 /**
  * CircularBuffer object
@@ -22,7 +23,7 @@ typedef struct CircularBuffer {
     bool            auto_grow;
     pthread_mutex_t mutex;
     pthread_cond_t  ready;
-    bool            empty;
+    atomic_bool     empty;
 
     struct {
         size_t read;

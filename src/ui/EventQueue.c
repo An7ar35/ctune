@@ -12,18 +12,18 @@ static processEventCb   event_processor_cb = NULL;
  * @return Success
  */
 static bool ctune_UI_EventQueue_init( processEventCb cb ) {
-    if( !CircularBuffer.init( &event_queue, 4096, true ) ) {
+    if( cb == NULL ) {
         CTUNE_LOG( CTUNE_LOG_FATAL,
-                   "[ctune_UI_EventQueue_init( %p )] Failed to init the circular buffer for the event_queue!",
+                   "[ctune_UI_EventQueue_init( %p )] Callback is NULL.",
                    cb
         );
 
         return false;
     }
 
-    if( !cb ) {
+    if( !CircularBuffer.init( &event_queue, 4096, true ) ) {
         CTUNE_LOG( CTUNE_LOG_FATAL,
-                   "[ctune_UI_EventQueue_init( %p )] Callback is NULL.",
+                   "[ctune_UI_EventQueue_init( %p )] Failed to init the circular buffer for the event_queue!",
                    cb
         );
 
