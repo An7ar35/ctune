@@ -1,6 +1,7 @@
 #include "Resizer.h"
 
 #include <stdlib.h>
+#include <stdatomic.h>
 
 #include "logger/src/Logger.h"
 #include "../datastructure/Deque.h"
@@ -17,15 +18,18 @@ typedef struct {
 
 /**
  * Private variables
- * @param initialised Init flag
- * @param queue       List of resize callbacks
+ * @param initialised  Init flag
+ * @param request_flag Resizing request flag
+ * @param queue        List of resize callbacks
  */
 struct {
-    bool    initialised;
-    Deque_t queue;
+    bool        initialised;
+    atomic_bool request_flag;
+    Deque_t     queue;
 
 } resizer = {
-    .initialised = false,
+    .initialised  = false,
+    .request_flag = false,
 };
 
 /**
@@ -118,12 +122,30 @@ static void ctune_UI_Resizer_resize( void ) {
 }
 
 /**
+ * Gets the resizing request flag and resets it
+ * @return Request flag
+ */
+static bool ctune_UI_resizingRequested( void ) {
+    bool expected = true;
+    return atomic_compare_exchange_strong( &resizer.request_flag, &expected, false );
+}
+
+/**
+ * Sets the resize request flag up
+ */
+static void ctune_UI_requestResizing( void ) {
+    CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_resizingRequested()] resize requested." );
+    bool expected = false;
+    atomic_compare_exchange_strong( &resizer.request_flag, &expected, true );
+}
+
+/**
  * De-allocates internal variables and resets everything back to an initialised state
  */
 static void ctune_UI_Resizer_free( void ) {
     if( resizer.initialised ) {
         Deque.free( &resizer.queue, free );
-        resizer.initialised     = false;
+        resizer.initialised = false;
 
         CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_Resizer_free()] Resizer's vars freed." );
     }
@@ -133,9 +155,11 @@ static void ctune_UI_Resizer_free( void ) {
  * Namespace constructor
  */
 const struct ctune_UI_Resizer_Instance ctune_UI_Resizer = {
-    .init   = &ctune_UI_Resizer_init,
-    .push   = &ctune_UI_Resizer_push,
-    .pop    = &ctune_UI_Resizer_pop,
-    .resize = &ctune_UI_Resizer_resize,
-    .free   = &ctune_UI_Resizer_free,
-} ;
+    .init              = &ctune_UI_Resizer_init,
+    .push              = &ctune_UI_Resizer_push,
+    .pop               = &ctune_UI_Resizer_pop,
+    .resize            = &ctune_UI_Resizer_resize,
+    .requestResizing   = &ctune_UI_requestResizing,
+    .resizingRequested = &ctune_UI_resizingRequested,
+    .free              = &ctune_UI_Resizer_free,
+};

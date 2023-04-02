@@ -9,6 +9,7 @@
 #include "../definitions/Theme.h"
 #include "../datastructure/WindowMargin.h"
 #include "../widget/Dialog.h"
+#include "../EventQueue.h"
 #include "../Resizer.h"
 
 /**
@@ -434,7 +435,15 @@ static void ctune_UI_ContextHelp_captureInput() {
 
         switch( ch ) {
             case ERR: {
-                keypad( private.cache.dialogs[ctx].canvas.pad, TRUE );
+//                keypad( private.cache.dialogs[ctx].canvas.pad, TRUE );
+
+                if( ctune_UI_Resizer.resizingRequested() ) {
+                    ctune_UI_Resizer.resize();
+                }
+
+                if( !ctune_UI_EventQueue.empty() ) {
+                    ctune_UI_EventQueue.flush();
+                }
             } break;
 
             case KEY_RESIZE: break;
