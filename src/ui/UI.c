@@ -38,13 +38,14 @@ typedef enum ctune_UI_InitStages {
     CTUNE_UI_INITSTAGE_KEYBINDS = 0,
     CTUNE_UI_INITSTAGE_STDSCR,
     CTUNE_UI_INITSTAGE_THEME,
+    CTUNE_UI_INITSTAGE_MAINWIN,
+    CTUNE_UI_INITSTAGE_EVENTQUEUE,
     CTUNE_UI_INITSTAGE_CTXHELP,
     CTUNE_UI_INITSTAGE_RSFIND,
     CTUNE_UI_INITSTAGE_RSEDIT,
     CTUNE_UI_INITSTAGE_RSINFO,
     CTUNE_UI_INITSTAGE_OPTMENU,
     CTUNE_UI_INITSTAGE_SETOUTDIR,
-    CTUNE_UI_INITSTAGE_WINDOWS,
     CTUNE_UI_INITSTAGE_COMPLETE,
 
     CTUNE_UI_INITSTAGE_COUNT
@@ -95,6 +96,22 @@ static WindowProperty_t ctune_UI_getScreenSize( void ) {
                                 ( w1.ws_col >= UI_MIN_COLS ? w1.ws_col : UI_MIN_COLS ),
                                 0,
                                 0 };
+}
+
+/**
+ * [PRIVATE] Gets the number of raised flags in the init stage array
+ * @return Successful init count
+ */
+static size_t ctune_UI_getInitCount() {
+    size_t count = 0;
+
+    for( size_t i = 0; i < CTUNE_UI_INITSTAGE_COUNT; i++ ) {
+        if( ui.init_stages[ i ] ) {
+            ++count;
+        }
+    }
+
+    return count;
 }
 
 /**
@@ -1221,14 +1238,22 @@ static bool ctune_UI_setup( bool show_cursor ) {
 
     ctune_UIConfig_t * ui_config = ctune_Controller.cfg.getUIConfig();
 
-    ctune_UI_MainWin.init( &ui.main_win,
-                           ui_config,
-                           ctune_Controller.search.getStations,
-                           ctune_Controller.search.getCategoryItems,
-                           ctune_Controller.search.getStationsBy,
-                           ctune_Controller.cfg.toggleFavourite );
+    const bool main_win_is_init = ctune_UI_MainWin.init( &ui.main_win,
+                                                         ui_config,
+                                                         ctune_Controller.search.getStations,
+                                                         ctune_Controller.search.getCategoryItems,
+                                                         ctune_Controller.search.getStationsBy,
+                                                         ctune_Controller.cfg.toggleFavourite );
+
+    if( main_win_is_init ) {
+        ui.init_stages[CTUNE_UI_INITSTAGE_MAINWIN] = true;
+    }
+
     ctune_UI_Resizer.init();
-    ctune_UI_EventQueue.init( ctune_UI_processEvent );
+
+    if( ctune_UI_EventQueue.init( ctune_UI_processEvent ) ) {
+        ui.init_stages[CTUNE_UI_INITSTAGE_EVENTQUEUE] = true;
+    }
 
     cbreak();
     noecho();
@@ -1333,29 +1358,33 @@ static bool ctune_UI_setup( bool show_cursor ) {
         ui.init_stages[CTUNE_UI_INITSTAGE_SETOUTDIR] = true;
     }
 
-    ui.init_stages[CTUNE_UI_INITSTAGE_WINDOWS ] = true; //TODO move that to where MainWin gets init-ed
     ui.init_stages[CTUNE_UI_INITSTAGE_COMPLETE] = true;
 
     ctune_UI_MainWin.ctrl.updateFavourites( &ui.main_win, ctune_Controller.cfg.getListOfFavourites );
-    ctune_UI_MainWin.show( &ui.main_win, CTUNE_UI_PANEL_FAVOURITES ); //TODO adapt
+    ctune_UI_MainWin.show( &ui.main_win, CTUNE_UI_PANEL_FAVOURITES );
 
     CTUNE_LOG( CTUNE_LOG_DEBUG,
-               "[ctune_UI_setup( %i )] Init = [%i][%i][%i][%i][%i][%i][%i][%i][%i][%i][%i]",
+               "[ctune_UI_setup( %i )] Init = [%i][%i][%i][%i][%i][%i][%i][%i][%i][%i][%i][%i]",
                show_cursor,
                ui.init_stages[CTUNE_UI_INITSTAGE_KEYBINDS],
                ui.init_stages[CTUNE_UI_INITSTAGE_STDSCR],
                ui.init_stages[CTUNE_UI_INITSTAGE_THEME],
+               ui.init_stages[CTUNE_UI_INITSTAGE_MAINWIN],
+               ui.init_stages[CTUNE_UI_INITSTAGE_EVENTQUEUE],
                ui.init_stages[CTUNE_UI_INITSTAGE_CTXHELP],
                ui.init_stages[CTUNE_UI_INITSTAGE_RSFIND],
                ui.init_stages[CTUNE_UI_INITSTAGE_RSEDIT],
                ui.init_stages[CTUNE_UI_INITSTAGE_RSINFO],
                ui.init_stages[CTUNE_UI_INITSTAGE_OPTMENU],
                ui.init_stages[CTUNE_UI_INITSTAGE_SETOUTDIR],
-               ui.init_stages[CTUNE_UI_INITSTAGE_WINDOWS],
                ui.init_stages[CTUNE_UI_INITSTAGE_COMPLETE]
     );
 
-    CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_setup( %i )] UI Initialised successfully.", show_cursor );
+
+    CTUNE_LOG( CTUNE_LOG_MSG,
+               "[ctune_UI_setup( %i )] UI Initialised (%d/%d).",
+               show_cursor, ctune_UI_getInitCount(), CTUNE_UI_INITSTAGE_COUNT
+    );
 
     refresh();
     return true;
@@ -1408,15 +1437,19 @@ static void ctune_UI_teardown() {
     }
 
 
-    if( ui.init_stages[CTUNE_UI_INITSTAGE_WINDOWS] ) {
+    if( ui.init_stages[CTUNE_UI_INITSTAGE_MAINWIN] ) {
         ctune_UI_MainWin.free( &ui.main_win );
-        ui.init_stages[CTUNE_UI_INITSTAGE_WINDOWS] = false;
+        ui.init_stages[CTUNE_UI_INITSTAGE_MAINWIN] = false;
     }
 
     ctune_UI_Resizer.pop(); //ctune_UI_MainWin.resize
     ctune_UI_Resizer.pop(); //ctune_UI.resize
     ctune_UI_Resizer.free();
-    ctune_UI_EventQueue.free();
+
+    if( ui.init_stages[CTUNE_UI_INITSTAGE_EVENTQUEUE] ) {
+        ctune_UI_EventQueue.free();
+        ui.init_stages[CTUNE_UI_INITSTAGE_EVENTQUEUE] = false;
+    }
 
     delwin( stdscr );
     endwin();
@@ -1425,21 +1458,21 @@ static void ctune_UI_teardown() {
     ui.init_stages[CTUNE_UI_INITSTAGE_STDSCR  ] = false;
     ui.init_stages[CTUNE_UI_INITSTAGE_THEME   ] = false;
     ui.init_stages[CTUNE_UI_INITSTAGE_KEYBINDS] = false;
-
     ui.init_stages[CTUNE_UI_INITSTAGE_COMPLETE] = false;
 
     CTUNE_LOG( CTUNE_LOG_DEBUG,
-               "[ctune_UI_teardown()] Init = [%i][%i][%i][%i][%i][%i][%i][%i][%i][%i][%i]",
+               "[ctune_UI_teardown()] Init = [%i][%i][%i][%i][%i][%i][%i][%i][%i][%i][%i][%i]",
                ui.init_stages[CTUNE_UI_INITSTAGE_KEYBINDS],
                ui.init_stages[CTUNE_UI_INITSTAGE_STDSCR],
                ui.init_stages[CTUNE_UI_INITSTAGE_THEME],
+               ui.init_stages[CTUNE_UI_INITSTAGE_MAINWIN],
+               ui.init_stages[CTUNE_UI_INITSTAGE_EVENTQUEUE],
                ui.init_stages[CTUNE_UI_INITSTAGE_CTXHELP],
                ui.init_stages[CTUNE_UI_INITSTAGE_RSFIND],
                ui.init_stages[CTUNE_UI_INITSTAGE_RSEDIT],
                ui.init_stages[CTUNE_UI_INITSTAGE_RSINFO],
                ui.init_stages[CTUNE_UI_INITSTAGE_OPTMENU],
                ui.init_stages[CTUNE_UI_INITSTAGE_SETOUTDIR],
-               ui.init_stages[CTUNE_UI_INITSTAGE_WINDOWS],
                ui.init_stages[CTUNE_UI_INITSTAGE_COMPLETE]
     );
 

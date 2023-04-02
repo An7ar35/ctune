@@ -166,8 +166,9 @@ static bool CircularBuffer_createBuffer( size_t size, int * fd, u_int8_t ** buff
 static void CircularBuffer_advanceReadPos( CircularBuffer_t * buffer, size_t n ) {
     buffer->position.read = ( ( buffer->position.read + n ) % buffer->size );
 
-    if( buffer->position.read == buffer->position.write )
-        buffer->empty = true;
+    if( buffer->position.read == buffer->position.write ) {
+        atomic_store( &buffer->empty, true );
+    }
 }
 
 /**
@@ -178,8 +179,9 @@ static void CircularBuffer_advanceReadPos( CircularBuffer_t * buffer, size_t n )
 static void CircularBuffer_advanceWritePos( CircularBuffer_t * buffer, size_t n ) {
     buffer->position.write = ( ( buffer->position.write + n ) % buffer->size );
 
-    if( n )
-        buffer->empty = false;
+    if( n ) {
+        atomic_store( &buffer->empty, false );
+    }
 }
 
 /**
@@ -197,7 +199,7 @@ static size_t CircularBuffer_dataBytes( CircularBuffer_t * buffer ) {
  * @return Number of free bytes
  */
 static size_t CircularBuffer_freeBytes( CircularBuffer_t * buffer ) {
-    if( buffer->empty ) {
+    if( atomic_load( &buffer->empty ) ) {
         return buffer->size;
     } else {
         return ( ( buffer->position.read + buffer->size - buffer->position.write ) % buffer->size );
@@ -370,7 +372,7 @@ static size_t CircularBuffer_readChunk( CircularBuffer_t * buffer, u_int8_t * ta
     size_t bytes_read = 0;
 
     if( ( ret = pthread_mutex_lock( &buffer->mutex ) ) == 0 ) {
-        while( buffer->empty ) {
+        while( atomic_load( &buffer->empty ) ) {
             pthread_cond_wait( &buffer->ready, &buffer->mutex );
         }
 
@@ -403,15 +405,7 @@ static size_t CircularBuffer_readChunk( CircularBuffer_t * buffer, u_int8_t * ta
  * @return Empty state
  */
 static bool CircularBuffer_empty( CircularBuffer_t * buffer ) {
-    bool empty = true;
-
-    if( buffer != NULL ) {
-        pthread_mutex_lock( &buffer->mutex );
-        empty = buffer->empty;
-        pthread_mutex_unlock( &buffer->mutex );
-    }
-
-    return empty;
+    return atomic_load( &buffer->empty );
 }
 
 /**
