@@ -36,34 +36,43 @@ package ctune #lightgrey {
         component Plugin
 
         package "plugins/player/" as plugins_in #lightgrey {
-            file      ffmpeg.so
-            file      vlc.so
+            file      "ffmpeg.so" as ffmpeg_plugin
+            file      "vlc.so" as vlc_plugin
             interface libffmpeg
             interface libvlc
 
-            ffmpeg.so -down-( libffmpeg : uses
-            vlc.so    -down-( libvlc : uses
+            ffmpeg_plugin -down-( libffmpeg : uses
+            vlc_plugin    -down-( libvlc : uses
         }
 
         package "plugins/output/" as plugins_out #lightgrey {
-            file pulse.so
-            file alsa.so
-            file sdl.so
-            file sndio.so
-            file wave.so
-            file mp3.so
+            package "sound servers" as sound_servers {
+                file "pulse.so" as pulse_plugin
+                file "alsa.so" as alsa_plugin
+                file "sdl.so" as sdl_plugin
+                file "sndio.so" as sndio_plugin
 
-            interface libalsa
-            interface libpulseaudio
-            interface libsld2
-            interface libmp3lame
+                interface libalsa
+                interface libpulseaudio
+                interface libsld2
+                interface libsndio
+            }
 
-            pulse.so -down-( libpulseaudio : uses
-            alsa.so -down-( libalsa : uses
-            sdl.so -down-( libsld2 : uses
-            sndio.so -down-( libsndio : uses
-            mp3.so -down-( libmp3lame : uses
+            package "audio recorders" as audio_recorders {
+                file "wave.so" as wave_plugin
+                file "mp3.so" as mp3_plugin
+
+                interface libmp3lame
+            }
+
+            pulse_plugin -down-( libpulseaudio : uses
+            alsa_plugin -down-( libalsa : uses
+            sdl_plugin -down-( libsld2 : uses
+            sndio_plugin -down-( libsndio : uses
+            mp3_plugin -down-( libmp3lame : uses
         }
+
+        plugins_out -[hidden]- plugins_in
 
         package "config dir" #lightgrey {
             file cfgfile as "ctune.cfg"
@@ -75,14 +84,14 @@ package ctune #lightgrey {
             file logfile as "ctune.log"
         }
 
-        Plugin .[#RoyalBlue]..> ffmpeg.so
-        Plugin .[#RoyalBlue]..> vlc.so
-        Plugin .[#RoyalBlue]..> pulse.so
-        Plugin .[#RoyalBlue]..> alsa.so
-        Plugin .[#RoyalBlue]..> sdl.so
-        Plugin .[#RoyalBlue]..> sndio.so
-        Plugin .[#RoyalBlue]..> wave.so
-        Plugin .[#RoyalBlue]..> mp3.so
+        Plugin .[#RoyalBlue]..> ffmpeg_plugin
+        Plugin .[#RoyalBlue]..> vlc_plugin
+        Plugin .[#RoyalBlue]..> pulse_plugin
+        Plugin .[#RoyalBlue]..> alsa_plugin
+        Plugin .[#RoyalBlue]..> sdl_plugin
+        Plugin .[#RoyalBlue]..> sndio_plugin
+        Plugin .[#RoyalBlue]..> wave_plugin
+        Plugin .[#RoyalBlue]..> mp3_plugin
 
         Settings -> XDG
         Settings -down-> cfgfile
@@ -96,12 +105,19 @@ package ctune #lightgrey {
         interface FileOutput
     }
 
-    AudioOutput -- pulse.so
-    AudioOutput -- alsa.so
-    AudioOutput -- sdl.so
-    AudioOutput -- sndio.so
-    FileOutput  -- mp3.so
-    FileOutput  -- wave.so
+'    player -[hidden]- audio
+'    sound_servers -down[hidden]- audio_recorders
+    audio_recorders -down[hidden]-- plugins_in
+'    audio -[hidden]- audio_recorders
+    plugins_in -left[hidden]- plugins_out
+
+
+    AudioOutput -- pulse_plugin
+    AudioOutput -- alsa_plugin
+    AudioOutput -- sdl_plugin
+    AudioOutput -- sndio_plugin
+    FileOutput  -- mp3_plugin
+    FileOutput  -- wave_plugin
 
     package player #white {
         component RadioPlayer
@@ -110,8 +126,8 @@ package ctune #lightgrey {
         RadioPlayer -down-( Player
     }
 
-    Player -- ffmpeg.so
-    Player -- vlc.so
+    Player -- ffmpeg_plugin
+    Player -- vlc_plugin
     RadioPlayer --( AudioOutput
     RadioPlayer --( FileOutput
 

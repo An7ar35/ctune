@@ -121,6 +121,8 @@ set(SOURCE_FILES
         src/ctune_err.c
         src/utils/Timeout.c
         src/utils/Timeout.h
+        src/datastructure/CircularBuffer.c
+        src/datastructure/CircularBuffer.h
         src/datastructure/StrList.c
         src/datastructure/StrList.h
         src/datastructure/ServerList.c
@@ -201,6 +203,8 @@ set(SOURCE_FILES
         src/fs/XDG.h
         src/ui/UI.c
         src/ui/UI.h
+        src/ui/EventQueue.c
+        src/ui/EventQueue.h
         src/ui/Resizer.c
         src/ui/Resizer.h
         src/ui/datastructure/WindowProperty.h
@@ -245,6 +249,8 @@ set(SOURCE_FILES
         src/ui/window/RSListWin.h
         src/ui/window/BrowserWin.c
         src/ui/window/BrowserWin.h
+        src/ui/window/MainWin.c
+        src/ui/window/MainWin.h
         src/ui/widget/Dialog.h
         src/ui/widget/Dialog.c
         src/ui/widget/Form.c
@@ -258,6 +264,11 @@ set(SOURCE_FILES
         src/ui/widget/BorderWin.c
         src/ui/widget/BorderWin.h)
 
+set(TEST_FILES
+        tests/main.c
+        src/datastructure/CircularBuffer.c
+        src/datastructure/CircularBuffer.h
+        tests/datastructure/CircularBuffer.c)
 #==================================== CTUNE LOGGER LIBRARY ========================================#
 add_subdirectory(libraries/logger)
 link_directories(libraries/logger)
@@ -413,6 +424,19 @@ target_link_libraries(ctune PRIVATE
         dl                      #(dlfcn.h) for `fs/Plugin.c`
 )
 
+#TODO move tests to own CMakeList.txt
+#add_executable(ctune_tests ${TEST_FILES})
+#add_dependencies(ctune_tests ctune_logger)
+#
+#target_link_libraries(ctune_tests PRIVATE
+#        ctune_logger            #CTUNE_LOG(..)
+#        ${NCURSES_LIBRARIES}    #(ncurses.h) for `ui/*`
+#        ${CURSES_LIBRARIES}     #(ncurses.h) for `ui/*`
+#        panel                   #(panel.h) ncurses panel lib for `ui/*`
+#        form                    #(form.h) ncurses form lib for `ui/*`
+#        pthread                 #threading
+#        cunit
+#)
 #=========================================== INSTALL ==============================================#
 install(TARGETS     ctune
         DESTINATION ${CTUNE_INSTALL_BINDIR})

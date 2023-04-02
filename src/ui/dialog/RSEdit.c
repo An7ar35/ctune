@@ -4,6 +4,8 @@
 #include <string.h>
 #include <regex.h>
 
+#include "../EventQueue.h"
+#include "../Resizer.h"
 #include "../definitions/KeyBinding.h"
 #include "../definitions/Theme.h"
 #include "ContextHelp.h"
@@ -1038,8 +1040,15 @@ static ctune_FormExit_e ctune_UI_RSEdit_captureInput( ctune_UI_RSEdit_t * rsedit
         character = ctune_UI_Form.input.getChar( &rsedit->form );
 
         switch( ctune_UI_KeyBinding.getAction( CTUNE_UI_CTX_RSEDIT, character ) ) {
-            case CTUNE_UI_ACTION_ERR   : //fallthrough
-            case CTUNE_UI_ACTION_RESIZE: break;
+            case CTUNE_UI_ACTION_ERR: {
+                if( ctune_UI_Resizer.resizingRequested() ) {
+                    ctune_UI_Resizer.resize();
+                }
+
+                if( !ctune_UI_EventQueue.empty() ) {
+                    ctune_UI_EventQueue.flush();
+                }
+            } break;
 
             case CTUNE_UI_ACTION_HELP: { //Contextual help
                 ctune_UI_ContextHelp.show( CTUNE_UI_CTX_RSEDIT );

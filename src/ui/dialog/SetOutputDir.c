@@ -1,6 +1,8 @@
 #include "SetOutputDir.h"
 
 #include "logger/src/Logger.h"
+#include "../EventQueue.h"
+#include "../Resizer.h"
 #include "../definitions/KeyBinding.h"
 #include "../definitions/Theme.h"
 #include "../../utils/utilities.h"
@@ -399,8 +401,15 @@ static ctune_FormExit_e ctune_UI_SetOutputDir_captureInput( ctune_UI_SetOutputDi
         character = ctune_UI_Form.input.getChar( &sop->form );
 
         switch( ctune_UI_KeyBinding.getAction( CTUNE_UI_CTX_SETOUTDIR, character ) ) {
-            case CTUNE_UI_ACTION_ERR   : //fallthrough
-            case CTUNE_UI_ACTION_RESIZE: break;
+            case CTUNE_UI_ACTION_ERR: {
+                if( ctune_UI_Resizer.resizingRequested() ) {
+                    ctune_UI_Resizer.resize();
+                }
+
+                if( !ctune_UI_EventQueue.empty() ) {
+                    ctune_UI_EventQueue.flush();
+                }
+            } break;
 
             case CTUNE_UI_ACTION_HELP: {
                 ctune_UI_ContextHelp.show( CTUNE_UI_CTX_SETOUTDIR );

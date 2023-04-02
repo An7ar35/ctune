@@ -184,7 +184,7 @@ static bool ctune_init( const ctune_ArgOptions_t * options ) {
     ctune_Controller.setVolumeChangeEventCallback( ctune_UI.printVolume );
     ctune_Controller.setPlaybackStateChangeEventCallback( ctune_UI.printPlaybackState );
     ctune_Controller.setSearchStateChangeEventCallback( ctune_UI.printSearchingState );
-    ctune_Controller.setResizeUIEventCallback( ctune_UI_Resizer.resize );
+    ctune_Controller.setResizeUIEventCallback( ctune_UI_Resizer.requestResizing );
 
     /* UI */
     if( !ctune_UI.setup( options->ui.show_cursor ) ) {
