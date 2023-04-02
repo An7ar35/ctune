@@ -69,9 +69,6 @@ static struct ctune_UI {
         ctune_UI_SetOutputDir_t setrecdir;
     } dialogs;
 
-    //TODO pass callback to process background updates to the captureInput method of each dialogs to that, in event
-    //    of a resize or background update, the callback can be called from the dialog and process changes
-
     struct {
         int(* quietVolChangeCallback)( int );
     } cb;
@@ -318,7 +315,7 @@ static int ctune_UI_setCurrListRowSize( ctune_UI_PanelID_e tab, int action_flag_
  * @param action_flag_e Action to take (get/set)
  * @return State of the "fav theming" property
  */
-static int ctune_UI_setFavouriteTabTheming( ctune_UI_PanelID_e tab, int action_flag_e ) { //TODO create in MainWin
+static int ctune_UI_setFavouriteTabTheming( ctune_UI_PanelID_e tab, int action_flag_e ) {
     ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
 
     ctune_UIConfig_t * ui_config = ctune_Controller.cfg.getUIConfig();
@@ -421,6 +418,7 @@ static int ctune_UI_setMouseSupport( ctune_UI_PanelID_e tab, int action_flag_e )
         ctune_UI_RSInfo.setMouseCtrl( &ui.dialogs.rsinfo, new_state );
         ctune_UI_RSEdit.setMouseCtrl( &ui.dialogs.rsedit, new_state );
         ctune_UI_RSFind.setMouseCtrl( &ui.dialogs.rsfind, new_state );
+        ctune_UI_MainWin.setMouseCtrl( &ui.main_win, new_state );
 
         return new_state;
     }
@@ -708,7 +706,7 @@ static void ctune_UI_openSelectedStationInformationDialog( const ctune_RadioStat
 /**
  * [PRIVATE] Opens the 'find station' dialog window
  */
-static void ctune_UI_openFindDialog( void ) { //TODO adpat
+static void ctune_UI_openFindDialog( void ) {
     ctune_UI_MainWin.print.clearMsgLine( &ui.main_win );
     ctune_UI_MainWin.show( &ui.main_win, CTUNE_UI_PANEL_SEARCH );
 
@@ -1206,9 +1204,6 @@ static bool ctune_UI_setup( bool show_cursor ) {
     ctune_UI_MainWin.cb.setOpenInfoDialogCallback( &ui.main_win, ctune_UI_openSelectedStationInformationDialog );
     ctune_UI_MainWin.cb.setPlayStationCallback( &ui.main_win, ctune_Controller.playback.start );
     ctune_UI_MainWin.cb.setOpenInfoDialogCallback( &ui.main_win, ctune_UI_openSelectedStationInformationDialog );
-    ctune_UI_MainWin.cb.setOpenEditDialogCallback( &ui.main_win, ctune_UI_openEditSelectedStationDialog );
-    ctune_UI_MainWin.cb.setOpenFindDialogCallback( &ui.main_win, ctune_UI_openFindDialog );
-    ctune_UI_MainWin.cb.setOpenOptionsMenuDialogCallback( &ui.main_win, ctune_UI_openOptionsMenuDialog );
 
     if( !getenv("ESCDELAY") ) {
         set_escdelay( 25 );
@@ -1232,7 +1227,6 @@ static bool ctune_UI_setup( bool show_cursor ) {
                            ctune_Controller.search.getCategoryItems,
                            ctune_Controller.search.getStationsBy,
                            ctune_Controller.cfg.toggleFavourite );
-
     ctune_UI_Resizer.init();
     ctune_UI_EventQueue.init( ctune_UI_processEvent );
 
@@ -1344,10 +1338,6 @@ static bool ctune_UI_setup( bool show_cursor ) {
 
     ctune_UI_MainWin.ctrl.updateFavourites( &ui.main_win, ctune_Controller.cfg.getListOfFavourites );
     ctune_UI_MainWin.show( &ui.main_win, CTUNE_UI_PANEL_FAVOURITES ); //TODO adapt
-
-//    timeout( 0 );
-//    raw();
-//    nonl();
 
     CTUNE_LOG( CTUNE_LOG_DEBUG,
                "[ctune_UI_setup( %i )] Init = [%i][%i][%i][%i][%i][%i][%i][%i][%i][%i][%i]",

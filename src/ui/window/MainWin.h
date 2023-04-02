@@ -12,7 +12,7 @@
 
 typedef struct ctune_UI_Window_MainWin {
     const WindowProperty_t * screen_property;
-    bool                     mouse_ctrl; //TODO
+    bool                     mouse_ctrl;
     WINDOW                 * panel_windows[CTUNE_UI_PANEL_COUNT];
     PANEL                  * panels       [CTUNE_UI_PANEL_COUNT];
     ctune_UI_Context_e       curr_ctx;
@@ -43,10 +43,7 @@ typedef struct ctune_UI_Window_MainWin {
         const char * (* getDisplayText)( ctune_UI_TextID_e );
         unsigned     (* getStationState)( const ctune_RadioStationInfo_t * rsi );
         bool         (* playStation)( const ctune_RadioStationInfo_t * rsi );
-        void         (* openInfoDialog)( const ctune_RadioStationInfo_t * rsi ); //TODO do i still need these callbacks since actions are returned to UI?
-        int          (* openEditDialog)( ctune_UI_PanelID_e, int );
-        void         (* openFindDialog)( void ); //TODO
-        void         (* openOptionsMenuDialog)( ctune_UI_PanelID_e ); //TODO
+        void         (* openInfoDialog)( const ctune_RadioStationInfo_t * rsi );
     } cb;
 
     struct {
@@ -393,27 +390,6 @@ extern const struct ctune_UI_MainWinClass {
          * @param cb   Callback method
          */
         void (* setOpenInfoDialogCallback)( ctune_UI_MainWin_t * main, void (* cb)( const ctune_RadioStationInfo_t * ) );
-
-        /**
-         * Sets the callback to use to open the station edit dialog
-         * @param main Pointer to MainWin
-         * @param cb   Callback method
-         */
-        void (* setOpenEditDialogCallback)( ctune_UI_MainWin_t * main, int (* cb)( ctune_UI_PanelID_e, int ) );
-
-        /**
-         * Sets the callback to use to open the find station dialog
-         * @param main Pointer to MainWin
-         * @param cb   Callback method
-         */
-        void (* setOpenFindDialogCallback)( ctune_UI_MainWin_t * main, void (* cb)( void ) );
-
-        /**
-         * Sets the callback to use to open a options menu dialog
-         * @param main Pointer to MainWin
-         * @param cb   Callback method
-         */
-        void (* setOpenOptionsMenuDialogCallback)( ctune_UI_MainWin_t * main, void (* cb)( ctune_UI_PanelID_e ) );
     } cb;
 
 
