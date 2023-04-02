@@ -7,8 +7,6 @@
 #include "../definitions/Language.h"
 #include "../definitions/Theme.h"
 #include "../definitions/Icons.h"
-#include "../window/RSListWin.h"
-#include "../window/BrowserWin.h"
 
 /**
  * [PRIVATE] Calculates all the main UI window positions on the screen
@@ -147,8 +145,6 @@ static void ctune_UI_MainWin_printTabMenu( ctune_UI_MainWin_t * main, ctune_UI_P
         if( end_col != NULL && *end_col < col )
             *end_col = col;
     }
-
-//    refresh();  //TODO needed - check?
 }
 
 /**
@@ -304,9 +300,6 @@ static ctune_UI_MainWin_t ctune_UI_MainWin_create( const char * (* getDisplayTex
             .playStation            = NULL,
             .getStationState        = NULL,
             .openInfoDialog         = NULL,
-            .openEditDialog         = NULL,
-            .openFindDialog         = NULL,
-            .openOptionsMenuDialog  = NULL,
         },
         .cache = {
             .prev_panel              = CTUNE_UI_PANEL_FAVOURITES,
@@ -337,6 +330,7 @@ static bool ctune_UI_MainWin_init( ctune_UI_MainWin_t * main,
                                    bool (* getStationsBy)( const ctune_ByCategory_e, const char *, Vector_t * ),
                                    bool (* toggleFavourite)( ctune_RadioStationInfo_t *, ctune_StationSrc_e ) )
 {
+    main->mouse_ctrl = ctune_UIConfig.mouse.enabled( ui_config, FLAG_GET_VALUE );
     ctune_UI_MainWin_calculateWinSizes( main->screen_property, &main->size );
     ctune_UI_MainWin_createPanels( main );
 
@@ -347,7 +341,7 @@ static bool ctune_UI_MainWin_init( ctune_UI_MainWin_t * main,
                                                          toggleFavourite,
                                                          main->cb.getStationState );
 
-        ctune_UI_RSListWin.setMouseCtrl( &main->tabs.favourites, ctune_UIConfig.mouse.enabled( ui_config, FLAG_GET_VALUE ) );
+        ctune_UI_RSListWin.setMouseCtrl( &main->tabs.favourites, main->mouse_ctrl );
         ctune_UI_RSListWin.showCtrlRow( &main->tabs.favourites, false );
         ctune_UI_RSListWin.setLargeRow( &main->tabs.favourites, ctune_UIConfig.fav_tab.largeRowSize( ui_config, FLAG_GET_VALUE ) );
         ctune_UI_RSListWin.themeFavourites( &main->tabs.favourites, ctune_UIConfig.fav_tab.theming( ui_config, FLAG_GET_VALUE ) );
@@ -362,7 +356,7 @@ static bool ctune_UI_MainWin_init( ctune_UI_MainWin_t * main,
                                                      toggleFavourite,
                                                      main->cb.getStationState );
 
-        ctune_UI_RSListWin.setMouseCtrl( &main->tabs.search, ctune_UIConfig.mouse.enabled( ui_config, FLAG_GET_VALUE ) );
+        ctune_UI_RSListWin.setMouseCtrl( &main->tabs.search, main->mouse_ctrl );
         ctune_UI_RSListWin.showCtrlRow( &main->tabs.search, true );
         ctune_UI_RSListWin.setLargeRow( &main->tabs.search, ctune_UIConfig.search_tab.largeRowSize( ui_config, FLAG_GET_VALUE ) );
         ctune_UI_RSListWin.themeFavourites( &main->tabs.search, true );
@@ -378,7 +372,7 @@ static bool ctune_UI_MainWin_init( ctune_UI_MainWin_t * main,
                                                        toggleFavourite,
                                                        main->cb.getStationState );
 
-        ctune_UI_BrowserWin.setMouseCtrl( &main->tabs.browser, ctune_UIConfig.mouse.enabled( ui_config, FLAG_GET_VALUE ) );
+        ctune_UI_BrowserWin.setMouseCtrl( &main->tabs.browser, main->mouse_ctrl );
         ctune_UI_BrowserWin.showCtrlRow( &main->tabs.browser, true );
         ctune_UI_BrowserWin.setLargeRow( &main->tabs.browser, ctune_UIConfig.browse_tab.largeRowSize( ui_config, FLAG_GET_VALUE ) );
         ctune_UI_BrowserWin.themeFavourites( &main->tabs.browser, true );
@@ -402,7 +396,6 @@ static void ctune_UI_MainWin_setMouseCtrl( ctune_UI_MainWin_t * main, bool mouse
  * @return ActionID associated with mouse event in MainWin
  */
 static ctune_UI_ActionID_e ctune_UI_MainWin_handleMouseEvent( ctune_UI_MainWin_t * main, MEVENT * event ) {
-    //TODO change scroll events into actions (maybe change fn name after every processing is moved outside to UI?)
     ctune_UI_ActionID_e action = CTUNE_UI_ACTION_NONE;
     ctune_UI_PanelID_e  panel  = CTUNE_UI_PANEL_COUNT;
 
@@ -459,7 +452,7 @@ static ctune_UI_ActionID_e ctune_UI_MainWin_handleMouseEvent( ctune_UI_MainWin_t
     switch( panel ) {
         case CTUNE_UI_PANEL_TITLE: {
             if( event->bstate & BUTTON2_CLICKED ) {
-                main->cb.openOptionsMenuDialog( main->cache.curr_panel );
+                action = CTUNE_UI_ACTION_OPTIONS;
             }
         } break;
 
@@ -527,7 +520,6 @@ static ctune_UI_ActionID_e ctune_UI_MainWin_handleMouseEvent( ctune_UI_MainWin_t
                     ctune_UI_RSListWin.selectAt( list_win, event->y, event->x );
                     ctune_UI_RSListWin.show( list_win );
                     action = CTUNE_UI_ACTION_TRIGGER;
-//                    ctune_UI_playSelectedStation( panel );
 
                 } else if( event->bstate & BUTTON3_CLICKED ) {
                     if( scroll & CTUNE_UI_SCROLL_UP ) {
@@ -542,9 +534,6 @@ static ctune_UI_ActionID_e ctune_UI_MainWin_handleMouseEvent( ctune_UI_MainWin_t
                         ctune_UI_RSListWin.selectAt( list_win, event->y, event->x );
                         ctune_UI_RSListWin.show( list_win );
                         action = CTUNE_UI_ACTION_RSI_SELECTED;
-//                        ctune_UI_openSelectedStationInformationDialog(
-//                            ctune_UI_MainWin.getSelectedStation( main )
-//                        );
                     }
                 }
             }
@@ -573,7 +562,6 @@ static ctune_UI_ActionID_e ctune_UI_MainWin_handleMouseEvent( ctune_UI_MainWin_t
                     ctune_UI_BrowserWin.selectAt( &main->tabs.browser, event->y, event->x );
                     ctune_UI_BrowserWin.show( &main->tabs.browser );
                     action = CTUNE_UI_ACTION_TRIGGER;
-//                    ctune_UI_navEnter( panel );
 
                 } else if( event->bstate & BUTTON3_CLICKED ) {
                     if( scroll & CTUNE_UI_SCROLL_UP ) {
@@ -588,7 +576,6 @@ static ctune_UI_ActionID_e ctune_UI_MainWin_handleMouseEvent( ctune_UI_MainWin_t
                         ctune_UI_BrowserWin.selectAt( &main->tabs.browser, event->y, event->x );
                         ctune_UI_BrowserWin.show( &main->tabs.browser );
                         action = CTUNE_UI_ACTION_GO_RIGHT;
-//                        ctune_UI_navSelectRight( panel );
                     }
                 }
             }
@@ -626,7 +613,7 @@ static void ctune_UI_MainWin_free( ctune_UI_MainWin_t * main ) {
  * Reconstruct the UI for when window sizes change
  * @param main_win Pointer to MainWin
  */
-static void ctune_UI_MainWin_resize( void * main_win ) { //TODO make sure to set mouse_ctr before calling that!
+static void ctune_UI_MainWin_resize( void * main_win ) {
     CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_MainWin_resize( %p )] Resize event called.", main_win );
     ctune_UI_MainWin_t * main = main_win;
 
@@ -1373,33 +1360,6 @@ static void ctune_UI_MainWin_cb_setOpenInfoDialogCallback( ctune_UI_MainWin_t * 
     main->cb.openInfoDialog = cb;
 }
 
-/**
- * Sets the callback to use to open the station edit dialog
- * @param main Pointer to MainWin
- * @param cb   Callback method
- */
-static void ctune_UI_MainWin_cb_setOpenEditDialogCallback( ctune_UI_MainWin_t * main, int (* cb)( ctune_UI_PanelID_e, int ) ) {
-    main->cb.openEditDialog = cb;
-}
-
-/**
- * Sets the callback to use to open the find station dialog
- * @param main Pointer to MainWin
- * @param cb   Callback method
- */
-static void ctune_UI_MainWin_cb_setOpenFindDialogCallback( ctune_UI_MainWin_t * main, void (* cb)( void ) ) {
-    main->cb.openFindDialog = cb;
-}
-
-/**
- * Sets the callback to use to open a options menu dialog
- * @param main Pointer to MainWin
- * @param cb   Callback method
- */
-static void ctune_UI_MainWin_cb_setOpenOptionsMenuDialogCallback( ctune_UI_MainWin_t * main, void (* cb)( ctune_UI_PanelID_e ) ) {
-    main->cb.openOptionsMenuDialog = cb;
-}
-
 
 const struct ctune_UI_MainWinClass ctune_UI_MainWin = {
     .create                               = &ctune_UI_MainWin_create,
@@ -1460,8 +1420,5 @@ const struct ctune_UI_MainWinClass ctune_UI_MainWin = {
         .setStationStateGetterCallback    = &ctune_UI_MainWin_cb_setStationStateGetterCallback,
         .setPlayStationCallback           = &ctune_UI_MainWin_cb_setPlayStationCallback,
         .setOpenInfoDialogCallback        = &ctune_UI_MainWin_cb_setOpenInfoDialogCallback,
-        .setOpenEditDialogCallback        = &ctune_UI_MainWin_cb_setOpenEditDialogCallback,
-        .setOpenFindDialogCallback        = &ctune_UI_MainWin_cb_setOpenFindDialogCallback,
-        .setOpenOptionsMenuDialogCallback = &ctune_UI_MainWin_cb_setOpenOptionsMenuDialogCallback,
     },
 };
