@@ -254,6 +254,10 @@ static bool CircularBuffer_init( CircularBuffer_t * buffer, size_t size, bool au
         goto end;
     }
 
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init( &attr );
+    pthread_mutexattr_setprotocol( &attr, PTHREAD_PRIO_PROTECT );
+    pthread_mutex_init( &buffer->mutex, &attr );
     pthread_mutex_lock( &buffer->mutex );
 
     if( !CircularBuffer_createBuffer( size, &buffer->fd, &buffer->buffer, &real_size ) ) {
@@ -273,6 +277,18 @@ static bool CircularBuffer_init( CircularBuffer_t * buffer, size_t size, bool au
     buffer->position.read  = 0;
 
     end:
+        if( error_state ) {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[CircularBuffer_init( %p, %lu, %s )] CircularBuffer initialisation: FAILED",
+                       buffer, size, ( auto_grow ? "true" : "false" )
+            );
+        } else {
+            CTUNE_LOG( CTUNE_LOG_DEBUG,
+                       "[CircularBuffer_init( %p, %lu, %s )] CircularBuffer initialisation: SUCCESSFUL",
+                       buffer, size, ( auto_grow ? "true" : "false" )
+            );
+        }
+
         pthread_mutex_unlock( &buffer->mutex );
         return !( error_state );
 }
@@ -373,6 +389,9 @@ static size_t CircularBuffer_readChunk( CircularBuffer_t * buffer, u_int8_t * ta
 
     if( ( ret = pthread_mutex_lock( &buffer->mutex ) ) == 0 ) {
         while( atomic_load( &buffer->empty ) ) {
+            CTUNE_LOG( CTUNE_LOG_WARNING,
+                       "[CircularBuffer_readChunk( %p, %p, %lu )] Waiting for data to read...",
+                       buffer, target, length );
             pthread_cond_wait( &buffer->ready, &buffer->mutex );
         }
 
