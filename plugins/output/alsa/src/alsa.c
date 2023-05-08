@@ -147,6 +147,7 @@ static void ctune_audio_shutdownAudioOut() {
 
     if( alsa_audio_server.mixer_handle ) {
         snd_mixer_close( alsa_audio_server.mixer_handle );
+        snd_mixer_selem_id_free( alsa_audio_server.mixer_id );
         alsa_audio_server.mixer_handle  = NULL;
         alsa_audio_server.mixer_id      = NULL;
         alsa_audio_server.mixer_element = NULL;
@@ -260,12 +261,17 @@ static bool initAlsaMixer() {
         return false; //EARLY RETURN
     }
 
-    snd_mixer_selem_id_alloca( &alsa_audio_server.mixer_id );
+    snd_mixer_selem_id_malloc( &alsa_audio_server.mixer_id );
     snd_mixer_selem_id_set_index( alsa_audio_server.mixer_id, 0 );
     snd_mixer_selem_id_set_name( alsa_audio_server.mixer_id, alsa_audio_server.mixer_name );
 
     if( ( alsa_audio_server.mixer_element = snd_mixer_find_selem( alsa_audio_server.mixer_handle, alsa_audio_server.mixer_id ) ) == NULL ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR, "[initAlsaMixer()] Failed to find mixer element." );
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[initAlsaMixer()] Failed to find mixer element: %s (index: %d)",
+                   snd_mixer_selem_id_get_name( alsa_audio_server.mixer_id ),
+                   snd_mixer_selem_id_get_index( alsa_audio_server.mixer_id )
+        );
+
         return false; //EARLY RETURN
     };
 
