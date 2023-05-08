@@ -6,6 +6,7 @@
 #include "logger/src/Logger.h"
 #include "../src/ctune_err.h"
 #include "../src/utils/Timeout.h"
+#include "../src/datastructure/CircularBuffer.h"
 #include "project_version.h"
 
 const unsigned           abi_version = CTUNE_AUDIOOUT_ABI_VERSION;
@@ -29,6 +30,9 @@ static struct {
     pa_cvolume             channel_volume;
     pa_sample_spec         sample_specs;
     volatile sig_atomic_t  ready;
+
+    /* Holds data until PulseAudio is ready and actually asks for data */
+    CircularBuffer_t buffer;
 
     /* Event counters */
     uint64_t overflow_count;
@@ -298,6 +302,32 @@ static void notifyLatencyUpdateCallback( pa_stream * stream, void * userdata ) {
     }
 }
 
+static void notifyStreamEventCallback( pa_stream * p, const char * name, pa_proplist * pl, void * userdata ) {
+    CTUNE_LOG( CTUNE_LOG_TRACE, "[notifyStreamEventCallback( %p, '%s', %p, %p )] " , p, name, pl, userdata );
+}
+
+static void notifyContextEventChangeCallback( pa_context * p, const char * name, pa_proplist * pl, void * userdata ) {
+    CTUNE_LOG( CTUNE_LOG_TRACE, "[notifyContextEventChangeCallback( %p, '%s', %p, %p )] " , p, name, pl, userdata );
+}
+
+static void requestStreamWriteCallback( pa_stream * p, size_t nbytes, void * userdata ) {
+    uint8_t stream_buffer[nbytes];
+    size_t  bytes_available = CircularBuffer.readChunk( &pulse_audio_server.buffer, &stream_buffer[0], nbytes );
+
+    if( bytes_available > 0 ) {
+        pa_stream_write( pulse_audio_server.stream, &stream_buffer[ 0 ], bytes_available, NULL, 0, PA_SEEK_RELATIVE );
+
+    } else {
+        /* CTune's 'AudioOutput' API is designed to get things going as soon as the server is
+         * initialised but since there is a delay between that and the first 'sendToAudioSink(..)'
+         * call, we just write silence to the stream here. This is a workaround with PulseAudio's
+         * issue where the write callback function is only called once if there is 0 bytes sent
+         * to the stream sink.
+         */
+        pa_stream_write( pulse_audio_server.stream, &stream_buffer[ 0 ], nbytes, NULL, 0, PA_SEEK_RELATIVE );
+    }
+}
+
 /**
  * Gets current mixing volume (0-100)
  * @return Output volume as a percentage
@@ -400,6 +430,8 @@ static void ctune_audio_shutdownAudioOut() {
         pa_threaded_mainloop_free( pulse_audio_server.main_loop );
         pulse_audio_server.main_loop = NULL;
     }
+
+    CircularBuffer.free( &pulse_audio_server.buffer );
 }
 
 /**
@@ -507,23 +539,28 @@ static int ctune_audio_initAudioOut( ctune_OutputFmt_e fmt, int sample_rate, uin
         goto failed;
     }
 
+    const size_t frame_size = fmt * sample_rate * channels;
+    CircularBuffer.init( &pulse_audio_server.buffer, frame_size, true );
+
     //create playback stream
     pa_stream_set_state_callback( pulse_audio_server.stream, notifyStreamStateChangeCallBack, pulse_audio_server.main_loop );
+    pa_stream_set_event_callback( pulse_audio_server.stream, notifyStreamEventCallback, pulse_audio_server.main_loop );
     pa_stream_set_underflow_callback( pulse_audio_server.stream, notifyStreamUnderflowCallback, pulse_audio_server.main_loop );
     pa_stream_set_overflow_callback( pulse_audio_server.stream, notifyStreamOverflowCallback, pulse_audio_server.main_loop );
     pa_stream_set_latency_update_callback( pulse_audio_server.stream, notifyLatencyUpdateCallback, pulse_audio_server.main_loop );
-    pa_context_set_state_callback( pulse_audio_server.context, &notifyContextStateChangeCallback, pulse_audio_server.main_loop );
+    pa_context_set_state_callback( pulse_audio_server.context, notifyContextStateChangeCallback, pulse_audio_server.main_loop );
+    pa_context_set_event_callback( pulse_audio_server.context, notifyContextEventChangeCallback, pulse_audio_server.main_loop );
+    pa_stream_set_write_callback( pulse_audio_server.stream, requestStreamWriteCallback, pulse_audio_server.main_loop );
 
-    pa_cvolume   * init_volume = &pulse_audio_server.channel_volume;
-    pa_buffer_attr buffer_attributes = { .tlength   = -1,
-                                         .minreq    = -1,
-                                         .maxlength = -1,
-                                         .prebuf    = -1,
-                                         .fragsize  = -1, };
+    pa_cvolume   * init_volume       = &pulse_audio_server.channel_volume;
+    pa_buffer_attr buffer_attributes = { .tlength = -1, .minreq = -1, .maxlength = -1, .prebuf = -1, .fragsize = -1, };
 
     ctune_audio_setVolume( volume );
 
-    const pa_stream_flags_t flags = PA_STREAM_ADJUST_LATENCY | PA_STREAM_VARIABLE_RATE | PA_STREAM_AUTO_TIMING_UPDATE | PA_STREAM_INTERPOLATE_TIMING;
+    const pa_stream_flags_t flags = PA_STREAM_ADJUST_LATENCY
+                                  | PA_STREAM_VARIABLE_RATE
+                                  | PA_STREAM_AUTO_TIMING_UPDATE
+                                  | PA_STREAM_INTERPOLATE_TIMING;
 
     if( pa_stream_connect_playback( pulse_audio_server.stream, NULL, &buffer_attributes, flags, init_volume, NULL ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
@@ -580,9 +617,7 @@ static int ctune_audio_initAudioOut( ctune_OutputFmt_e fmt, int sample_rate, uin
  * @param buff_size Size of PCM buffer (in bytes)
  */
 static void ctune_audio_sendToAudioSink( const void * buffer, int buff_size ) {
-    pa_threaded_mainloop_lock( pulse_audio_server.main_loop );
-    pa_stream_write( pulse_audio_server.stream, buffer, buff_size, NULL, 0, PA_SEEK_RELATIVE );
-    pa_threaded_mainloop_unlock( pulse_audio_server.main_loop );
+    CircularBuffer.writeChunk( &pulse_audio_server.buffer, buffer, buff_size );
 }
 
 /**
