@@ -942,39 +942,39 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
 static void ctune_UI_processEvent( ctune_UI_Event_t * event ) {
     switch( event->type ) {
         case EVENT_SONG_CHANGE: {
-            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents()] Dequeued song change event." );
+            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents( %p )] Dequeued song change event.", event );
             char * str = event->data.pointer;
             ctune_UI_MainWin.print.songInfo( &ui.main_win, str );
             free( str );
         } break;
 
         case EVENT_VOLUME_CHANGE: {
-            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents()] Dequeued volume change event." );
+            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents( %p )] Dequeued volume change event.", event );
             ctune_UI_MainWin.print.volume( &ui.main_win, event->data.integer );
         } break;
 
         case EVENT_PLAYBACK_STATE_CHANGE: {
-            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents()] Dequeued playback state change event." );
+            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents( %p )] Dequeued playback state change event.", event );
             ctune_UI_MainWin.print.playbackState( &ui.main_win, event->data.playback_ctrl );
         } break;
 
         case EVENT_SEARCH_STATE_CHANGE: {
-            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents()] Dequeued search state change event." );
+            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents( %p )] Dequeued search state change event.", event );
             ctune_UI_MainWin.print.searchingState( &ui.main_win, (bool) event->data.integer );
         } break;
 
         case EVENT_ERROR_MSG: {
-            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents()] Dequeued error message event." );
+            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents( %p )] Dequeued error message event.", event );
             ctune_UI_MainWin.print.error( &ui.main_win, event->data.pointer );
         } break;
 
         case EVENT_STATUS_MSG: {
-            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents()] Dequeued status message event." );
+            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents( %p )] Dequeued status message event.", event );
             ctune_UI_MainWin.print.statusMsg( &ui.main_win, event->data.pointer );
         } break;
 
         case EVENT_STATION_CHANGE: {
-            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents()] Dequeued station change event." );
+            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents( %p )] Dequeued station change event.", event );
             ctune_UI_MainWin.ctrl.setCurrStation( &ui.main_win, event->data.pointer );
         } break;
     }

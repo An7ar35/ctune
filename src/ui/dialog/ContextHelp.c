@@ -435,8 +435,6 @@ static void ctune_UI_ContextHelp_captureInput() {
 
         switch( ch ) {
             case ERR: {
-//                keypad( private.cache.dialogs[ctx].canvas.pad, TRUE );
-
                 if( ctune_UI_Resizer.resizingRequested() ) {
                     ctune_UI_Resizer.resize();
                 }
@@ -445,8 +443,6 @@ static void ctune_UI_ContextHelp_captureInput() {
                     ctune_UI_EventQueue.flush();
                 }
             } break;
-
-            case KEY_RESIZE: break;
 
             case KEY_UP: {
                 if( ctune_UI_Dialog.isScrollableY( &private.cache.dialogs[ctx] ) )

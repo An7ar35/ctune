@@ -539,8 +539,8 @@ static int ctune_audio_initAudioOut( ctune_OutputFmt_e fmt, int sample_rate, uin
         goto failed;
     }
 
-    const size_t frame_size = fmt * sample_rate * channels;
-    CircularBuffer.init( &pulse_audio_server.buffer, frame_size, true );
+    pulse_audio_server.buffer = CircularBuffer.create();
+    CircularBuffer.init( &pulse_audio_server.buffer, ( ( fmt * sample_rate * channels ) * 2 ), true );
 
     //create playback stream
     pa_stream_set_state_callback( pulse_audio_server.stream, notifyStreamStateChangeCallBack, pulse_audio_server.main_loop );

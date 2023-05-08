@@ -21,6 +21,8 @@ static bool ctune_UI_EventQueue_init( processEventCb cb ) {
         return false;
     }
 
+    event_queue = CircularBuffer.create();
+
     if( !CircularBuffer.init( &event_queue, 4096, true ) ) {
         CTUNE_LOG( CTUNE_LOG_FATAL,
                    "[ctune_UI_EventQueue_init( %p )] Failed to init the circular buffer for the event_queue!",
@@ -31,6 +33,12 @@ static bool ctune_UI_EventQueue_init( processEventCb cb ) {
     }
 
     event_processor_cb = cb;
+
+    CTUNE_LOG( CTUNE_LOG_MSG,
+               "[ctune_UI_EventQueue_init( %p )] Event queue initialised.",
+               cb
+    );
+
     return true;
 }
 
