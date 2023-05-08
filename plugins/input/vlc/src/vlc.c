@@ -346,7 +346,11 @@ static bool ctune_Player_playRadioStream( const char * url, const int volume, in
         goto end;
     }
 
+    char options_buff[256];
+    snprintf( options_buff, 256, ":timeout=%d", timeout_val ); //TODO
+
     libvlc_media_player_set_media( vlc_player.vlc_media_player, vlc_media );
+    libvlc_media_add_option( vlc_media, options_buff );
 
     if( libvlc_media_player_play( vlc_player.vlc_media_player ) < 0 ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
