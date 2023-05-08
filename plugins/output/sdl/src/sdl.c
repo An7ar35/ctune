@@ -184,8 +184,9 @@ static int ctune_audio_initAudioOut( ctune_OutputFmt_e fmt, int sample_rate, uin
  * @param buff_size Size of PCM buffer (in bytes)
  */
 static void ctune_audio_sendToAudioSink( const void * buffer, int buff_size ) {
-    while( audio_buff_info.length > 0 )
+    while( audio_buff_info.length > 0 ) {
         SDL_Delay( 1 ); //wait for the buffer to be consumed
+    }
 
     audio_buff_info.chunk  = (Uint8 *) buffer; //PCM audio buffer
     audio_buff_info.length = buff_size;

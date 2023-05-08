@@ -342,11 +342,11 @@ static size_t CircularBuffer_writeChunk( CircularBuffer_t * buffer, const u_int8
     CircularBuffer_advanceWritePos( buffer, length );
     bytes_writen = length;
 
+    pthread_mutex_unlock( &buffer->mutex );
+
     if( length > 0 ) {
         pthread_cond_signal( &buffer->ready );
     }
-
-    pthread_mutex_unlock( &buffer->mutex );
 
     return bytes_writen;
 }
