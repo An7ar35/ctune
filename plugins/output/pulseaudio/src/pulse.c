@@ -32,7 +32,7 @@ static struct {
     volatile sig_atomic_t  ready;
 
     /* Holds data until PulseAudio is ready and actually asks for data */
-    CircularBuffer_t buffer;
+    CircularBuffer_t * buffer;
 
     /* Event counters */
     uint64_t overflow_count;
@@ -312,7 +312,7 @@ static void notifyContextEventChangeCallback( pa_context * p, const char * name,
 
 static void requestStreamWriteCallback( pa_stream * p, size_t nbytes, void * userdata ) {
     uint8_t stream_buffer[nbytes];
-    size_t  bytes_available = CircularBuffer.readChunk( &pulse_audio_server.buffer, &stream_buffer[0], nbytes );
+    size_t  bytes_available = CircularBuffer.readChunk( pulse_audio_server.buffer, &stream_buffer[0], nbytes );
 
     if( bytes_available > 0 ) {
         pa_stream_write( pulse_audio_server.stream, &stream_buffer[ 0 ], bytes_available, NULL, 0, PA_SEEK_RELATIVE );
@@ -324,6 +324,7 @@ static void requestStreamWriteCallback( pa_stream * p, size_t nbytes, void * use
          * issue where the write callback function is only called once if there is 0 bytes sent
          * to the stream sink.
          */
+        memset( &stream_buffer, 0, nbytes );
         pa_stream_write( pulse_audio_server.stream, &stream_buffer[ 0 ], nbytes, NULL, 0, PA_SEEK_RELATIVE );
     }
 }
@@ -431,7 +432,11 @@ static void ctune_audio_shutdownAudioOut() {
         pulse_audio_server.main_loop = NULL;
     }
 
-    CircularBuffer.free( &pulse_audio_server.buffer );
+    if( pulse_audio_server.buffer ) {
+        CircularBuffer.free( pulse_audio_server.buffer );
+        free( pulse_audio_server.buffer );
+        pulse_audio_server.buffer = NULL;
+    }
 }
 
 /**
@@ -534,13 +539,30 @@ static int ctune_audio_initAudioOut( ctune_OutputFmt_e fmt, int sample_rate, uin
     pulse_audio_server.stream = pa_stream_new( pulse_audio_server.context, "playback", &pulse_audio_server.sample_specs, &pulse_audio_server.channel_map );
 
     if( !pulse_audio_server.stream ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR, "Pulse audio error: %s", pa_strerror( pa_context_errno( pulse_audio_server.context ) ) );
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_audio_initAudioOut( %d, %i, %u, %u, %i )] Pulse audio error: %s",
+                   fmt, sample_rate, channels, samples, volume,
+                   pa_strerror( pa_context_errno( pulse_audio_server.context ) )
+        );
+
         pa_threaded_mainloop_unlock( pulse_audio_server.main_loop );
         goto failed;
     }
 
-    pulse_audio_server.buffer = CircularBuffer.create();
-    CircularBuffer.init( &pulse_audio_server.buffer, ( ( fmt * sample_rate * channels ) * 2 ), true );
+    if( pulse_audio_server.buffer != NULL ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_audio_initAudioOut( %d, %i, %u, %u, %i )] CircularBuffer_t (%p) already initialised!",
+                   fmt, sample_rate, channels, samples, volume,
+                   pulse_audio_server.buffer
+        );
+
+        pa_threaded_mainloop_unlock( pulse_audio_server.main_loop );
+        goto failed;
+    }
+
+    pulse_audio_server.buffer = malloc( sizeof( CircularBuffer_t ) );
+    (*pulse_audio_server.buffer) = CircularBuffer.create();
+    CircularBuffer.init( pulse_audio_server.buffer, ( ( fmt * sample_rate * channels ) * 4 ), true );
 
     //create playback stream
     pa_stream_set_state_callback( pulse_audio_server.stream, notifyStreamStateChangeCallBack, pulse_audio_server.main_loop );
@@ -617,7 +639,7 @@ static int ctune_audio_initAudioOut( ctune_OutputFmt_e fmt, int sample_rate, uin
  * @param buff_size Size of PCM buffer (in bytes)
  */
 static void ctune_audio_sendToAudioSink( const void * buffer, int buff_size ) {
-    CircularBuffer.writeChunk( &pulse_audio_server.buffer, buffer, buff_size );
+    CircularBuffer.writeChunk( pulse_audio_server.buffer, buffer, buff_size );
 }
 
 /**

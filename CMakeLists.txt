@@ -223,6 +223,8 @@ set(SOURCE_FILES
         src/ui/definitions/Theme.h
         src/ui/enum/ActionID.h
         src/ui/enum/ContextID.h
+        src/ui/enum/EventType.c
+        src/ui/enum/EventType.h
         src/ui/enum/FormExit.h
         src/ui/enum/IconID.h
         src/ui/enum/PanelID.h
@@ -262,7 +264,7 @@ set(SOURCE_FILES
         src/ui/widget/ScrollBar.c
         src/ui/widget/ScrollBar.h
         src/ui/widget/BorderWin.c
-        src/ui/widget/BorderWin.h)
+        src/ui/widget/BorderWin.h )
 
 set(TEST_FILES
         tests/main.c

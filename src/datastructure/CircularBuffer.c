@@ -16,6 +16,7 @@
  */
 static const char * CircularBuffer_getPThreadErrStr( int i ) {
     switch( i ) {
+        case 0      : return "OK";
         case EINVAL : return "EINVAL";
         case EBUSY  : return "EBUSY";
         case EAGAIN : return "EAGAIN";
@@ -58,7 +59,7 @@ static int CircularBuffer_memfd_create( const char * name, unsigned int flags ) 
  * @param buffer Pointer to byte buffer pointer to set
  * @param size   Real size of page aligned byte buffer
  */
-static void CircularBuffer_freeBuffer( int * fd, u_int8_t ** buffer, size_t size ) {
+inline static void CircularBuffer_freeBuffer( int * fd, u_int8_t ** buffer, size_t size ) {
     if( (*buffer) != NULL && munmap( (*buffer) + size, size ) != 0 ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[CircularBuffer_freeBuffer( %p, %p, %lu )] Failed unmap virtual buffer 2: %s",
@@ -212,13 +213,14 @@ static size_t CircularBuffer_freeBytes( CircularBuffer_t * buffer ) {
  */
 static CircularBuffer_t CircularBuffer_create( void ) {
     return (CircularBuffer_t) {
-        .fd          = 0,
-        .buffer      = NULL,
-        .size        = 0,
-        .mutex       = PTHREAD_MUTEX_INITIALIZER,
-        .ready       = PTHREAD_COND_INITIALIZER,
-        .empty       = true,
-        .position    = { 0, 0 },
+        .fd       = 0,
+        .buffer   = NULL,
+        .size     = 0,
+        .mutex    = PTHREAD_MUTEX_INITIALIZER,
+        .ready    = PTHREAD_COND_INITIALIZER,
+        .empty    = true,
+        .active   = true,
+        .position = { 0, 0 },
     };
 }
 
@@ -241,8 +243,8 @@ static bool CircularBuffer_init( CircularBuffer_t * buffer, size_t size, bool au
      *                   |          |
      *                   section 1  section 2
      */
-    bool   error_state = false;
-    size_t real_size   = size;
+    bool error_state = false;
+    int  ret         = 0;
 
     if( buffer == NULL ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
@@ -254,27 +256,63 @@ static bool CircularBuffer_init( CircularBuffer_t * buffer, size_t size, bool au
         goto end;
     }
 
-    pthread_mutexattr_t attr;
-    pthread_mutexattr_init( &attr );
-    pthread_mutexattr_setprotocol( &attr, PTHREAD_PRIO_PROTECT );
-    pthread_mutex_init( &buffer->mutex, &attr );
-    pthread_mutex_lock( &buffer->mutex );
+    if( buffer->fd != 0 ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[CircularBuffer_init( %p, %lu, %s )] CircularBuffer_t is already initialised.",
+                   buffer, size, ( auto_grow ? "true" : "false" )
+        );
 
-    if( !CircularBuffer_createBuffer( size, &buffer->fd, &buffer->buffer, &real_size ) ) {
+        error_state = true;
+        goto end;
+    }
+
+    pthread_mutex_init( &buffer->mutex, NULL );
+
+    if( ( ret = pthread_mutex_lock( &buffer->mutex ) ) != 0 ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[CircularBuffer_init( %p, %lu, %s )] Failed to lock mutex: %s (%d)",
+                   buffer, size, ( auto_grow ? "true" : "false" ),
+                   CircularBuffer_getPThreadErrStr( ret ), ret
+        );
+    }
+
+    pthread_cond_init( &buffer->ready, NULL );
+
+    buffer->auto_grow     = auto_grow;
+    buffer->fd            = 0;
+    buffer->buffer        = NULL;
+    buffer->size          = 0;
+    buffer->empty         = true;
+    buffer->active        = true;
+    buffer->position.read = 0;
+
+    if( !CircularBuffer_createBuffer( size, &buffer->fd, &buffer->buffer, &buffer->size ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[CircularBuffer_init( %p, %lu, %s )] Failed to create a page-aligned buffer in memory",
                    buffer, size, ( auto_grow ? "true" : "false" )
         );
 
-        CircularBuffer_freeBuffer( &buffer->fd, &buffer->buffer, real_size );
+        CircularBuffer_freeBuffer( &buffer->fd, &buffer->buffer, buffer->size );
+
+        if( ( ret = pthread_mutex_unlock( &buffer->mutex ) ) != 0 ) {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[CircularBuffer_init( %p, %lu, %s )] Failed to unlock mutex: %s (%d)",
+                       buffer, size, ( auto_grow ? "true" : "false" ),
+                       CircularBuffer_getPThreadErrStr( ret ), ret
+            );
+        }
+
         error_state = true;
         goto end;
     }
 
-    buffer->auto_grow      = auto_grow;
-    buffer->size           = real_size;
-    buffer->position.write = 0;
-    buffer->position.read  = 0;
+    if( ( ret = pthread_mutex_unlock( &buffer->mutex ) ) != 0 ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[CircularBuffer_init( %p, %lu, %s )] Failed to unlock mutex: %s (%d)",
+                   buffer, size, ( auto_grow ? "true" : "false" ),
+                   CircularBuffer_getPThreadErrStr( ret ), ret
+        );
+    }
 
     end:
         if( error_state ) {
@@ -283,13 +321,12 @@ static bool CircularBuffer_init( CircularBuffer_t * buffer, size_t size, bool au
                        buffer, size, ( auto_grow ? "true" : "false" )
             );
         } else {
-            CTUNE_LOG( CTUNE_LOG_DEBUG,
+            CTUNE_LOG( CTUNE_LOG_MSG,
                        "[CircularBuffer_init( %p, %lu, %s )] CircularBuffer initialisation: SUCCESSFUL",
                        buffer, size, ( auto_grow ? "true" : "false" )
             );
         }
 
-        pthread_mutex_unlock( &buffer->mutex );
         return !( error_state );
 }
 
@@ -301,67 +338,74 @@ static bool CircularBuffer_init( CircularBuffer_t * buffer, size_t size, bool au
  * @return Number or bytes written
  */
 static size_t CircularBuffer_writeChunk( CircularBuffer_t * buffer, const u_int8_t * src, size_t length ) {
+    int    ret          = 0;
     size_t bytes_writen = 0;
 
-    pthread_mutex_lock( &buffer->mutex );
+    if( ( ret = pthread_mutex_lock( &buffer->mutex ) ) == 0 ) {
+        size_t free_bytes = CircularBuffer_freeBytes( buffer );
 
-    size_t free_bytes = CircularBuffer_freeBytes( buffer );
+        if( length > free_bytes ) {
+            if( !buffer->auto_grow ) {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[CircularBuffer_writeChunk( %p, %p, %lu )] "
+                           "Free space too small (%lu). Consider making the buffer larger (%lu).",
+                           buffer, src, length,
+                           free_bytes, buffer->size
+                );
 
-    if( length > free_bytes ) {
-        if( !buffer->auto_grow ) {
-            CTUNE_LOG( CTUNE_LOG_ERROR,
+                return 0; //EARLY RETURN
+            }
+
+            CTUNE_LOG( CTUNE_LOG_DEBUG,
                        "[CircularBuffer_writeChunk( %p, %p, %lu )] "
-                       "Free space too small (%lu). Consider making the buffer larger (%lu).",
-                       buffer, src, length,
-                       free_bytes, buffer->size
+                       "Buffer needs to grow (available: %luB, required: %luB)",
+                       buffer, src, length, free_bytes, length
             );
 
-            return 0; //ErARLY RETURN
+            int        new_fd        = -1;
+            u_int8_t * new_buff      = NULL;
+            size_t     new_size      = buffer->size + ( length - free_bytes );
+            size_t     new_real_size = new_size;
+
+            if( !CircularBuffer_createBuffer( new_size, &new_fd, &new_buff, &new_real_size ) ) {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[CircularBuffer_writeChunk( %p, %p, %lu )] "
+                           "Failed to grow buffer (not enough free space (available: %luB)",
+                           buffer, src, length, free_bytes
+                );
+
+                CircularBuffer_freeBuffer( &new_fd, &new_buff, new_real_size );
+                return 0; //EARLY RETURN
+            }
+
+            const size_t bytes_to_copy = CircularBuffer_dataBytes( buffer );
+
+            memcpy( &new_buff[0], &buffer->buffer[buffer->position.read], bytes_to_copy );
+
+            CircularBuffer_freeBuffer( &buffer->fd, &buffer->buffer, buffer->size );
+
+            buffer->fd             = new_fd;
+            buffer->buffer         = new_buff;
+            buffer->size           = new_real_size;
+            buffer->position.read  = 0;
+            buffer->position.write = bytes_to_copy;
         }
 
-        CTUNE_LOG( CTUNE_LOG_DEBUG,
-                   "[CircularBuffer_writeChunk( %p, %p, %lu )] "
-                   "Buffer needs to grow (available: %luB, required: %luB)",
-                   buffer, src, length, free_bytes, length
+        memcpy( &buffer->buffer[buffer->position.write], src, length );
+        CircularBuffer_advanceWritePos( buffer, length );
+        bytes_writen = length;
+
+        pthread_mutex_unlock( &buffer->mutex );
+
+        if( length > 0 ) {
+            pthread_cond_broadcast( &buffer->ready );
+        }
+
+    } else {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[CircularBuffer_writeChunk( %p, %p, %lu )] Failed to lock mutex: %s (%d)",
+                   buffer, src, length, CircularBuffer_getPThreadErrStr( ret ), ret
         );
-
-        int        new_fd        = -1;
-        u_int8_t * new_buff      = NULL;
-        size_t     new_size      = buffer->size + ( length - free_bytes );
-        size_t     new_real_size = new_size;
-
-        if( !CircularBuffer_createBuffer( new_size, &new_fd, &new_buff, &new_real_size ) ) {
-            CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[CircularBuffer_writeChunk( %p, %p, %lu )] "
-                       "Failed to grow buffer (not enough free space (available: %luB)",
-                       buffer, src, length, free_bytes
-            );
-
-            CircularBuffer_freeBuffer( &new_fd, &new_buff, new_real_size );
-            return 0; //EARLY RETURN
-        }
-
-        const size_t bytes_to_copy = CircularBuffer_dataBytes( buffer );
-
-        memcpy( &new_buff[0], &buffer->buffer[buffer->position.read], bytes_to_copy );
-
-        CircularBuffer_freeBuffer( &buffer->fd, &buffer->buffer, buffer->size );
-
-        buffer->fd             = new_fd;
-        buffer->buffer         = new_buff;
-        buffer->size           = new_real_size;
-        buffer->position.read  = 0;
-        buffer->position.write = bytes_to_copy;
-    }
-
-    memcpy( &buffer->buffer[buffer->position.write], src, length );
-    CircularBuffer_advanceWritePos( buffer, length );
-    bytes_writen = length;
-
-    pthread_mutex_unlock( &buffer->mutex );
-
-    if( length > 0 ) {
-        pthread_cond_signal( &buffer->ready );
     }
 
     return bytes_writen;
@@ -386,36 +430,41 @@ static size_t CircularBuffer_readChunk( CircularBuffer_t * buffer, u_int8_t * ta
 
     int    ret        = 0;
     size_t bytes_read = 0;
+    bool   active     = true;
 
-    if( ( ret = pthread_mutex_lock( &buffer->mutex ) ) == 0 ) {
-        while( atomic_load( &buffer->empty ) ) {
-            CTUNE_LOG( CTUNE_LOG_WARNING,
-                       "[CircularBuffer_readChunk( %p, %p, %lu )] Waiting for data to read...",
-                       buffer, target, length );
-            pthread_cond_wait( &buffer->ready, &buffer->mutex );
-        }
+    if( ( ret = pthread_mutex_lock( &buffer->mutex ) ) != 0 ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[CircularBuffer_readChunk( %p, %p, %lu )] Failed to lock mutex: %s (%d)",
+                   buffer, target, length, CircularBuffer_getPThreadErrStr( ret ), ret
+        );
 
+        goto end;
+    }
+
+    while( atomic_load( &buffer->empty ) && !( active = atomic_load( &buffer->active ) ) ) {
+        CTUNE_LOG( CTUNE_LOG_WARNING,
+                   "[CircularBuffer_readChunk( %p, %p, %lu )] Waiting for data to read...",
+                   buffer, target, length );
+        pthread_cond_wait( &buffer->ready, &buffer->mutex );
+    }
+
+    if( active ) {
         size_t bytes_available = CircularBuffer_dataBytes( buffer );
 
         bytes_read = ( bytes_available < length ? bytes_available : length );
-        memcpy( target, &buffer->buffer[buffer->position.read], bytes_read );
+        memcpy( target, &buffer->buffer[ buffer->position.read ], bytes_read );
         CircularBuffer_advanceReadPos( buffer, bytes_read );
+    }
 
-        if( ( ret = pthread_mutex_unlock( &buffer->mutex ) ) != 0 ) {
-            CTUNE_LOG( CTUNE_LOG_ERROR,
-                       "[CircularBuffer_readChunk( %p, %p, %lu )] Failed to unlock mutex: %s (%d).",
-                       buffer, target, length, CircularBuffer_getPThreadErrStr( ret ), ret
-            );
-        }
-
-    } else {
+    if( ( ret = pthread_mutex_unlock( &buffer->mutex ) ) != 0 ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[CircularBuffer_readChunk( %p, %p, %lu )] Failed to lock mutex: %s (%d).",
+                   "[CircularBuffer_readChunk( %p, %p, %lu )] Failed to unlock mutex: %s (%d)",
                    buffer, target, length, CircularBuffer_getPThreadErrStr( ret ), ret
         );
     }
 
-    return bytes_read;
+    end:
+        return bytes_read;
 }
 
 /**
@@ -454,13 +503,29 @@ static size_t CircularBuffer_size( CircularBuffer_t * buffer ) {
  */
 static void CircularBuffer_free( CircularBuffer_t * buffer ) {
     if( buffer != NULL ) {
+        CTUNE_LOG( CTUNE_LOG_MSG,
+                   "[CircularBuffer_free( %p )] Freeing buffer (%lu bytes)...",
+                   buffer, buffer->size
+        );
+
+        atomic_store( &buffer->active, false );
+
+        pthread_cond_broadcast( &buffer->ready );
+        pthread_mutex_lock( &buffer->mutex );
         CircularBuffer_freeBuffer( &buffer->fd, &buffer->buffer, buffer->size );
-        pthread_mutex_destroy( &buffer->mutex );
-        pthread_cond_destroy( &buffer->ready );
         buffer->fd             = 0;
         buffer->buffer         = NULL;
         buffer->position.read  = 0;
         buffer->position.write = 0;
+        buffer->size           = 0;
+        pthread_mutex_destroy( &buffer->mutex );
+        pthread_cond_destroy( &buffer->ready );
+
+    } else {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[CircularBuffer_free( %p )] Failed to free buffer: NULL pointer",
+                   buffer
+        );
     }
 }
 

@@ -1,8 +1,6 @@
 #ifndef CTUNE_DATASTRUCTURE_CIRCULARBUFFER_H
 #define CTUNE_DATASTRUCTURE_CIRCULARBUFFER_H
 
-//TODO circ. buffer with variable width lined up on mem page
-
 #include <stdlib.h>
 #include <stdbool.h>
 #include <pthread.h>
@@ -10,20 +8,22 @@
 
 /**
  * CircularBuffer object
- * @param auto_grow  Flag for auto-grow the buffer when it gets full
- * @param mutex      Mutex for read/write locks
- * @param ready      Read access condition
- * @param empty      Empty state of the buffer
- * @param position   Read/Write positions
- * @param fd         File descriptor for the virtual buffer
- * @param buffer     Raw buffer
- * @param size       Total size of the buffer
+ * @param auto_grow Flag for auto-grow the buffer when it gets full
+ * @param mutex     Mutex for read/write locks
+ * @param ready     Read access condition
+ * @param empty     Empty state of the buffer
+ * @param active    Active state of the buffer
+ * @param position  Read/Write positions
+ * @param fd        File descriptor for the virtual buffer
+ * @param buffer    Raw buffer
+ * @param size      Total size of the buffer
  */
 typedef struct CircularBuffer {
     bool            auto_grow;
     pthread_mutex_t mutex;
     pthread_cond_t  ready;
     atomic_bool     empty;
+    atomic_bool     active;
 
     struct {
         size_t read;

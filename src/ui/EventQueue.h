@@ -4,16 +4,7 @@
 #include <stdbool.h>
 
 #include "../enum/PlaybackCtrl.h"
-
-typedef enum {
-    EVENT_SONG_CHANGE,
-    EVENT_VOLUME_CHANGE,
-    EVENT_PLAYBACK_STATE_CHANGE,
-    EVENT_SEARCH_STATE_CHANGE,
-    EVENT_ERROR_MSG,
-    EVENT_STATUS_MSG,
-    EVENT_STATION_CHANGE
-} ctune_UI_EventType_e;
+#include "enum/EventType.h"
 
 #pragma pack(push, 1)
 typedef struct {
