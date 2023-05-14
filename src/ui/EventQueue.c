@@ -21,7 +21,7 @@ static bool ctune_UI_EventQueue_init( processEventCb cb ) {
         return false;
     }
 
-    event_queue = CircularBuffer.create();
+//    event_queue = CircularBuffer.create();
 
     if( !CircularBuffer.init( &event_queue, 4096, true ) ) {
         CTUNE_LOG( CTUNE_LOG_FATAL,
@@ -51,8 +51,8 @@ static void ctune_UI_EventQueue_add( ctune_UI_Event_t * event ) {
 
     if( ln != sizeof( ctune_UI_Event_t ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_UI_EventQueue_add( %p )] Failed to write Event (written %d/%d bytes)",
-                   event, ln, sizeof( ctune_UI_Event_t )
+                   "[ctune_UI_EventQueue_add( %p )] Failed to write Event (written %d/%d bytes): %s",
+                   event, ln, sizeof( ctune_UI_Event_t ), ctune_UI_EventType.str( event->type )
         );
     }
 }
