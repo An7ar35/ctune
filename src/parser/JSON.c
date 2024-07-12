@@ -21,13 +21,26 @@
  * @return Success of operation
  */
 static bool ctune_parser_JSON_packField_str( const char * key, const char * val, char ** target ) {
-    if( val == NULL )
+    if( val == NULL ) {
+        CTUNE_LOG( CTUNE_LOG_WARNING,
+                   "[ctune_parser_JSON_packField_str( %s, %p, %p )] Value is NULL - replacing by empty string.",
+                   key, val, target
+        );
+
+        *target = malloc(  1 * sizeof( char ) );
+        (*target)[0] = '\0';
+
         return true; //EARLY RETURN
+    }
 
     const size_t length = strlen( val );
 
-    if( length == 0 )
+    if( length == 0 ) {
+        *target = malloc(  1 * sizeof( char ) );
+        (*target)[0] = '\0';
+
         return true; //EARLY RETURN
+    }
 
     if( length > 1 && val[0] == '\"' && val[( length - 1 )] == '\"' ) { //i.e. in quotes ".."
 
