@@ -17,24 +17,14 @@ typedef struct {
     bool (* nslookup)( const char * hostname, const char * service, struct ctune_ServerList * server_list );
 
     /**
-     * Fetch over HTTP
+     * Curl fetch over HTTPS
      * @param host    Host information
+     * @param path    Path
      * @param timeout Socket timeout value to use (seconds)
-     * @param msg     Query message
      * @param answer  String container for the data fetched
-     * @return Success
+     * @return HTTP code
      */
-    bool (* fetch)( const ServerListNode * host, int timeout, const char * msg, struct String * answer );
-
-    /**
-     * Secure fetch over HTTPS
-     * @param host    Host information
-     * @param timeout Socket timeout value to use (seconds)
-     * @param msg     Query message
-     * @param answer  String container for the data fetched
-     * @return Success
-     */
-    bool (* sfetch)( const ServerListNode * host, int timeout, const char * msg, struct String * answer );
+    long (* curlSecureFetch)( const ServerListNode * host, const char * path, long timeout, struct String * answer );
 
     /**
      * Validates a URL

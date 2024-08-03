@@ -1,6 +1,7 @@
 #ifndef CTUNE_DATASTRUCTURE_SERVERLIST_H
 #define CTUNE_DATASTRUCTURE_SERVERLIST_H
 
+#include <stdbool.h>
 #include "netdb.h"
 
 /**
