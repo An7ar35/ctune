@@ -56,6 +56,9 @@
 #define CTUNE_ERR_SOCK_SWRITE           ADD( CTUNE_ERR_NETWORK_IO, 10 )
 #define CTUNE_ERR_SOCK_SREAD            ADD( CTUNE_ERR_NETWORK_IO, 11 )
 #define CTUNE_ERR_INVALID_URL           ADD( CTUNE_ERR_NETWORK_IO, 12 )
+#define CTUNE_ERR_CURL_INIT             ADD( CTUNE_ERR_NETWORK_IO, 13 )
+#define CTUNE_ERR_CURL_WRITE_CALLBACK   ADD( CTUNE_ERR_NETWORK_IO, 14 )
+#define CTUNE_ERR_HTTP_GET              ADD( CTUNE_ERR_NETWORK_IO, 15 )
 #define CTUNE_ERR_RADIO_BROWSER_API     200 //'Radio Browser' web API specific errors
 #define CTUNE_ERR_PARSE                 300 //parsing errors
 #define CTUNE_ERR_PARSE_UNKNOWN_KEY     ADD( CTUNE_ERR_PARSE, 1 )
