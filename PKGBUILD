@@ -12,7 +12,7 @@ depends=('ncurses'
          'curl'
          'ffmpeg'
          'alsa-lib'
-         'pulseaudio'
+         'pipewire-pulse'
          'libbsd')
 
 makedepends=('make'
