@@ -22,7 +22,7 @@
  */
 static bool ctune_parser_JSON_packField_str( const char * key, const char * val, char ** target ) {
     if( val == NULL ) {
-        CTUNE_LOG( CTUNE_LOG_WARNING,
+        CTUNE_LOG( CTUNE_LOG_DEBUG,
                    "[ctune_parser_JSON_packField_str( %s, %p, %p )] Value is NULL - replacing by empty string.",
                    key, val, target
         );
