@@ -51,6 +51,10 @@ typedef enum ctune_UI_InitStages {
     CTUNE_UI_INITSTAGE_COUNT
 } UIInitStages_e;
 
+static const int ACTION_CANCELED  = 0b00;
+static const int ACTION_REQUEST   = 0b01;
+static const int ACTION_CONFIRMED = 0b10;
+
 /**
  * Internal UI variables
  */
@@ -632,31 +636,35 @@ static int ctune_UI_setRecorderPlugin( ctune_UI_PanelID_e tab, int plugin_id ) {
 /**
  * [PRIVATE] Toggles the favourite state of a selected station in any of the tabs
  * @param tab PanelID of the current tab
- * @param arg (unused)
+ * @param arg Pending state
  * @return 1 (unused)
  */
-static int ctune_UI_toggleFavourite( ctune_UI_PanelID_e tab, int arg /*unused*/ ) {
+static int ctune_UI_toggleFavourite( ctune_UI_PanelID_e tab, int pending_state ) {
     ctune_UI_OptionsMenu.close( &ui.dialogs.optmenu );
 
     int  ch;
-    bool refresh = true;
+    bool refresh = false;
 
-    const ctune_RadioStationInfo_t * rsi = ctune_UI_MainWin.getSelectedStation( &ui.main_win, tab );;
+    const ctune_RadioStationInfo_t * rsi = ctune_UI_MainWin.getSelectedStation( &ui.main_win, tab );
+
+    CTUNE_LOG( CTUNE_LOG_TRACE, "[ctune_UI_toggleFavourite( %s, %d )]", ctune_UI_PanelID.str( tab ), pending_state );
 
     if( tab == CTUNE_UI_PANEL_FAVOURITES ) {
         if( ctune_Controller.cfg.isFavourite( rsi, ctune_RadioStationInfo.get.stationSource( rsi ) ) ) {
-            ctune_UI_MainWin.print.statusMsg( &ui.main_win, ctune_UI_Language.text( CTUNE_UI_TEXT_MSG_CONFIRM_UNFAV ) );
-            update_panels();
-            doupdate();
-
-            if( ( ch = getch() ) == 'y' ) {
+            if( pending_state & ACTION_CONFIRMED ) {
                 ctune_UI_MainWin.ctrl.toggleFavourite( &ui.main_win, CTUNE_UI_PANEL_FAVOURITES );
-            } else {
-                refresh = false;
+                refresh = true;
+
+            } else if( pending_state & ACTION_REQUEST ) {
+                ctune_UI_MainWin.print.statusMsg( &ui.main_win, ctune_UI_Language.text( CTUNE_UI_TEXT_MSG_CONFIRM_UNFAV ) );
+                update_panels();
+                doupdate();
             }
 
         } else {
             ctune_UI_MainWin.ctrl.toggleFavourite( &ui.main_win, CTUNE_UI_PANEL_FAVOURITES );
+            pending_state = ACTION_CONFIRMED;
+            refresh = true;
         }
 
         if( refresh ) {
@@ -666,18 +674,20 @@ static int ctune_UI_toggleFavourite( ctune_UI_PanelID_e tab, int arg /*unused*/ 
 
     } else if( tab == CTUNE_UI_PANEL_SEARCH ) {
         if( ctune_Controller.cfg.isFavourite( rsi, ctune_RadioStationInfo.get.stationSource( rsi ) ) ) {
-            ctune_UI_MainWin.print.statusMsg( &ui.main_win, ctune_UI_Language.text( CTUNE_UI_TEXT_MSG_CONFIRM_UNFAV ) );
-            update_panels();
-            doupdate();
-
-            if( ( ch = getch() ) == 'y' ) {
+            if( pending_state & ACTION_CONFIRMED ) {
                 ctune_UI_MainWin.ctrl.toggleFavourite( &ui.main_win, CTUNE_UI_PANEL_SEARCH );
-            } else {
-                refresh = false;
+                refresh = true;
+
+            } else if( pending_state & ACTION_REQUEST ) {
+                ctune_UI_MainWin.print.statusMsg( &ui.main_win, ctune_UI_Language.text( CTUNE_UI_TEXT_MSG_CONFIRM_UNFAV ) );
+                update_panels();
+                doupdate();
             }
 
         } else {
             ctune_UI_MainWin.ctrl.toggleFavourite( &ui.main_win, CTUNE_UI_PANEL_SEARCH );
+            pending_state = ACTION_CONFIRMED;
+            refresh = true;
         }
 
         if( refresh ) {
@@ -686,18 +696,20 @@ static int ctune_UI_toggleFavourite( ctune_UI_PanelID_e tab, int arg /*unused*/ 
 
     } else if( tab == CTUNE_UI_PANEL_BROWSER && ctune_UI_MainWin.browserPaneIsInFocus( &ui.main_win, FOCUS_PANE_RIGHT ) ) {
         if( ctune_Controller.cfg.isFavourite( rsi, ctune_RadioStationInfo.get.stationSource( rsi ) ) ) {
-            ctune_UI_MainWin.print.statusMsg( &ui.main_win, ctune_UI_Language.text( CTUNE_UI_TEXT_MSG_CONFIRM_UNFAV ) );
-            update_panels();
-            doupdate();
-
-            if( ( ch = getch() ) == 'y' ) {
+            if( pending_state & ACTION_CONFIRMED ) {
                 ctune_UI_MainWin.ctrl.toggleFavourite( &ui.main_win, CTUNE_UI_PANEL_BROWSER );
-            } else {
-                refresh = false;
+                refresh = true;
+
+            } else if( pending_state & ACTION_REQUEST ) {
+                ctune_UI_MainWin.print.statusMsg( &ui.main_win, ctune_UI_Language.text( CTUNE_UI_TEXT_MSG_CONFIRM_UNFAV ) );
+                update_panels();
+                doupdate();
             }
 
         } else {
             ctune_UI_MainWin.ctrl.toggleFavourite( &ui.main_win, CTUNE_UI_PANEL_BROWSER );
+            pending_state = ACTION_CONFIRMED;
+            refresh = true;
         }
 
         if( refresh ) {
@@ -705,8 +717,7 @@ static int ctune_UI_toggleFavourite( ctune_UI_PanelID_e tab, int arg /*unused*/ 
         }
     }
 
-    ctune_UI_MainWin.print.clearMsgLine( &ui.main_win );
-    return 1;
+    return pending_state;
 }
 
 /**
@@ -942,39 +953,67 @@ static void ctune_UI_openOptionsMenuDialog( ctune_UI_PanelID_e tab ) {
 static void ctune_UI_processEvent( ctune_UI_Event_t * event ) {
     switch( event->type ) {
         case EVENT_SONG_CHANGE: {
-            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents( %p )] Dequeued song change event.", event );
+            CTUNE_LOG( CTUNE_LOG_DEBUG,
+                       "[ctune_UI_processEvents( %p )] Dequeued song change event.",
+                       event
+            );
+
             char * str = event->data.pointer;
             ctune_UI_MainWin.print.songInfo( &ui.main_win, str );
             free( str );
         } break;
 
         case EVENT_VOLUME_CHANGE: {
-            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents( %p )] Dequeued volume change event.", event );
+            CTUNE_LOG( CTUNE_LOG_DEBUG,
+                       "[ctune_UI_processEvents( %p )] Dequeued volume change event: %d",
+                       event, event->data.integer
+            );
+
             ctune_UI_MainWin.print.volume( &ui.main_win, event->data.integer );
         } break;
 
         case EVENT_PLAYBACK_STATE_CHANGE: {
-            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents( %p )] Dequeued playback state change event.", event );
+            CTUNE_LOG( CTUNE_LOG_DEBUG,
+                       "[ctune_UI_processEvents( %p )] Dequeued playback state change event: %s",
+                       event, ctune_PlaybackCtrl.str( event->data.playback_ctrl )
+            );
+
             ctune_UI_MainWin.print.playbackState( &ui.main_win, event->data.playback_ctrl );
         } break;
 
         case EVENT_SEARCH_STATE_CHANGE: {
-            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents( %p )] Dequeued search state change event.", event );
+            CTUNE_LOG( CTUNE_LOG_DEBUG,
+                       "[ctune_UI_processEvents( %p )] Dequeued search state change event.",
+                       event
+            );
+
             ctune_UI_MainWin.print.searchingState( &ui.main_win, (bool) event->data.integer );
         } break;
 
         case EVENT_ERROR_MSG: {
-            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents( %p )] Dequeued error message event.", event );
+            CTUNE_LOG( CTUNE_LOG_DEBUG,
+                       "[ctune_UI_processEvents( %p )] Dequeued error message event: %s",
+                       event, event->data.pointer
+            );
+
             ctune_UI_MainWin.print.error( &ui.main_win, event->data.pointer );
         } break;
 
         case EVENT_STATUS_MSG: {
-            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents( %p )] Dequeued status message event.", event );
+            CTUNE_LOG( CTUNE_LOG_DEBUG,
+                       "[ctune_UI_processEvents( %p )] Dequeued status message event: %s",
+                       event, event->data.pointer
+            );
+
             ctune_UI_MainWin.print.statusMsg( &ui.main_win, event->data.pointer );
         } break;
 
         case EVENT_STATION_CHANGE: {
-            CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_UI_processEvents( %p )] Dequeued station change event.", event );
+            CTUNE_LOG( CTUNE_LOG_DEBUG,
+                       "[ctune_UI_processEvents( %p )] Dequeued station change event.",
+                       event
+            );
+
             ctune_UI_MainWin.ctrl.setCurrStation( &ui.main_win, event->data.pointer );
         } break;
     }
@@ -984,34 +1023,44 @@ static void ctune_UI_processEvent( ctune_UI_Event_t * event ) {
  * [PRIVATE] Runs the key interaction interface
  */
 static void ctune_UI_runKeyInterfaceLoop() {
-    static const int EXIT_CANCELED  = 0x00;
-    static const int EXIT_REQUEST   = 0x01;
-    static const int EXIT_CONFIRMED = 0x10;
-
     int                 character;
-    ctune_UI_ActionID_e action;
-    int                 exit = EXIT_CANCELED;
+    ctune_UI_ActionID_e current_action;
+    ctune_UI_ActionID_e pending_action = CTUNE_UI_ACTION_NONE;
+    int                 pending_state  = ACTION_CANCELED;
 
-    while( !( exit & EXIT_CONFIRMED ) ) {
-        character = getch();
-        action    = ctune_UI_KeyBinding.getAction( ctune_UI_MainWin.currentContext( &ui.main_win ), character );
+    while( !( pending_action == CTUNE_UI_ACTION_QUIT && ( pending_state & ACTION_CONFIRMED ) ) ) {
+        character      = getch();
+        current_action = ctune_UI_KeyBinding.getAction( ctune_UI_MainWin.currentContext( &ui.main_win ), character );
 
-        if( exit & EXIT_REQUEST && action != CTUNE_UI_ACTION_ERR ) {
+        if( pending_action == CTUNE_UI_ACTION_QUIT && pending_state & ACTION_REQUEST && current_action != CTUNE_UI_ACTION_ERR ) {
             if( character == 'y' || character == 'q' ) {
-                exit |= EXIT_CONFIRMED;
+                pending_state |= ACTION_CONFIRMED;
                 continue;
             } else {
-                exit   = EXIT_CANCELED;
-                action = CTUNE_UI_ACTION_ERR; //avoids initiating any actions if one is linked to the character
+                pending_state  = ACTION_CANCELED;
+                pending_action = CTUNE_UI_ACTION_NONE;
+                current_action = CTUNE_UI_ACTION_ERR; //avoids initiating any actions if one is linked to the character
                 ctune_UI_MainWin.print.clearMsgLine( &ui.main_win );
             }
         }
 
-        if( action == CTUNE_UI_ACTION_MOUSE_EVENT && getmouse( &ui.mouse_event ) == OK ) {
-            action = ctune_UI_MainWin.handleMouseEvent( &ui.main_win, &ui.mouse_event );
+        if( pending_action == CTUNE_UI_ACTION_FAV && pending_state & ACTION_REQUEST && current_action != CTUNE_UI_ACTION_ERR ) {
+            if( character == 'y' ) {
+                pending_state |= ACTION_CONFIRMED;
+                pending_state  = ctune_UI_toggleFavourite( ctune_UI_MainWin.currentPanelID( &ui.main_win ), pending_state );
+            }
+
+            pending_state  = ACTION_CANCELED;
+            pending_action = CTUNE_UI_ACTION_NONE;
+            current_action = CTUNE_UI_ACTION_ERR; //avoids initiating any actions if one is linked to the character
+            ctune_UI_MainWin.print.clearMsgLine( &ui.main_win );
         }
 
-        switch( action ) {
+        if( current_action == CTUNE_UI_ACTION_MOUSE_EVENT && getmouse( &ui.mouse_event ) == OK ) {
+            current_action = ctune_UI_MainWin.handleMouseEvent( &ui.main_win, &ui.mouse_event );
+        }
+
+        switch( current_action ) {
             case CTUNE_UI_ACTION_FIND: {
                 ctune_UI_openFindDialog();
             } break;
@@ -1092,7 +1141,7 @@ static void ctune_UI_runKeyInterfaceLoop() {
                 }
             } break;
 
-            case CTUNE_UI_ACTION_TRIGGER: { //action on selected
+            case CTUNE_UI_ACTION_TRIGGER: { //current_action on selected
                 ctune_UI_MainWin.print.clearMsgLine( &ui.main_win );
                 ctune_UI_MainWin.nav.enter( &ui.main_win );
             } break;
@@ -1126,10 +1175,10 @@ static void ctune_UI_runKeyInterfaceLoop() {
             } break;
 
             case CTUNE_UI_ACTION_QUIT: {
-                exit |= EXIT_REQUEST;
+                pending_action = CTUNE_UI_ACTION_QUIT;
+                pending_state |= ACTION_REQUEST;
                 ctune_UI_MainWin.print.statusMsg( &ui.main_win, ctune_UI_Language.text( CTUNE_UI_TEXT_MSG_CONFIRM_QUIT ) );
                 update_panels();
-                doupdate();
             } break;
 
             case CTUNE_UI_ACTION_TAB1: { //goto "Favourites" tab
@@ -1160,8 +1209,19 @@ static void ctune_UI_runKeyInterfaceLoop() {
             } break;
 
             case CTUNE_UI_ACTION_FAV: { //Toggle favourite state on currently selected station
-                ctune_UI_MainWin.print.clearMsgLine( &ui.main_win );
-                ctune_UI_toggleFavourite( ctune_UI_MainWin.currentPanelID( &ui.main_win ), 0 );
+                pending_action = CTUNE_UI_ACTION_FAV;
+
+                if( pending_state == ACTION_CANCELED ) {
+                    pending_state |= ACTION_REQUEST;
+                }
+
+                pending_state = ctune_UI_toggleFavourite( ctune_UI_MainWin.currentPanelID( &ui.main_win ), pending_state );
+
+                if( pending_state == ACTION_CONFIRMED ) { //for actions that don't require confirmations
+                    pending_state  = ACTION_CANCELED;
+                    pending_action = CTUNE_UI_ACTION_NONE;
+                    current_action = CTUNE_UI_ACTION_ERR; //avoids initiating any actions if one is linked to the character
+                }
             } break;
 
             case CTUNE_UI_ACTION_ERR: {
