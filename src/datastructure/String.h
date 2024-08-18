@@ -57,6 +57,20 @@ extern const struct ctune_String_Namespace {
     size_t (* length)( const struct String * self );
 
     /**
+     * Gets a pointer to the first character in the string
+     * @param self String instance
+     * @return Pointer to first character or NULL
+     */
+    char * (* front)( struct String * self );
+
+    /**
+     * Gets a pointer to the last character in the string
+     * @param self String instance
+     * @return Pointer to last character or NULL
+     */
+    char * (* back)( struct String * self );
+
+    /**
      * Gets the number of code points for a UTF-8 string
      * @param str Null terminated UTF-8 formatted string
      * @return Code point length

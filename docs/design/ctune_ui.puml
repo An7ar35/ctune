@@ -1,14 +1,18 @@
 @startuml
-skinparam linetype ortho
+'skinparam linetype ortho
 'skinparam linetype polyline
 
 package ui #lightgrey {
     component UI
+    component EventQueue
     component Resizer
+    interface " " as iEventQueue #green
     interface " " as iResizer #green
 
+    EventQueue -- iEventQueue
     Resizer -- iResizer
-    UI ----> Resizer
+    UI --> EventQueue
+    UI --> Resizer
 
 '    note top of iResizer : Used by all <b>dialog</b>s and <b>window</b>s
 
@@ -54,11 +58,13 @@ package ui #lightgrey {
 
 
     package window #white {
-
+        component MainWin
         component RSListWin
         component BrowserWin
 
         BrowserWin *-left- RSListWin
+        MainWin *-down- RSListWin
+        MainWin *-down- BrowserWin
     }
 
     package dialog #white {
@@ -75,7 +81,7 @@ package ui #lightgrey {
 '    dialog -[#purple]--( iResizer
 
 
-    BrowserWin  *-- SlideMenu
+    BrowserWin  *- SlideMenu
     OptionsMenu *-- SlideMenu
     RSFind      *-- Form
     RSInfo      *-- Dialog
@@ -87,8 +93,7 @@ package ui #lightgrey {
     UI      --> RSFind
     UI      --> RSInfo
     UI      --> RSEdit
-    UI      --> RSListWin
-    UI      --> BrowserWin
+    UI      --> MainWin
 
 
 

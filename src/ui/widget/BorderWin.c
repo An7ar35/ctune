@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#include "../../logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "../definitions/Icons.h"
 
 /**

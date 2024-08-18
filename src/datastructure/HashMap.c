@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 #include "Deque.h"
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 /**
  * [PRIVATE] Allocates and initialises a new bucket

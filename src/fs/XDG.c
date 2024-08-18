@@ -4,21 +4,25 @@
 #include <unistd.h>
 
 #include "fs.h"
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 static struct ctune_Settings_XDG {
     //https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
     const char * ctune_directory_name;
     const char * fallback_data_path;
     const char * fallback_cfg_path;
+    const char * fallback_rec_path;
     String_t     resolved_data_path;
     String_t     resolved_cfg_path;
+    String_t     resolved_rec_path;
 } xdg = {
     .ctune_directory_name = "ctune/",
     .fallback_data_path   = ".local/share/",
     .fallback_cfg_path    = ".config/",
+    .fallback_rec_path    = "Music/",
     .resolved_data_path   = { ._raw = NULL, ._length = 0 }, //i.e. String.init()
-    .resolved_cfg_path    = { ._raw = NULL, ._length = 0 }  //i.e. String.init()
+    .resolved_cfg_path    = { ._raw = NULL, ._length = 0 }, //i.e. String.init()
+    .resolved_rec_path    = { ._raw = NULL, ._length = 0 }, //i.e. String.init()
 };
 
 /**
@@ -100,6 +104,45 @@ static bool ctune_XDG_getDataBaseDir( String_t * path_str ) {
 }
 
 /**
+ * [PRIVATE] Gets the XDG or fallback 'Music' directory for the application
+ * @param path_str String container
+ * @return Success
+ */
+static bool ctune_XDG_getMusicBaseDir( String_t * path_str ) {
+    const char * xdg_music_home = getenv( "XDG_MUSIC_DIR" );
+    bool         error_state    = false;
+
+    if( xdg_music_home != NULL && strlen( xdg_music_home ) > 0 ) {
+        String.append_back( path_str, xdg_music_home );
+        String.append_back( path_str, "/" );
+
+    } else {
+        CTUNE_LOG( CTUNE_LOG_WARNING,
+                   "[ctune_XDG_getMusicBaseDir( String_t * )] "
+                   "Env. variable 'XDG_MUSIC_DIR' not set, using default (${HOME}/%s%s).",
+                   xdg.fallback_rec_path, xdg.ctune_directory_name
+        );
+
+        char * home_dir = getenv( "HOME" );
+
+        if( home_dir == NULL || strlen( home_dir ) <= 0 ) { //place in running directory as fallback
+            CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_XDG_getMusicBaseDir( String_t * )] Env. variable 'HOME' not found.\"" )
+            error_state = true;
+
+        } else {
+            String.append_back( path_str, home_dir );
+            String.append_back( path_str, "/" );
+            String.append_back( path_str, xdg.fallback_rec_path );
+        }
+    }
+
+    String.append_back( path_str, xdg.ctune_directory_name );
+    CTUNE_LOG( CTUNE_LOG_DEBUG, "[ctune_XDG_getMusicBaseDir( String_t * )] Base data dir set as: %s", path_str->_raw );
+
+    return !( error_state );
+}
+
+/**
  * Resolves the application configuration directory path and append given filename to it
  * @param file_name     File name to resolve on the application's configuration directory
  * @param resolved_path Container for the resolved file path to be stored in
@@ -164,6 +207,36 @@ static void ctune_XDG_resolveDataFilePath( const char * file_name, String_t * re
 }
 
 /**
+ * Resolves the current user's recording output directory path
+ * @param resolved_path Container for the resolved file path to be stored in
+ */
+static void ctune_XDG_resolveMusicOutputFilePath( String_t * resolved_path ) {
+    bool error_state = false;
+
+    if( String.empty( &xdg.resolved_rec_path ) ) {
+        //recording path has never been resolved
+        if( !ctune_XDG_getMusicBaseDir( &xdg.resolved_rec_path ) ) {
+            CTUNE_LOG( CTUNE_LOG_WARNING,
+                       "[ctune_XDG_resolveMusicOutputFilePath( %p )] "
+                       "Failed to resolve recording output path: using current directory as base.",
+                       resolved_path
+            );
+
+            error_state = true;
+        }
+    }
+
+    ctune_fs.createDirectory( &xdg.resolved_rec_path );
+
+    //copy resolved ${data dir path}
+    String.set( resolved_path, xdg.resolved_rec_path._raw );
+
+    if( error_state ) {
+        String.free( &xdg.resolved_rec_path );
+    }
+}
+
+/**
  * De-allocates anything stored on the heap
  */
 static void ctune_XDG_free( void ) {
@@ -176,7 +249,8 @@ static void ctune_XDG_free( void ) {
  * Namespace constructor
  */
 const struct ctune_XDG_Instance ctune_XDG = {
-    .resolveCfgFilePath  = &ctune_XDG_resolveCfgFilePath,
-    .resolveDataFilePath = &ctune_XDG_resolveDataFilePath,
-    .free                = &ctune_XDG_free,
+    .resolveCfgFilePath         = &ctune_XDG_resolveCfgFilePath,
+    .resolveDataFilePath        = &ctune_XDG_resolveDataFilePath,
+    .resolveMusicOutputFilePath = &ctune_XDG_resolveMusicOutputFilePath,
+    .free                       = &ctune_XDG_free,
 };

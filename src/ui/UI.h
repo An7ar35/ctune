@@ -6,6 +6,7 @@
 
 #include "../dto/ArgOptions.h"
 #include "../dto/RadioStationInfo.h"
+#include "../enum/PlaybackCtrl.h"
 #include "enum/PanelID.h"
 #include "definitions/Language.h"
 
@@ -13,10 +14,9 @@ struct ctune_UI_Instance {
     /**
      * Initialises the UI and its internal variables
      * @param show_cursor Flag to show the UI cursor
-     * @param mouse_nav   Flag to enable mouse navigation
      * @return Success
      */
-    bool (* setup)( bool show_cursor, bool mouse_nav );
+    bool (* setup)( bool show_cursor );
 
     /**
      * Start the UI loop
@@ -32,12 +32,6 @@ struct ctune_UI_Instance {
      * Reconstruct the UI for when window sizes change
      */
     void (* resize)();
-
-    /**
-     * Move a particular pane to the top
-     * @param panel Panel index
-     */
-    void (* show)( ctune_UI_PanelID_e panel );
 
     /**
      * Signals a radio station as 'current' (i.e. as queued or playing)
@@ -61,7 +55,7 @@ struct ctune_UI_Instance {
      * Prints the playback state to the screen
      * @param state Playback state
      */
-    void (* printPlaybackState)( const bool state );
+    void (* printPlaybackState)( const ctune_PlaybackCtrl_e state );
 
     /**
      * Prints the search state to the screen

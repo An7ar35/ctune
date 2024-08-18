@@ -34,10 +34,12 @@ find_library(VLC_LIBRARIES
             ${VLC_ROOT_DIR}
 )
 
+if(VLC_INCLUDE_DIRS AND VLC_LIBRARIES)
+    set(VLC_FOUND 1 CACHE INTERNAL "libVLC found" FORCE)
+endif()
 
 mark_as_advanced(VLC_INCLUDE_DIRS)
 mark_as_advanced(VLC_LIBRARIES)
-
 
 include (FindPackageHandleStandardArgs)
 

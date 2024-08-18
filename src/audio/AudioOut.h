@@ -4,17 +4,13 @@
 #include <stdbool.h>
 #include "OutputFormat.h"
 #include "../datastructure/String.h"
+#include "../enum/PluginType.h"
 
-#define CTUNE_AUDIOOUT_ABI_VERSION 1
+#define CTUNE_AUDIOOUT_ABI_VERSION 3
 
 typedef unsigned int uint;
 
 typedef struct ctune_AudioOut {
-    /**
-     * Output plugin name
-     */
-    String_t name;
-
     /**
      * Output plugin file handle
      */
@@ -23,7 +19,24 @@ typedef struct ctune_AudioOut {
     /**
      * Pointer to output plugin ABI version number
      */
-    unsigned int * abi_version;
+    const unsigned int * abi_version;
+
+    /**
+     * Pointer to the plugin's type
+     */
+    const ctune_PluginType_e * plugin_type;
+
+    /**
+     * Gets the plugin's name
+     * @return Plugin name string
+     */
+    const char * (* name)( void );
+
+    /**
+     * Gets the plugin's description
+     * @return Plugin description string
+     */
+    const char * (* description)( void );
 
     /**
      * Initialises sound server
@@ -42,6 +55,12 @@ typedef struct ctune_AudioOut {
      * @param buff_size Size of PCM buffer (in bytes)
      */
     void (* write)( const void * buffer, int buff_size );
+
+    /**
+     * Sets the volume refresh callback method (to update the UI/internal state on external vol change events)
+     * @param cb Callback method
+     */
+    void (* setVolumeChangeCallback)( void(* cb)( int ) );
 
     /**
      * Sets a value to the output volume

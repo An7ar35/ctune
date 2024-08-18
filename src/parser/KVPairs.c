@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "../datastructure/StrList.h"
 #include "../utils/utilities.h"
 #include "../dto/ColourTheme.h"

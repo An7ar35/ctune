@@ -10,12 +10,18 @@
 #include "../dto/UIConfig.h"
 #include "../audio/AudioOut.h"
 #include "../player/Player.h"
+#include "../audio/FileOut.h"
 
 extern const struct ctune_Settings_Instance {
     /**
      * Initialises all the variables for the Settings instance
      */
     void (* init)( void );
+
+    /**
+     * De-allocates anything stored on the heap
+     */
+    void (* free)( void );
 
     struct { /* Runtime lock file*/
         /**
@@ -175,10 +181,17 @@ extern const struct ctune_Settings_Instance {
         int (* getNetworkTimeoutVal)( void );
 
         /**
-         * Gets the mouse support requirement
-         * @return "Enable mouse" state
+         * Get the recording directory path
+         * @return Directory path
          */
-        bool (* enableMouse)( void );
+        const char * (* recordingDirectory)( void );
+
+        /**
+         * Sets the recording directory path
+         * @param path Directory path
+         * @return Validate and set result
+         */
+        bool (* setRecordingDirectory)( const char * path );
 
         /**
          * Gets the UI configuration
@@ -197,23 +210,34 @@ extern const struct ctune_Settings_Instance {
 
     struct { /* Plugins */
         /**
-         * Gets the audio server plugin
-         * @return Pointer to the loaded plugin
+         * Call to load all available plugins into the engine
+         * @return Success
          */
-        ctune_AudioOut_t * (* getAudioServer)( void );
+        bool (* loadPlugins)( void );
 
         /**
-         * Gets the player plugin
-         * @return Pointer to the loaded plugin
+         * Gets the currently selected plugin of a given type or the default if it has not been selected yet
+         * @param type Plugin type enum
+         * @return Pointer to plugin interface of given type or NULL
          */
-        ctune_Player_t * (* getPlayer)( void );
+        void * (* getPlugin)( ctune_PluginType_e type );
+
+        /**
+         * Sets a plugin as 'selected'
+         * @param type Plugin type enum
+         * @param id   Plugin ID
+         * @return Success
+         */
+        bool (* setPlugin)( ctune_PluginType_e type, size_t id );
+
+        /**
+         * Gets a list of all the loaded plugins of a specified type
+         * @param type Plugin type enum
+         * @return Pointer to a heap allocated list of ids, names, descriptions and 'selected' flags
+         */
+        const Vector_t * (* getPluginList)( ctune_PluginType_e type );
 
     } plugins;
-
-    /**
-     * De-allocates anything stored on the heap
-     */
-    void (* free)( void );
 
 } ctune_Settings;
 

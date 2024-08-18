@@ -2,7 +2,7 @@
 
 #include <pthread.h>
 
-#include "logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "ctune_err.h"
 #include "fs/Settings.h"
 #include "fs/PlaybackLog.h"
@@ -84,8 +84,9 @@ static void ctune_Controller_songChangeEvent( const char * str ) {
  * @param vol Volume (0-100)
  */
 static void ctune_Controller_volumeChangeEvent( int vol ) {
-    if( controller.cb.volume_change_cb != NULL )
+    if( controller.cb.volume_change_cb != NULL ) {
         controller.cb.volume_change_cb( vol );
+    }
 
     ctune_Settings.cfg.setVolume( vol );
 }
@@ -108,15 +109,19 @@ static bool ctune_Controller_init( void ) {
     ctune_RadioPlayer.init( ctune_Controller_songChangeEvent,
                             ctune_Controller_volumeChangeEvent );
 
-    if( !ctune_RadioPlayer.loadSoundServerPlugin( ctune_Settings.plugins.getAudioServer() ) ) {
+    if( !ctune_RadioPlayer.loadSoundServerPlugin( ctune_Settings.plugins.getPlugin( CTUNE_PLUGIN_OUT_AUDIO_SERVER ) ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Controller_init()] Failed to load a sound server plugin." );
         return false; //EARLY RETURN
     };
 
-    if( !ctune_RadioPlayer.loadPlayerPlugin( ctune_Settings.plugins.getPlayer() ) ) {
+    if( !ctune_RadioPlayer.loadPlayerPlugin( ctune_Settings.plugins.getPlugin( CTUNE_PLUGIN_IN_STREAM_PLAYER ) ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Controller_init()] Failed to load a player plugin." );
         return false; //EARLY RETURN
     };
+
+    if( ctune_Settings.plugins.getPlugin( CTUNE_PLUGIN_OUT_AUDIO_RECORDER ) == NULL ) {
+        CTUNE_LOG( CTUNE_LOG_WARNING, "[ctune_Controller_init()] Failed to load a recorder plugin." );
+    }
 
     return true;
 }
@@ -254,7 +259,7 @@ static void ctune_Controller_free() {
 /**
  * Stops the playback of the currently playing stream
  */
-static void ctune_Controller_stopPlayback() {
+static void ctune_Controller_playback_stopPlayback() {
     ctune_RadioPlayer.stopPlayback();
 };
 
@@ -262,7 +267,7 @@ static void ctune_Controller_stopPlayback() {
  * Gets the playback state variable's value
  * @return Playback state value
  */
-static bool ctune_Controller_getPlaybackState() {
+static bool ctune_Controller_playback_getPlaybackState() {
     return ctune_RadioPlayer.getPlaybackState();
 }
 
@@ -271,7 +276,7 @@ static bool ctune_Controller_getPlaybackState() {
  * @param station Pointer to a RadioStationInfo DTO
  * @return Success
  */
-static bool ctune_Controller_startPlayback( const ctune_RadioStationInfo_t * station ) {
+static bool ctune_Controller_playback_startPlayback( const ctune_RadioStationInfo_t * station ) {
     if( station == NULL ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Controller_startPlayback( %p )] Station is NULL.", station );
         return false; //EARLY RETURN
@@ -282,19 +287,33 @@ static bool ctune_Controller_startPlayback( const ctune_RadioStationInfo_t * sta
         return false; //EARLY RETURN
     }
 
-    if( ctune_RadioPlayer.getPlaybackState() )
+    if( ctune_RadioPlayer.getPlaybackState() ) {
         ctune_RadioPlayer.stopPlayback();
+    }
 
     { //signal the radio station change to callback and the playback log
         String.free( &cache.last_played_song );
 
-        if( controller.cb.station_change_cb != NULL )
+        if( controller.cb.station_change_cb != NULL ) {
             controller.cb.station_change_cb( station );
+        }
 
         ctune_PlaybackLog.writeln( "" );
         ctune_RadioStationInfo.printLite( station, ctune_PlaybackLog.output() );
         ctune_PlaybackLog.writeln( "\n" );
     }
+
+    if( !ctune_RadioPlayer.loadSoundServerPlugin( ctune_Settings.plugins.getPlugin( CTUNE_PLUGIN_OUT_AUDIO_SERVER ) ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Controller_playback_startPlayback( %p )] Failed to load a sound server plugin." );
+        ctune_err.set( CTUNE_ERR_IO_PLUGIN_LOAD );
+        return false; //EARLY RETURN
+    };
+
+    if( !ctune_RadioPlayer.loadPlayerPlugin( ctune_Settings.plugins.getPlugin( CTUNE_PLUGIN_IN_STREAM_PLAYER ) ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Controller_playback_startPlayback( %p )] Failed to load a player plugin." );
+        ctune_err.set( CTUNE_ERR_IO_PLUGIN_LOAD );
+        return false; //EARLY RETURN
+    };
 
     const char * url = ( ctune_RadioStationInfo.get.resolvedURL( station ) == NULL
                        ? ctune_RadioStationInfo.get.stationURL( station )
@@ -339,7 +358,7 @@ static bool ctune_Controller_startPlayback( const ctune_RadioStationInfo_t * sta
  * @param stations RadioStationInfo container
  * @return Success
  */
-static bool ctune_Controller_getStations( ctune_RadioBrowserFilter_t * filter, Vector_t * stations ) {
+static bool ctune_Controller_search_getStations( ctune_RadioBrowserFilter_t * filter, Vector_t * stations ) {
     bool ret = ctune_RadioBrowser.downloadStations( &controller.radio_browser_servers,
                                                     ctune_Settings.cfg.getNetworkTimeoutVal(),
                                                     filter,
@@ -350,11 +369,11 @@ static bool ctune_Controller_getStations( ctune_RadioBrowserFilter_t * filter, V
             ctune_err.set( CTUNE_ERR_ACTION_FETCH );
 
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_Controller_getStations( %p, %p )] Error downloading radio stations.",
+                   "[ctune_Controller_search_getStations( %p, %p )] Error downloading radio stations.",
                    filter, stations );
     } else {
         CTUNE_LOG( CTUNE_LOG_DEBUG,
-                   "[ctune_Controller_getStations( %p, %p )] Downloaded %lu radio stations.",
+                   "[ctune_Controller_search_getStations( %p, %p )] Downloaded %lu radio stations.",
                    filter, stations, Vector.size( stations ) );
     }
 
@@ -368,7 +387,7 @@ static bool ctune_Controller_getStations( ctune_RadioBrowserFilter_t * filter, V
  * @param stations    Container for stations
  * @return Success
  */
-static bool ctune_Controller_getStationsBy( const ctune_ByCategory_e category, const char * search_term, Vector_t * stations ) {
+static bool ctune_Controller_search_getStationsBy( const ctune_ByCategory_e category, const char * search_term, Vector_t * stations ) {
     bool ret = ctune_RadioBrowser.downloadStationsBy( &controller.radio_browser_servers,
                                                       ctune_Settings.cfg.getNetworkTimeoutVal(),
                                                       category,
@@ -379,11 +398,11 @@ static bool ctune_Controller_getStationsBy( const ctune_ByCategory_e category, c
             ctune_err.set( CTUNE_ERR_ACTION_FETCH );
 
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_Controller_getStationsBy( %i, \"%s\", %p )] Error downloading radio stations.",
+                   "[ctune_Controller_search_getStationsBy( %i, \"%s\", %p )] Error downloading radio stations.",
                    category, ( search_term ? search_term : "" ), stations );
     } else {
         CTUNE_LOG( CTUNE_LOG_TRACE,
-                   "[ctune_Controller_getStationsBy( %i, \"%s\", %p )] Downloaded %lu radio stations.",
+                   "[ctune_Controller_search_getStationsBy( %i, \"%s\", %p )] Downloaded %lu radio stations.",
                    category, ( search_term ? search_term : "" ), stations, Vector.size( stations ) );
     }
 
@@ -396,7 +415,7 @@ static bool ctune_Controller_getStationsBy( const ctune_ByCategory_e category, c
  * @param filter         Search filter
  * @param category_items Data-structure to store the category items (`ctune_CategoryItem_t`) into
  */
-bool ctune_Controller_getCategoryItems( const ctune_ListCategory_e category, const ctune_RadioBrowserFilter_t * filter, Vector_t * categories ) {
+bool ctune_Controller_search_getCategoryItems( const ctune_ListCategory_e category, const ctune_RadioBrowserFilter_t * filter, Vector_t * categories ) {
     bool ret = ctune_RadioBrowser.downloadCategoryItems( &controller.radio_browser_servers,
                                                          ctune_Settings.cfg.getNetworkTimeoutVal(),
                                                          category,
@@ -408,11 +427,11 @@ bool ctune_Controller_getCategoryItems( const ctune_ListCategory_e category, con
             ctune_err.set( CTUNE_ERR_ACTION_FETCH );
 
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_Controller_getCategoryItems( %i, %p, %p )] Error downloading category items.",
+                   "[ctune_Controller_search_getCategoryItems( %i, %p, %p )] Error downloading category items.",
                    category, filter, categories );
     } else {
         CTUNE_LOG( CTUNE_LOG_TRACE,
-                   "[ctune_Controller_getCategoryItems( %i, %p, %p )] Downloaded %lu items for category %i.",
+                   "[ctune_Controller_search_getCategoryItems( %i, %p, %p )] Downloaded %lu items for category %i.",
                    category, filter, categories, Vector.size( categories ), category );
     }
 
@@ -423,7 +442,7 @@ bool ctune_Controller_getCategoryItems( const ctune_ListCategory_e category, con
  * [THREAD SAFE] Changes playback volume variable
  * @param delta Volume change (+/-)
  */
-static void ctune_Controller_modifyVolume( int delta ) {
+static void ctune_Controller_playback_modifyVolume( int delta ) {
     ctune_RadioPlayer.modifyVolume( delta );
 }
 
@@ -434,7 +453,7 @@ static void ctune_Controller_modifyVolume( int delta ) {
  * @param bitrate Pointer to store bitrate value into
  * @return Success
  */
-static bool ctune_Controller_testStream( const char * url, String_t * codec, ulong * bitrate ) {
+static bool ctune_Controller_playback_testStream( const char * url, String_t * codec, ulong * bitrate ) {
     return ctune_RadioPlayer.testStream( url, ctune_Settings.cfg.getStreamTimeoutVal(), codec, bitrate );
 }
 
@@ -443,8 +462,87 @@ static bool ctune_Controller_testStream( const char * url, String_t * codec, ulo
  * @param url URL string
  * @return Valid state
  */
-static bool ctune_Controller_validateURL( const char * url ) {
+static bool ctune_Controller_playback_validateURL( const char * url ) {
     return ctune_NetworkUtils.validateURL( url );
+}
+
+/**
+ * Starts recording
+ * @param station
+ * @return Success
+ */
+static bool ctune_Controller_recording_start( void ) {
+    bool              error_state = false;
+    String_t          path        = String.init();
+    ctune_FileOut_t * plugin      = ctune_Settings.plugins.getPlugin( CTUNE_PLUGIN_OUT_AUDIO_RECORDER );
+
+    if( plugin == NULL ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_Controller_recording_start()] Failed to get a file output plugin to use for recording."
+        );
+
+        ctune_err.set( CTUNE_ERR_IO_PLUGIN_LOAD );
+        error_state = true;
+        goto end;
+    }
+
+    String.append_back( &path, ctune_Settings.cfg.recordingDirectory() );
+
+    if( !ctune_timestampLocal( &path, "%F-%H%M%S" ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_Controller_recording_start()] Failed to create timestamp."
+        );
+
+        ctune_err.set( CTUNE_ERR_FUNC_FAIL );
+        error_state = true;
+        goto end;
+    }
+
+    String.append_back( &path, "." );
+    String.append_back( &path, plugin->extension() );
+
+    if( !ctune_RadioPlayer.startRecording( path._raw, plugin ) ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_Controller_recording_start()] Failed to start recording (path=\"%s\").",
+                   path._raw
+        );
+    }
+
+    end:
+        String.free( &path );
+        return !( error_state );
+}
+
+/**
+ * Stops recording
+ */
+static void ctune_Controller_recording_stop( void ) {
+    return ctune_RadioPlayer.stopRecording();
+}
+
+/**
+ * Check if stream is being recorded
+ * @return Live recording state
+ */
+static bool ctune_Controller_recording_isRecording( void ) {
+    return ctune_RadioPlayer.getRecordingState();
+}
+
+/**
+ * Sets the output path directory for recordings
+ * @param path Directory path
+ * @return Success
+ */
+static bool ctune_Controller_recording_setPath( const char * path ) {
+    return ctune_Settings.cfg.setRecordingDirectory( path );
+}
+
+/**
+ * Gets the current recording output directory path
+ * @return Directory path string
+ */
+static const char * ctune_Controller_recording_path( void ) {
+    return ctune_Settings.cfg.recordingDirectory();
 }
 
 /**
@@ -453,7 +551,7 @@ static bool ctune_Controller_validateURL( const char * url ) {
  * @param src  Radio station provenance
  * @return Success
  */
-static bool ctune_Controller_toggleFavourite( ctune_RadioStationInfo_t * rsi, ctune_StationSrc_e src ) {
+static bool ctune_Controller_cfg_toggleFavourite( ctune_RadioStationInfo_t * rsi, ctune_StationSrc_e src ) {
     bool success = false;
 
     if( ctune_Settings.favs.isFavourite( ctune_RadioStationInfo.get.stationUUID( rsi ), src ) )
@@ -476,7 +574,7 @@ static bool ctune_Controller_toggleFavourite( ctune_RadioStationInfo_t * rsi, ct
  * @param src Radio station origin
  * @return Success
  */
-bool ctune_Controller_updateFavourite( ctune_RadioStationInfo_t * rsi, ctune_StationSrc_e src ) {
+bool ctune_Controller_cfg_updateFavourite( ctune_RadioStationInfo_t * rsi, ctune_StationSrc_e src ) {
     if( ctune_Settings.favs.isFavourite( ctune_RadioStationInfo.get.stationUUID( rsi ), src ) ) {
         bool ret1 = ctune_Settings.favs.removeStation( rsi, src );
         bool ret2 = ctune_Settings.favs.addStation( rsi, src );
@@ -508,7 +606,7 @@ bool ctune_Controller_updateFavourite( ctune_RadioStationInfo_t * rsi, ctune_Sta
  * @param src  Radio station provenance
  * @return Favourite state
  */
-static bool ctune_Controller_isFavourite( const ctune_RadioStationInfo_t * rsi, ctune_StationSrc_e src ) {
+static bool ctune_Controller_cfg_isFavourite( const ctune_RadioStationInfo_t * rsi, ctune_StationSrc_e src ) {
     return ctune_Settings.favs.isFavourite( ctune_RadioStationInfo.get.stationUUID( rsi ), src );
 }
 
@@ -518,7 +616,7 @@ static bool ctune_Controller_isFavourite( const ctune_RadioStationInfo_t * rsi, 
  * @param src  Radio station UUID origin
  * @return In-use state
  */
-static bool ctune_Controller_isFavouriteUUID( const char * uuid, ctune_StationSrc_e src ) {
+static bool ctune_Controller_cfg_isFavouriteUUID( const char * uuid, ctune_StationSrc_e src ) {
     return ctune_Settings.favs.isFavourite( uuid, src );
 }
 
@@ -526,7 +624,7 @@ static bool ctune_Controller_isFavouriteUUID( const char * uuid, ctune_StationSr
  * Saves the favourite stations to file
  * @return Success
  */
-static bool ctune_Controller_saveFavourites() {
+static bool ctune_Controller_cfg_saveFavourites() {
     return ctune_Settings.favs.saveFavourites();
 }
 
@@ -534,7 +632,7 @@ static bool ctune_Controller_saveFavourites() {
  * Update the collection of stations so that it contains only the current favourites
  * @param stations Vector of stations
  */
-static bool ctune_Controller_updateFavourites( Vector_t * stations ) {
+static bool ctune_Controller_cfg_updateFavourites( Vector_t * stations ) {
     return ctune_Settings.favs.refreshView( stations );
 }
 
@@ -542,7 +640,7 @@ static bool ctune_Controller_updateFavourites( Vector_t * stations ) {
  * Sets the sorting attribute for the list of favourite stations
  * @param attr ctune_RadioStationInfo_SortBy_e ID
  */
-static void ctune_Controller_setFavouriteSorting( ctune_RadioStationInfo_SortBy_e attr ) {
+static void ctune_Controller_cfg_setFavouriteSorting( ctune_RadioStationInfo_SortBy_e attr ) {
     ctune_Settings.favs.setSortingAttribute( attr );
 }
 
@@ -550,7 +648,7 @@ static void ctune_Controller_setFavouriteSorting( ctune_RadioStationInfo_SortBy_
  * Gets the loaded UI theme
  * @return Colour theme
  */
-struct ctune_ColourTheme * ctune_Controller_getUiTheme( void ) {
+struct ctune_ColourTheme * ctune_Controller_cfg_getUiTheme( void ) {
     struct ctune_ColourTheme * pallet = ctune_UIConfig.theming.getCurrentThemePallet( &controller.ui_config );
 
     if( pallet == NULL ) {
@@ -567,14 +665,14 @@ struct ctune_ColourTheme * ctune_Controller_getUiTheme( void ) {
  * Gets a pointer to the internal UIConfig object
  * @return Pointer to ctune_UIConfig_t object
  */
-static ctune_UIConfig_t * ctune_Controller_getUIConfig( void ) {
+static ctune_UIConfig_t * ctune_Controller_cfg_getUIConfig( void ) {
     return &controller.ui_config;
 }
 
 /**
  * Saves the internal UIConfig_t object to the Settings component
  */
-static void ctune_Controller_saveUIConfig( void ) {
+static void ctune_Controller_cfg_saveUIConfig( void ) {
     ctune_Settings.cfg.setUIConfig( &controller.ui_config );
 }
 
@@ -582,7 +680,7 @@ static void ctune_Controller_saveUIConfig( void ) {
  * Gets the timeout value in seconds for connecting to and playing a stream
  * @return Timeout value in seconds
  */
-static int ctune_Controller_getStreamTimeout( void ) {
+static int ctune_Controller_cfg_getStreamTimeout( void ) {
     return ctune_Settings.cfg.getStreamTimeoutVal();
 }
 
@@ -591,8 +689,59 @@ static int ctune_Controller_getStreamTimeout( void ) {
  * @param val Timeout value in seconds (1-10 inclusive)
  * @return Success
  */
-static bool ctune_Controller_setStreamTimeout( int seconds ) {
+static bool ctune_Controller_cfg_setStreamTimeout( int seconds ) {
     return ctune_Settings.cfg.setStreamTimeoutVal( seconds );
+}
+
+/**
+ * Changes the selected plugin of a given type
+ * @param type Plugin type enum
+ * @param id   Plugin ID
+ * @return Success
+ */
+static bool ctune_Controller_plugin_changePlugin( ctune_PluginType_e type, size_t id ) {
+    switch( type ) {
+        case CTUNE_PLUGIN_IN_STREAM_PLAYER: //fallthrough
+        case CTUNE_PLUGIN_OUT_AUDIO_SERVER: {
+            if( ctune_RadioPlayer.getPlaybackState() ) {
+                ctune_RadioPlayer.stopPlayback();
+            }
+        } break;
+
+        case CTUNE_PLUGIN_OUT_AUDIO_RECORDER: {
+            if( ctune_RadioPlayer.getRecordingState() ) {
+                ctune_RadioPlayer.stopRecording();
+            }
+        } break;
+
+        default: break;
+    }
+
+    if( ctune_Settings.plugins.setPlugin( type, id ) ) {
+        CTUNE_LOG( CTUNE_LOG_MSG,
+                   "[ctune_Controller_plugin_changePlugin( '%s', %lu )] Selected plugin changed.",
+                   ctune_PluginType.str( type ), id
+        );
+
+        return true;
+
+    } else {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_Controller_plugin_changePlugin( '%s', %lu )] Failed to change selected plugin.",
+                   ctune_PluginType.str( type ), id
+        );
+
+        return false;
+    }
+}
+
+/**
+ * Gets a list of all the loaded plugins of a specified type
+ * @param type Plugin type enum
+ * @return Pointer to a heap allocated list of ids, names, descriptions and 'selected' flags
+ */
+static const Vector_t * ctune_Controller_plugin_getPluginList( ctune_PluginType_e type ) {
+    return ctune_Settings.plugins.getPluginList( type );
 }
 
 /**
@@ -632,7 +781,7 @@ static void ctune_Controller_setStationChangeEventCallback( void(* cb)( const ct
  * [OPTIONAL] Assigns a function as the playback state change callback
  * @param cb Callback function pointer
  */
-static void ctune_Controller_setPlaybackStateChangeEvent_cb( void(* cb)( bool ) ) {
+static void ctune_Controller_setPlaybackStateChangeEvent_cb( void(* cb)( ctune_PlaybackCtrl_e ) ) {
     ctune_RadioPlayer.setStateChangeCallback( cb );
 }
 
@@ -655,33 +804,46 @@ const struct ctune_Controller_Instance ctune_Controller = {
     .free     = &ctune_Controller_free,
 
     .playback = {
-        .getPlaybackState = &ctune_Controller_getPlaybackState,
-        .start            = &ctune_Controller_startPlayback,
-        .stop             = &ctune_Controller_stopPlayback,
-        .modifyVolume     = &ctune_Controller_modifyVolume,
-        .testStream       = &ctune_Controller_testStream,
-        .validateURL      = &ctune_Controller_validateURL,
+        .getPlaybackState    = &ctune_Controller_playback_getPlaybackState,
+        .start               = &ctune_Controller_playback_startPlayback,
+        .stop                = &ctune_Controller_playback_stopPlayback,
+        .modifyVolume        = &ctune_Controller_playback_modifyVolume,
+        .testStream          = &ctune_Controller_playback_testStream,
+        .validateURL         = &ctune_Controller_playback_validateURL,
+    },
+
+    .recording = {
+        .start               = &ctune_Controller_recording_start,
+        .stop                = &ctune_Controller_recording_stop,
+        .isRecording         = &ctune_Controller_recording_isRecording,
+        .setPath             = &ctune_Controller_recording_setPath,
+        .path                = &ctune_Controller_recording_path,
     },
 
     .search = {
-      .getStations         = &ctune_Controller_getStations,
-      .getStationsBy       = &ctune_Controller_getStationsBy,
-      .getCategoryItems    = &ctune_Controller_getCategoryItems,
+      .getStations           = &ctune_Controller_search_getStations,
+      .getStationsBy         = &ctune_Controller_search_getStationsBy,
+      .getCategoryItems      = &ctune_Controller_search_getCategoryItems,
     },
 
     .cfg = {
-        .toggleFavourite        = &ctune_Controller_toggleFavourite,
-        .updateFavourite        = &ctune_Controller_updateFavourite,
-        .isFavourite            = &ctune_Controller_isFavourite,
-        .isFavouriteUUID        = &ctune_Controller_isFavouriteUUID,
-        .saveFavourites         = &ctune_Controller_saveFavourites,
-        .getListOfFavourites    = &ctune_Controller_updateFavourites,
-        .setFavouriteSorting    = &ctune_Controller_setFavouriteSorting,
-        .getUiTheme             = &ctune_Controller_getUiTheme,
-        .getUIConfig            = &ctune_Controller_getUIConfig,
-        .saveUIConfig           = &ctune_Controller_saveUIConfig,
-        .getStreamTimeout       = &ctune_Controller_getStreamTimeout,
-        .setStreamTimeout       = &ctune_Controller_setStreamTimeout,
+        .toggleFavourite     = &ctune_Controller_cfg_toggleFavourite,
+        .updateFavourite     = &ctune_Controller_cfg_updateFavourite,
+        .isFavourite         = &ctune_Controller_cfg_isFavourite,
+        .isFavouriteUUID     = &ctune_Controller_cfg_isFavouriteUUID,
+        .saveFavourites      = &ctune_Controller_cfg_saveFavourites,
+        .getListOfFavourites = &ctune_Controller_cfg_updateFavourites,
+        .setFavouriteSorting = &ctune_Controller_cfg_setFavouriteSorting,
+        .getUiTheme          = &ctune_Controller_cfg_getUiTheme,
+        .getUIConfig         = &ctune_Controller_cfg_getUIConfig,
+        .saveUIConfig        = &ctune_Controller_cfg_saveUIConfig,
+        .getStreamTimeout    = &ctune_Controller_cfg_getStreamTimeout,
+        .setStreamTimeout    = &ctune_Controller_cfg_setStreamTimeout,
+    },
+
+    .plugins = {
+        .changePlugin        = &ctune_Controller_plugin_changePlugin,
+        .getPluginList       = &ctune_Controller_plugin_getPluginList,
     },
 
     .setResizeUIEventCallback            = &ctune_Controller_setResizeUIEventCallback,

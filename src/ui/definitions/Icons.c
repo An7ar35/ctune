@@ -1,6 +1,6 @@
 #include "Icons.h"
 
-#include "../../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 struct IconSet {
     const char * ascii;
@@ -37,6 +37,7 @@ static const struct IconSet icons[CTUNE_UI_ICON_COUNT] = {
     [CTUNE_UI_ICON_RIGHT_ARROW  ] = { .ascii = ">", .unicode = "►" },
     [CTUNE_UI_ICON_STOPPED      ] = { .ascii = ".", .unicode = "■" },
     [CTUNE_UI_ICON_PLAYING      ] = { .ascii = ">", .unicode = "▶" },
+    [CTUNE_UI_ICON_RECORDING    ] = { .ascii = "R", .unicode = "●" },
     [CTUNE_UI_ICON_WINCTRL_CLOSE] = { .ascii = "X", .unicode = "⛌" },
     [CTUNE_UI_ICON_VOLUME       ] = { .ascii = "Vol:", .unicode = "   ◢" },
 };

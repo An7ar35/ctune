@@ -1,10 +1,11 @@
 #include "RSFind.h"
 
-#include "../../logger/Logger.h"
+#include "logger/src/Logger.h"
+#include "../EventQueue.h"
+#include "../Resizer.h"
 #include "../definitions/KeyBinding.h"
 #include "../definitions/Theme.h"
 #include "ContextHelp.h"
-//#include "../Resizer.h"
 
 typedef enum {
     LABEL_NAME = 0,
@@ -845,8 +846,15 @@ static ctune_FormExit_e ctune_UI_RSFind_captureInput( ctune_UI_RSFind_t * rsfind
         character = ctune_UI_Form.input.getChar( &rsfind->form );
 
         switch( ctune_UI_KeyBinding.getAction( CTUNE_UI_CTX_RSFIND, character ) ) {
-            case CTUNE_UI_ACTION_ERR   : //fallthrough
-            case CTUNE_UI_ACTION_RESIZE: break;
+            case CTUNE_UI_ACTION_ERR: {
+                if( ctune_UI_Resizer.resizingRequested() ) {
+                    ctune_UI_Resizer.resize();
+                }
+
+                if( !ctune_UI_EventQueue.empty() ) {
+                    ctune_UI_EventQueue.flush();
+                }
+            } break;
 
             case CTUNE_UI_ACTION_HELP: {
                 ctune_UI_ContextHelp.show( CTUNE_UI_CTX_RSFIND );

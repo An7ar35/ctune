@@ -1,7 +1,7 @@
 #include "String.h"
 
 #include <stdlib.h>
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 /**
  * Initializer
@@ -80,6 +80,32 @@ static void String_free( void * self ) {
  */
 static size_t String_length( const struct String * self ) {
     return self->_length;
+}
+
+/**
+ * Gets a pointer to the first character in the string
+ * @param self String instance
+ * @return Pointer to first character or NULL
+ */
+char * String_front( struct String * self ) {
+    if( self && String.length( self ) > 0 ) {
+        return &self->_raw[0];
+    }
+
+    return NULL;
+}
+
+/**
+ * Gets a pointer to the last character in the string
+ * @param self String instance
+ * @return Pointer to last character or NULL
+ */
+char * String_back( struct String * self ) {
+    if( self && String.length( self ) > 0 ) {
+        return &self->_raw[ ( String.length( self ) - 1 ) ];
+    }
+
+    return NULL;
 }
 
 /**
@@ -229,6 +255,8 @@ const struct ctune_String_Namespace String = {
     .copy           = &String_copy,
     .free           = &String_free,
     .length         = &String_length,
+    .front          = &String_front,
+    .back           = &String_back,
     .u8strlen       = &String_u8strlen,
     .u8length       = &String_u8length,
     .empty          = &String_empty,

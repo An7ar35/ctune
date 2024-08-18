@@ -70,6 +70,21 @@ inline static ctune_Field_t ctune_ServerStats_getField( struct ctune_CategoryIte
 }
 
 /**
+ * Compares CategoryItems based on their names
+ * @param lhs Pointer to a CategoryItem object
+ * @param rhs Pointer to a CategoryItem object to compare against
+ * @return Result of comparison (-1: less, 0: equal, +1: greater)
+ */
+static int ctune_CategoryItem_compareByName( const void * lhs, const void * rhs ) {
+    if( lhs && rhs ) {
+        return strcmp( ( (ctune_CategoryItem_t *) lhs )->name,
+                       ( (ctune_CategoryItem_t *) rhs )->name );
+    }
+
+    return ( lhs ? -1 : ( rhs ? +1 : 0 ) );
+}
+
+/**
  * Gets the name of the category
  * @param cat_item CategoryItem object
  * @return Name string
@@ -109,10 +124,11 @@ static const char * ctune_CategoryItem_get_country( const struct ctune_CategoryI
  * Namespace constructor
  */
 const struct ctune_CategoryItem_Namespace ctune_CategoryItem = {
-    .init        = &ctune_CategoryItem_init,
-    .freeContent = &ctune_CategoryItem_freeContent,
-    .print       = &ctune_CategoryItem_print,
-    .getField    = &ctune_ServerStats_getField,
+    .init          = &ctune_CategoryItem_init,
+    .freeContent   = &ctune_CategoryItem_freeContent,
+    .print         = &ctune_CategoryItem_print,
+    .getField      = &ctune_ServerStats_getField,
+    .compareByName = &ctune_CategoryItem_compareByName,
     .get =  {
         .name         = &ctune_CategoryItem_get_name,
         .stationcount = &ctune_CategoryItem_get_stationcount,

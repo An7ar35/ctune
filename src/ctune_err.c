@@ -1,5 +1,5 @@
 #include "ctune_err.h"
-#include "logger/Logger.h"
+#include "logger/src/Logger.h"
 
 static struct {
     volatile int    errno;
@@ -19,11 +19,15 @@ struct ctune_error {
 
 static const struct ctune_error ctune_error_descs[] = {
     { CTUNE_ERR_NONE,                  "" },
+    { CTUNE_ERR_BUFF_UNDERFLOW,        "Buffer underflow" },
     { CTUNE_ERR_BUFF_OVERFLOW,         "Buffer overflow" },
+    { CTUNE_ERR_BUFF_NULL,             "Buffer is NULL - see log" },
     { CTUNE_ERR_BUFF_ALLOC,            "Buffer allocation failed - see log" },
     { CTUNE_ERR_MALLOC,                "Memory allocation failed - see log" },
     { CTUNE_ERR_BAD_CAST,              "Bad cast" },
+    { CTUNE_ERR_NO_DATA,               "No data" },
     { CTUNE_ERR_BAD_FUNC_ARGS,         "Bad function arguments - see log" },
+    { CTUNE_ERR_FUNC_FAIL,             "Function has failed - see log" },
     { CTUNE_ERR_LOG,                   "Logger error" },
     { CTUNE_ERR_LOG_SERVICE_TIMEOUT,   "Logger service timout" },
     { CTUNE_ERR_LOG_STOP_TIMEOUT,      "Logger service termination timeout" },
@@ -32,11 +36,19 @@ static const struct ctune_error ctune_error_descs[] = {
     { CTUNE_ERR_IO_STDERR_REDIRECT,    "Redirecting stderr failed" },
     { CTUNE_ERR_IO_STDERR_RESET,       "Resetting stderr output to default failed" },
     { CTUNE_ERR_IO_PLAYLOG_OPEN,       "Opening playback log file failed" },
+    { CTUNE_ERR_IO_AUDIOFILE_OPEN,     "Opening audio output file failed" },
+    { CTUNE_ERR_IO_AUDIOFILE_OPENED,   "Audio output file already opened" },
     { CTUNE_ERR_IO_PLUGIN_OPEN,        "Could not open plugin" },
     { CTUNE_ERR_IO_PLUGIN_CLOSE,       "Could not close plugin" },
     { CTUNE_ERR_IO_PLUGIN_LINK,        "Failed linking to plugin" },
     { CTUNE_ERR_IO_PLUGIN_ABI,         "Plugin ABI version mismatch" },
     { CTUNE_ERR_IO_PLUGIN_NULL,        "No plugin set" },
+    { CTUNE_ERR_IO_PLUGIN_LOAD,        "Could not load plugin - see log" },
+    { CTUNE_ERR_IO_DISK_ACCESS_FAIL,   "Disk access failed - see log" },
+    { CTUNE_ERR_IO_DISK_FULL,          "Disk is full" },
+    { CTUNE_ERR_IO_FILE_FULL,          "File has reached max size" },
+    { CTUNE_ERR_IO_FILE_WRITE_FAIL,    "File write failed - see log" },
+    { CTUNE_ERR_IO_FILE_CLOSE_FAIL,    "File closing failed - see log" },
     { CTUNE_ERR_IO_MOUSE_ENABLE_FAIL,  "Failed to enable mouse." },
     { CTUNE_ERR_IO_MOUSE_DISABLE_FAIL, "Failed to disable mouse." },
     { CTUNE_ERR_THREAD,                "Thread error" },
@@ -56,6 +68,9 @@ static const struct ctune_error ctune_error_descs[] = {
     { CTUNE_ERR_SOCK_SWRITE,           "SSL socket write error" },
     { CTUNE_ERR_SOCK_SREAD,            "SSL socket read error" },
     { CTUNE_ERR_INVALID_URL,           "Invalid URL string" },
+    { CTUNE_ERR_CURL_INIT,             "Failed to init CURL - see log" },
+    { CTUNE_ERR_CURL_WRITE_CALLBACK,   "Failed in CURL write callback - see log" },
+    { CTUNE_ERR_HTTP_GET,              "HTTP GET failed - see log" },
     { CTUNE_ERR_RADIO_BROWSER_API,     "Radio Browser API error" },
     { CTUNE_ERR_PARSE,                 "Parsing error" },
     { CTUNE_ERR_PARSE_UNKNOWN_KEY,     "Parsing error: unrecognised key - see log" },
@@ -77,9 +92,11 @@ static const struct ctune_error ctune_error_descs[] = {
     { CTUNE_ERR_SDL_INIT,              "Could not initialise SDL" },
     { CTUNE_ERR_SDL_OPEN,              "Could not open SDL audio" },
     { CTUNE_ERR_PULSE_INIT,            "Could not initialise Pulse audio" },
+    { CTUNE_ERR_PULSE_SHUTDOWN,        "Pulse audio shutdown timed-out" },
     { CTUNE_ERR_ALSA_INIT,             "Could not initialise ALSA" },
     { CTUNE_ERR_SNDIO_INIT,            "Could not initialise SNDIO" },
     { CTUNE_ERR_SNDIO_NOVOL,           "Volume control is not available ('sndio')" },
+    { CTUNE_ERR_LAME_INIT,             "Could not initialise Lame" },
     { CTUNE_ERR_UI,                    "UI error - see log" },
     { CTUNE_ERR_ACTION,                "Failed action - see log" },
     { CTUNE_ERR_ACTION_UNSUPPORTED,    "Unsupported action" },

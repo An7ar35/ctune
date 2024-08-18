@@ -6,7 +6,7 @@
 #include <string.h>
 
 #include "project_version.h"
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "NetworkUtils.h"
 #include "../parser/JSON.h"
 #include "../ctune_err.h"
@@ -56,7 +56,6 @@ static int ctune_RadioBrowser_randomizeServerList( ctune_ServerList_t * addr_lis
  * @return Success
  */
 static bool ctune_RadioBrowser_downloadRadioBrowserData( ctune_ServerList_t * addr_list, int timeout, const char * path, String_t * rcv_buffer ) {
-
     CTUNE_LOG( CTUNE_LOG_TRACE,
                "[ctune_RadioBrowser_downloadRadioBrowserData( %p, \"%s\", %p )] Attempting to download data...",
                addr_list, path, rcv_buffer
@@ -72,46 +71,34 @@ static bool ctune_RadioBrowser_downloadRadioBrowserData( ctune_ServerList_t * ad
     }
 
     if( ctune_ServerList.size( addr_list ) == 0 ) {
-        if( !ctune_NetworkUtils.nslookup( CTUNE_RADIOBROWSER_DNS_ADDRESS, CTUNE_RADIOBROWSER_SERVICE_PORT, addr_list ) )
+        if( !ctune_NetworkUtils.nslookup( CTUNE_RADIOBROWSER_DNS_ADDRESS, CTUNE_RADIOBROWSER_SERVICE_PORT, addr_list ) ) {
             return false;
+        }
 
         ctune_RadioBrowser_randomizeServerList( addr_list );
     }
 
-    const char * query_format = "GET %s\r\n"
-                                "User-Agent: %s\r\n"
-                                "Host: https://%s\r\n" //root endpoint
-                                "Content-type: application/json; charset=utf-8\r\n\r\n";
-
-    const size_t query_buff_length = 1024;
-    char         query_buff[query_buff_length];
-
-    int cx = snprintf( query_buff, query_buff_length, query_format, path, CTUNE_USERAGENT, addr_list->_front->hostname );
-
-    #ifndef NDEBUG
-        CTUNE_LOG( CTUNE_LOG_TRACE, "\n[HTTP request]\n==============\n%s\n==============\n", query_buff );
-    #endif
-
-    if( cx < 0 || (size_t) cx >= query_buff_length ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_RadioBrowser_downloadRadioBrowserData( %p, \"%s\", %p )] "
-                   "Failed to construct the query (buffer too small, req. length: %i)",
-                   addr_list, path, rcv_buffer, cx
-        );
-
-        ctune_err.set( CTUNE_ERR_BUFF_ALLOC );
-        return false;
-    }
-
     ServerListNode * curr_srv      = addr_list->_front;
-    bool             fetch_success = true;
+    bool             fetch_success = false;
+    long             http_code     = 0;
 
-    while( curr_srv && !( fetch_success = ctune_NetworkUtils.sfetch( curr_srv, timeout, query_buff, rcv_buffer ) ) )
-        curr_srv = ctune_ServerList.remove( addr_list, curr_srv );
+    while( !fetch_success && curr_srv ) {
+        http_code     = ctune_NetworkUtils.curlSecureFetch( curr_srv, path, timeout, rcv_buffer );
+        fetch_success = ( http_code == 200 );
+
+        if( !fetch_success ) {
+            CTUNE_LOG( CTUNE_LOG_ERROR,
+                       "[ctune_RadioBrowser_downloadRadioBrowserData( %p, \"%s\", %p )] Failed to fetch data on %s: HTTP %ld",
+                       addr_list, path, rcv_buffer, curr_srv->hostname, http_code
+            );
+
+            curr_srv = ctune_ServerList.remove( addr_list, curr_srv );
+        }
+    }
 
     if( !fetch_success ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,
-                   "[ctune_RadioBrowser_downloadRadioBrowserData( %p, \"%s\", %p )] Failed fetching.",
+                   "[ctune_RadioBrowser_downloadRadioBrowserData( %p, \"%s\", %p )] Failed fetching / exhausted all servers",
                    addr_list, path, rcv_buffer
         );
 
@@ -120,15 +107,16 @@ static bool ctune_RadioBrowser_downloadRadioBrowserData( ctune_ServerList_t * ad
 
     if( String.empty( rcv_buffer ) ) {
         CTUNE_LOG( CTUNE_LOG_WARNING,
-                   "[ctune_RadioBrowser_downloadRadioBrowserData( %p, \"%s\", %p )] No data returned.",
-                   addr_list, path, rcv_buffer, rcv_buffer->_raw );
+                   "[ctune_RadioBrowser_downloadRadioBrowserData( %p, \"%s\", %p )] No data returned from %s",
+                   addr_list, path, rcv_buffer, rcv_buffer->_raw, curr_srv->hostname
+        );
 
         return false;
     }
 
     CTUNE_LOG( CTUNE_LOG_TRACE,
-               "[ctune_RadioBrowser_downloadRadioBrowserData( %p, \"%s\", %p )] Download successful.",
-               addr_list, path, rcv_buffer
+               "[ctune_RadioBrowser_downloadRadioBrowserData( %p, \"%s\", %p )] Download successful on %s",
+               addr_list, path, rcv_buffer, curr_srv->hostname
     );
 
     return true;
@@ -310,7 +298,14 @@ static bool ctune_RadioBrowser_downloadCategoryItems(
                        "[ctune_RadioBrowser_downloadCategoryies( %p, %i, %i, %p, %p )] rcv_buff:\n%s",
                        addr_list, timeout, category, filter, category_items, ( String.empty( &rcv_buff ) ? "\"\"" : rcv_buff._raw )
             );
+
+        } else if( category == RADIOBROWSER_CATEGORY_COUNTRIES
+                || category == RADIOBROWSER_CATEGORY_COUNTRYCODES
+                || category == RADIOBROWSER_CATEGORY_CODECS )
+        { //In-house sorting since reading RadioBrowserAPI's json yields somewhat inconsistent ordering
+            Vector.sort( category_items, ctune_CategoryItem.compareByName ); //<- as long as the text is ASCII, comparison should not go weird
         }
+
     } else {
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_RadioBrowser_downloadCategoryies( %p, %i, %i, %p, %p )] Error downloading data (uri=\"%s\").",

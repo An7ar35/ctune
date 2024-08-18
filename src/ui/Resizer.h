@@ -33,6 +33,17 @@ extern const struct ctune_UI_Resizer_Instance {
     void (* resize)( void );
 
     /**
+     * Gets the resizing request flag and resets it
+     * @return Request flag
+     */
+    bool (* resizingRequested)( void );
+
+    /**
+     * Sets the resize request flag up
+     */
+    void (* requestResizing)( void );
+
+    /**
      * De-allocates internal variables and resets everything back to an initialised state
      */
     void (* free)( void );

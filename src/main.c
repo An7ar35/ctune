@@ -3,7 +3,7 @@
 #include <locale.h>
 #include <langinfo.h>
 
-#include "logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "ctune_err.h"
 #include "cli/CLI.h"
 #include "fs/Settings.h"
@@ -151,6 +151,10 @@ static bool ctune_init( const ctune_ArgOptions_t * options ) {
     /* Print the args passed */
     ctune_ArgOptions.sendToLogger( "INIT", options );
 
+    if( !ctune_Settings.plugins.loadPlugins() ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR, "[INIT] Failed to load all available plugins." );
+    }
+
     /* CONFIGURATION */
     if( !ctune_Settings.cfg.loadCfg() ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[INIT] Failed to load configuration file - using defaults." );
@@ -180,10 +184,10 @@ static bool ctune_init( const ctune_ArgOptions_t * options ) {
     ctune_Controller.setVolumeChangeEventCallback( ctune_UI.printVolume );
     ctune_Controller.setPlaybackStateChangeEventCallback( ctune_UI.printPlaybackState );
     ctune_Controller.setSearchStateChangeEventCallback( ctune_UI.printSearchingState );
-    ctune_Controller.setResizeUIEventCallback( ctune_UI_Resizer.resize );
+    ctune_Controller.setResizeUIEventCallback( ctune_UI_Resizer.requestResizing );
 
     /* UI */
-    if( !ctune_UI.setup( options->ui.show_cursor, ctune_Settings.cfg.enableMouse() ) ) {
+    if( !ctune_UI.setup( options->ui.show_cursor ) ) {
         CTUNE_LOG( CTUNE_LOG_FATAL, "[INIT] Failed to setup the UI." );
         error_state = true;
     }
@@ -206,6 +210,19 @@ static bool ctune_init( const ctune_ArgOptions_t * options ) {
  * Shutdown and cleanup cTune
  */
 static void ctune_shutdown() {
+    CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_shutdown()] Initiating shutdown..." );
+
+    static bool initiated = false;
+
+    if( initiated ) {
+        //This is in case SIGABRT was raised in one of the 3rd party libraries
+        //so that everything exits cleanly regardless (looking at you pulseaudio!).
+        CTUNE_LOG( CTUNE_LOG_WARNING, "[ctune_shutdown()] Shutdown already initiated." );
+        return; //EARLY RETURN
+    }
+
+    initiated = true;
+
     ctune_Controller.playback.stop();
     ctune_Controller.free();
     ctune_PlaybackLog.close();
@@ -238,6 +255,8 @@ void ctune_setupSigHandler() {
     sigaction( SIGTERM,  &signal_handler, NULL );
     sigaction( SIGQUIT,  &signal_handler, NULL );
     sigaction( SIGTSTP,  &signal_handler, NULL );
+    sigaction( SIGHUP,   &signal_handler, NULL );
+    sigaction( SIGABRT,  &signal_handler, NULL );
 }
 
 /**
@@ -247,26 +266,33 @@ void ctune_setupSigHandler() {
  * @param context Pointer to context
  */
 void ctune_handleSignal( int signo, siginfo_t * info, void * context ) {
+    int exit_state = OK;
+
     switch( signo ) {
-        case SIGWINCH: //terminal resize event
+        case SIGWINCH: { //terminal resize event
             CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught interrupt signal (SIGWINCH).", signo );
             ctune_Controller.resizeUI();
-            break;
-        case SIGINT: //interrupt (^C)
-            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught interrupt signal (^C).", signo );
-            ctune_shutdown();
-            exit_curses( ERR );
-            break;
-        case SIGTERM: //terminate
-            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught SIGTERM signal.", signo );
-            ctune_shutdown();
-            exit_curses( OK );
-            break;
-        case SIGQUIT: //quit (^\)
-        case SIGTSTP: //suspend (^Z)
-        default:
-            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught signal, forwarding...", signo );
+        } break;
+
+        case SIGABRT: //fallthrough
+        case SIGINT : exit_state = ERR; //fallthrough
+        case SIGQUIT:
+        case SIGTSTP:
+        case SIGTERM: //fallthrough
+        case SIGHUP : {
+            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Caught signal: %s", signo, strsignal( signo ) );
+            goto shutdown;
+        } break;
+
+        default: {
+            CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_handleSignal( %d )] Forwarding signal: %s", signo, strsignal( signo ) );
             signal( signo, SIG_DFL );
-            break;
+        } break;
     }
+
+    return;
+
+    shutdown:
+        ctune_shutdown();
+        exit_curses( exit_state );
 }

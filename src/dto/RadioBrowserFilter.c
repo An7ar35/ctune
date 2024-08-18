@@ -1,6 +1,6 @@
 #include "RadioBrowserFilter.h"
 
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 /**
  * Default struct constructor for ctune_RadioBrowserFilter

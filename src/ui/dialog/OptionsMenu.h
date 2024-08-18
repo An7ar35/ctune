@@ -3,6 +3,7 @@
 
 #include "../../dto/RadioStationInfo.h" //for sorting
 #include "../../dto/UIConfig.h"
+#include "../../enum/PluginType.h"
 #include "../../enum/StationAttribute.h" //for sorting
 #include "../datastructure/WindowMargin.h"
 #include "../definitions/Language.h"
@@ -42,20 +43,26 @@ typedef struct ctune_UI_Dialog_OptionsMenu {
     } cache;
 
     struct Callbacks {
-        const char * (* getDisplayText)( ctune_UI_TextID_e );
-        int          (* sortStationList)( ctune_UI_PanelID_e tab, int sort_by_e );
-        int          (* addNewStation)( ctune_UI_PanelID_e tab, int /* unused */ );
-        int          (* editStation)( ctune_UI_PanelID_e tab, int /* unused */ );
-        int          (* toggleFavourite)( ctune_UI_PanelID_e tab, int /* unused */ );
-        int          (* syncUpstream)( ctune_UI_PanelID_e tab, int /* unused */ );
-        int          (* favTabTheming)( ctune_UI_PanelID_e tab, int action_flag_e );
-        int          (* favTabCustomTheming)( ctune_UI_PanelID_e tab, int action_flag_e );
-        int          (* listRowSizeLarge)( ctune_UI_PanelID_e tab, int action_flag_e );
-        void         (* getUIPresets)( Vector_t * presets );
-        int          (* setUIPreset)( ctune_UI_PanelID_e tab, int preset_e );
-        int          (* mouseSupport)( ctune_UI_PanelID_e tab, int action_flag_e );
-        int          (* unicodeIcons)( ctune_UI_PanelID_e tab, int action_flag_e );
-        int          (* streamTimeout)( ctune_UI_PanelID_e tab, int value );
+        const char *       (* getDisplayText)( ctune_UI_TextID_e );
+        int                (* sortStationList)( ctune_UI_PanelID_e tab, int sort_by_e );
+        int                (* addNewStation)( ctune_UI_PanelID_e tab, int /* unused */ );
+        int                (* editStation)( ctune_UI_PanelID_e tab, int /* unused */ );
+        int                (* toggleFavourite)( ctune_UI_PanelID_e tab, int /* unused */ );
+        int                (* syncUpstream)( ctune_UI_PanelID_e tab, int /* unused */ );
+        int                (* favTabTheming)( ctune_UI_PanelID_e tab, int action_flag_e );
+        int                (* favTabCustomTheming)( ctune_UI_PanelID_e tab, int action_flag_e );
+        int                (* listRowSizeLarge)( ctune_UI_PanelID_e tab, int action_flag_e );
+        ctune_UIConfig_t * (* getUIConfig)( void );
+        int                (* setUIPreset)( ctune_UI_PanelID_e tab, int preset_e );
+        int                (* mouseSupport)( ctune_UI_PanelID_e tab, int action_flag_e );
+        int                (* setMouseResolution)( ctune_UI_PanelID_e tab, int value );
+        int                (* unicodeIcons)( ctune_UI_PanelID_e tab, int action_flag_e );
+        int                (* streamTimeout)( ctune_UI_PanelID_e tab, int value );
+        const Vector_t *   (* pluginList)( ctune_PluginType_e type );
+        int                (* setPlayPlugin)( ctune_UI_PanelID_e tab, int id );
+        int                (* setSrvPlugin)( ctune_UI_PanelID_e tab, int id );
+        int                (* setRecPlugin)( ctune_UI_PanelID_e tab, int id );
+        int                (* setRecDir)( ctune_UI_PanelID_e tab, int /* unused */ );
     } cb;
 
 } ctune_UI_OptionsMenu_t;
@@ -176,11 +183,11 @@ extern const struct ctune_UI_Dialog_OptionsMenu_Namespace {
         void (* setListRowSizeLargeCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
 
         /**
-         * Sets the callback method to get the list of available UI colour pallet presets
+         * Sets the callback method to get a pointer to the UIConfig object
          * @param om       Pointer to ctune_UI_OptionsMenu_t object
          * @param callback Callback function
          */
-        void (* setGetUIPresetCallback)( ctune_UI_OptionsMenu_t * om, void (* callback)( Vector_t * ) );
+        void (* setGetUIConfigCallback)( ctune_UI_OptionsMenu_t * om, ctune_UIConfig_t * (* callback)( void ) );
 
         /**
          * Sets the callback method to set a UI colour pallet preset
@@ -197,6 +204,13 @@ extern const struct ctune_UI_Dialog_OptionsMenu_Namespace {
         void (* setMouseSupportCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
 
         /**
+         * Sets the callback method to set the mouse's click-interval resolution in the configuration
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
+         */
+        void (* setMouseResolutionCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
+
+        /**
          * Sets the callback method to set unicode icons on/off
          * @param om       Pointer to ctune_UI_OptionsMenu_t object
          * @param callback Callback function
@@ -209,6 +223,32 @@ extern const struct ctune_UI_Dialog_OptionsMenu_Namespace {
          * @param callback Callback function
          */
         void (* setStreamTimeoutValueCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
+
+        /**
+         * Sets the callback method to get a list of plugins
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
+         */
+        void (* setPluginListCallback)( ctune_UI_OptionsMenu_t * om, const Vector_t * (* callback)( ctune_PluginType_e ) );
+
+        /**
+         * Sets the callback methods to set plugins in the configuration
+         * @param om                       Pointer to ctune_UI_OptionsMenu_t object
+         * @param setPlayPlugin_callback   Plugin setter callback function
+         * @param setSndSrvPlugin_callback Plugin setter callback function
+         * @param setRecPlugin_callback    Plugin setter callback function
+         */
+        void (* setPluginSetterCallbacks)( ctune_UI_OptionsMenu_t * om,
+                                           OptionsMenuCb_fn setPlayPlugin_callback,
+                                           OptionsMenuCb_fn setSndSrvPlugin_callback,
+                                           OptionsMenuCb_fn setRecPlugin_callback );
+
+        /**
+         * Sets the callback method to set the recording directory path
+         * @param om       Pointer to ctune_UI_OptionsMenu_t object
+         * @param callback Callback function
+         */
+        void (* setRecordingDirPathCallback)( ctune_UI_OptionsMenu_t * om, OptionsMenuCb_fn callback );
 
     } cb;
 

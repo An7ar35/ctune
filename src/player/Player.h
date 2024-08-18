@@ -1,35 +1,46 @@
 #ifndef CTUNE_PLAYER_PLAYER_H
 #define CTUNE_PLAYER_PLAYER_H
 
+#include "logger/src/Logger.h"
+#include "../enum/PluginType.h"
 #include "../enum/PlaybackCtrl.h"
 #include "../enum/SearchCtrl.h"
-#include "../logger/Logger.h"
 #include "../network/RadioBrowser.h"
 #include "../datastructure/String.h"
 #include "../audio/AudioOut.h"
+#include "../audio/FileOut.h"
 
-#define CTUNE_PLAYER_ABI_VERSION 1
-
-#define CTUNE_PLAYER_STATE_PLAYING 1
-#define CTUNE_PLAYER_STATE_STOPPED 0
+#define CTUNE_PLAYER_ABI_VERSION 2
 
 #define CTUNE_MAX_FRAME_SIZE 192000 //default fallback for output frame buffer
 
 typedef struct ctune_Player_Interface {
-    /**
-     * Player plugin name
-     */
-    String_t name;
-
     /**
      * Player plugin file handle
      */
     void * handle;
 
     /**
-     * Pointer to player plugin ABI version number
+     * Pointer to output plugin ABI version number
      */
-    unsigned int * abi_version;
+    const unsigned int * abi_version;
+
+    /**
+     * Pointer to the plugin's type
+     */
+    const ctune_PluginType_e * plugin_type;
+
+    /**
+     * Gets the plugin's name
+     * @return Plugin name string
+     */
+    const char * (* name)( void );
+
+    /**
+     * Gets the plugin's description
+     * @return Plugin description string
+     */
+    const char * (* description)( void );
 
     /**
      * Initialises the RadioPlayer functionalities
@@ -50,6 +61,21 @@ typedef struct ctune_Player_Interface {
      * @return Success (if false the error_no in the RadioPlayer_t instance will be set accordingly)
      */
     bool (* playRadioStream)( const char * url, const int volume, int timeout_val );
+
+    //TODO have an internal circular buffer of x seconds/minutes for the recorder so that beginnings of songs can be included when recording is turned on
+
+    /**
+     * Attach a callback that copies the raw PCM buffer of the decoded stream
+     * @param filepath Output filepath
+     * @param plugin   File recording plugin
+     * @return Success
+     */
+    bool (* startRecording)( const char * filepath, ctune_FileOut_t * plugin );
+
+    /**
+     * Stops the recording and closes the output file
+     */
+    void (* stopRecording)( void );
 
     /**
      * Gets the error number set in RadioPlayer

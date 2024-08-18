@@ -2,14 +2,14 @@
 
 #include <panel.h>
 
-#include "../../logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "../../datastructure/Vector.h"
 #include "../../utils/utilities.h"
 #include "../definitions/KeyBinding.h"
 #include "../definitions/Theme.h"
 #include "../datastructure/WindowMargin.h"
-#include "../datastructure/WindowProperty.h"
 #include "../widget/Dialog.h"
+#include "../EventQueue.h"
 #include "../Resizer.h"
 
 /**
@@ -128,7 +128,9 @@ static void ctune_UI_ContextHelp_printScroll( ctune_UI_Context_e ctx ) {
 
     ctune_UI_Dialog.createScrollWin( &private.cache.dialogs[ctx], properties.row_count, total_width );
 
-    for( int i = 0, row = 0; i < Vector.size( &entries ); ++i) {
+    int row = 0;
+
+    for( size_t i = 0; i < Vector.size( &entries ); ++i) {
         const ctune_UI_KeyBinding_t * binding = Vector.at( &entries, i );
 
         if( binding != NULL ) {
@@ -257,6 +259,26 @@ static void ctune_UI_ContextHelp_createBorderWin( ctune_UI_Context_e ctx ) {
             ctune_UI_Dialog.hide( &private.cache.dialogs[CTUNE_UI_CTX_RSEDIT] );
         } break;
 
+        case CTUNE_UI_CTX_OPT_MENU: {
+            ctune_UI_Dialog.createBorderWin( &private.cache.dialogs[CTUNE_UI_CTX_OPT_MENU],
+                                             private.screen_size,
+                                             private.cb.getDisplayText( CTUNE_UI_TEXT_WIN_TITLE_HELP_OPTIONMENU ),
+                                             &private.margins,
+                                             private.mouse_ctrl );
+
+            ctune_UI_Dialog.hide( &private.cache.dialogs[CTUNE_UI_CTX_OPT_MENU] );
+        } break;
+
+        case CTUNE_UI_CTX_SETOUTDIR: {
+            ctune_UI_Dialog.createBorderWin( &private.cache.dialogs[CTUNE_UI_CTX_SETOUTDIR],
+                                             private.screen_size,
+                                             private.cb.getDisplayText( CTUNE_UI_TEXT_WIN_TITLE_HELP_SETOUTDIR ),
+                                             &private.margins,
+                                             private.mouse_ctrl );
+
+            ctune_UI_Dialog.hide( &private.cache.dialogs[CTUNE_UI_CTX_SETOUTDIR] );
+        } break;
+
         default: break;
     }
 }
@@ -301,6 +323,7 @@ static bool ctune_UI_ContextHelp_init( const WindowProperty_t * parent, const ch
     private.cache.dialogs[CTUNE_UI_CTX_RSINFO    ] = ctune_UI_Dialog.init();
     private.cache.dialogs[CTUNE_UI_CTX_RSEDIT    ] = ctune_UI_Dialog.init();
     private.cache.dialogs[CTUNE_UI_CTX_OPT_MENU  ] = ctune_UI_Dialog.init();
+    private.cache.dialogs[CTUNE_UI_CTX_SETOUTDIR ] = ctune_UI_Dialog.init();
 
     ctune_UI_ContextHelp_printScroll( CTUNE_UI_CTX_MAIN );
     ctune_UI_ContextHelp_printScroll( CTUNE_UI_CTX_FAV_TAB );
@@ -310,6 +333,7 @@ static bool ctune_UI_ContextHelp_init( const WindowProperty_t * parent, const ch
     ctune_UI_ContextHelp_printScroll( CTUNE_UI_CTX_RSINFO );
     ctune_UI_ContextHelp_printScroll( CTUNE_UI_CTX_RSEDIT );
     ctune_UI_ContextHelp_printScroll( CTUNE_UI_CTX_OPT_MENU );
+    ctune_UI_ContextHelp_printScroll( CTUNE_UI_CTX_SETOUTDIR );
 
     private.init = true;
 
@@ -411,10 +435,14 @@ static void ctune_UI_ContextHelp_captureInput() {
 
         switch( ch ) {
             case ERR: {
-                keypad( private.cache.dialogs[ctx].canvas.pad, TRUE );
-            } break;
+                if( ctune_UI_Resizer.resizingRequested() ) {
+                    ctune_UI_Resizer.resize();
+                }
 
-            case KEY_RESIZE: break;
+                if( !ctune_UI_EventQueue.empty() ) {
+                    ctune_UI_EventQueue.flush();
+                }
+            } break;
 
             case KEY_UP: {
                 if( ctune_UI_Dialog.isScrollableY( &private.cache.dialogs[ctx] ) )

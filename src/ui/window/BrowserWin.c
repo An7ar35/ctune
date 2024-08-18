@@ -1,6 +1,6 @@
 #include "BrowserWin.h"
 
-#include "../../logger/Logger.h"
+#include "logger/src/Logger.h"
 #include "../../datastructure/String.h"
 
 //==================================[ PRIVATE METHODS/STRUCTS ]=====================================

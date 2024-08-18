@@ -5,7 +5,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 /**
  * Get file state
@@ -31,12 +31,31 @@ static ctune_FileState_e ctune_fs_getFileState( const char * filename, ssize_t *
     } else {
         CTUNE_LOG( CTUNE_LOG_ERROR,
                    "[ctune_fs_getFileState( \"%s\" )] Failed to get stats: %s",
-                   filename,
-                   strerror( err_no )
+                   filename, strerror( err_no )
         );
 
         return CTUNE_FILE_ERR;
     }
+}
+
+/**
+ * Check target is an existing directory and is write accessible
+ * @param dir_path Directory path
+ * @return Result
+ */
+static bool ctune_fs_isDirectory( const char * dir_path ) {
+    struct stat file_stat;
+    const int   err    = stat( dir_path, &file_stat );
+    const int   err_no = errno;
+
+    if( err < 0 && err_no != ENOENT ) {
+        CTUNE_LOG( CTUNE_LOG_ERROR,
+                   "[ctune_fs_isDirectory( \"%s\" )] Failed to get stats: %s",
+                   dir_path, strerror( err_no )
+        );
+    }
+
+    return ( err == 0 && S_ISDIR( file_stat.st_mode ) && file_stat.st_mode & S_IWUSR );
 }
 
 /**
@@ -193,6 +212,7 @@ static bool ctune_fs_readFile( const char * file_path, String_t * content ) {
  */
 const struct ctune_fs_Namespace ctune_fs = {
     .getFileState    = &ctune_fs_getFileState,
+    .isDirectory     = &ctune_fs_isDirectory,
     .createDirectory = &ctune_fs_createDirectory,
     .duplicateFile   = &ctune_fs_duplicateFile,
     .readFile        = &ctune_fs_readFile,

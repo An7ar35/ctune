@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-#include "../logger/Logger.h"
+#include "logger/src/Logger.h"
 
 /**
  * [PRIVATE] Helper method to create a Deque node
