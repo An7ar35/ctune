@@ -63,7 +63,7 @@ static const char * ctune_Plugin_loadPlugin( void * handle ) {
         case CTUNE_PLUGIN_IN_STREAM_PLAYER: {
             if( *abi_version != CTUNE_PLAYER_ABI_VERSION ) {
                 CTUNE_LOG( CTUNE_LOG_FATAL,
-                           "[ctune_Plugin_loadPlugin( %p )] ABI version mismatch: plugin=%d, ctune=%d.",
+                           "[ctune_Plugin_loadPlugin( %p )] Player ABI version mismatch: plugin=%d, ctune=%d.",
                            handle, *abi_version, CTUNE_PLAYER_ABI_VERSION
                 );
 
@@ -104,9 +104,9 @@ static const char * ctune_Plugin_loadPlugin( void * handle ) {
         } break;
 
         case CTUNE_PLUGIN_OUT_AUDIO_SERVER: {
-            if( *abi_version != CTUNE_FILEOUT_ABI_VERSION ) {
+            if( *abi_version != CTUNE_AUDIOOUT_ABI_VERSION ) {
                 CTUNE_LOG( CTUNE_LOG_FATAL,
-                           "[ctune_Plugin_loadPlugin( %p )] ABI version mismatch: plugin=%d, ctune=%d.",
+                           "[ctune_Plugin_loadPlugin( %p )] AudioOut ABI version mismatch: plugin=%d, ctune=%d.",
                            handle, *abi_version, CTUNE_FILEOUT_ABI_VERSION
                 );
 
@@ -132,14 +132,15 @@ static const char * ctune_Plugin_loadPlugin( void * handle ) {
                     Vector.remove( &private.audio_servers.list, Vector.size( &private.audio_servers.list ) - 1 );
 
                 } else {
-                    plugin->name         = ao->name;
-                    plugin->description  = ao->description;
-                    plugin->init         = ao->init;
-                    plugin->write        = ao->write;
-                    plugin->setVolume    = ao->setVolume;
-                    plugin->changeVolume = ao->changeVolume;
-                    plugin->getVolume    = ao->getVolume;
-                    plugin->shutdown     = ao->shutdown;
+                    plugin->name                    = ao->name;
+                    plugin->description             = ao->description;
+                    plugin->init                    = ao->init;
+                    plugin->write                   = ao->write;
+                    plugin->setVolumeChangeCallback = ao->setVolumeChangeCallback;
+                    plugin->setVolume               = ao->setVolume;
+                    plugin->changeVolume            = ao->changeVolume;
+                    plugin->getVolume               = ao->getVolume;
+                    plugin->shutdown                = ao->shutdown;
 
                     plugin_name = plugin->name();
                 }
@@ -147,9 +148,9 @@ static const char * ctune_Plugin_loadPlugin( void * handle ) {
         } break;
 
         case CTUNE_PLUGIN_OUT_AUDIO_RECORDER: {
-            if( *abi_version != CTUNE_AUDIOOUT_ABI_VERSION ) {
+            if( *abi_version != CTUNE_FILEOUT_ABI_VERSION ) {
                 CTUNE_LOG( CTUNE_LOG_FATAL,
-                           "[ctune_Plugin_loadPlugin( %p )] ABI version mismatch: plugin=%d, ctune=%d.",
+                           "[ctune_Plugin_loadPlugin( %p )] FileOut ABI version mismatch: plugin=%d, ctune=%d.",
                            handle, *abi_version, CTUNE_AUDIOOUT_ABI_VERSION
                 );
 

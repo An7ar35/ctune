@@ -47,11 +47,13 @@ package ctune #lightgrey {
 
         package "plugins/output/" as plugins_out #lightgrey {
             package "sound servers" as sound_servers {
+                file "pipewire.so" as pw_plugin
                 file "pulse.so" as pulse_plugin
                 file "alsa.so" as alsa_plugin
                 file "sdl.so" as sdl_plugin
                 file "sndio.so" as sndio_plugin
 
+                interface libpipewire
                 interface libalsa
                 interface libpulseaudio
                 interface libsld2
@@ -65,6 +67,7 @@ package ctune #lightgrey {
                 interface libmp3lame
             }
 
+            pw_plugin -down-( libpipewire : uses
             pulse_plugin -down-( libpulseaudio : uses
             alsa_plugin -down-( libalsa : uses
             sdl_plugin -down-( libsld2 : uses
@@ -86,6 +89,7 @@ package ctune #lightgrey {
 
         Plugin .[#RoyalBlue]..> ffmpeg_plugin
         Plugin .[#RoyalBlue]..> vlc_plugin
+        Plugin .[#RoyalBlue]..> pw_plugin
         Plugin .[#RoyalBlue]..> pulse_plugin
         Plugin .[#RoyalBlue]..> alsa_plugin
         Plugin .[#RoyalBlue]..> sdl_plugin
@@ -111,7 +115,7 @@ package ctune #lightgrey {
 '    audio -[hidden]- audio_recorders
     plugins_in -left[hidden]- plugins_out
 
-
+    AudioOutput -- pw_plugin
     AudioOutput -- pulse_plugin
     AudioOutput -- alsa_plugin
     AudioOutput -- sdl_plugin

@@ -12,7 +12,6 @@ depends=('ncurses'
          'curl'
          'ffmpeg'
          'alsa-lib'
-         'pipewire-pulse'
          'libbsd')
 
 makedepends=('make'
@@ -20,7 +19,10 @@ makedepends=('make'
              'git'
              'pandoc')
 
-optdepends=('sdl2: for SDL2 output plugin support'
+optdepends=('pulseaudio: for PulseAudio plugin support'
+            'pipewire-pulse: for using the pulseaudio plugin on Pipewire'
+            'pipewire: for PipeWire plugin support'
+            'sdl2: for SDL2 output plugin support'
             'sndio: for SNDIO output plugin support'
             'vlc: for VLC player plugin support')
 

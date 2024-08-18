@@ -14,7 +14,12 @@ const ctune_PluginType_e plugin_type = CTUNE_PLUGIN_OUT_AUDIO_SERVER;
 static volatile int ctune_audio_mix_volume = 0;
 
 /**
- * PulseAudio server information
+ * Volume change callback
+ */
+void(* vol_change_cb)( int ) = NULL; //unused
+
+/**
+ * ALSA server information
  * @param device_name Name of output sound card to use
  * @param access          PCM access type
  * @param hw_params       Hardware parameters
@@ -35,6 +40,7 @@ static struct {
     snd_mixer_selem_id_t * mixer_id;
     snd_mixer_elem_t     * mixer_element;
     unsigned               frame_byte_size;
+
 } alsa_audio_server = {
     .device_name     = "default",
     .access          = SND_PCM_ACCESS_RW_INTERLEAVED,
@@ -91,6 +97,14 @@ static void ctune_audio_setVolume( int vol ) {
                "[ctune_audio_setVolume( %i )] ALSA mixing volume: %i (%i%%)",
                vol, alsa_vol, ctune_audio_mix_volume
     );
+}
+
+/**
+ * Sets the volume refresh callback method (to update the UI/internal state on external vol change events)
+ * @param cb Callback method
+ */
+static void ctune_audio_setVolumeChangeCallback( void(* cb)( int ) ) {
+    vol_change_cb = cb;
 }
 
 /**
@@ -418,12 +432,13 @@ static void ctune_audio_sendToAudioSink( const void * buffer, int buff_size ) {
 
 
 const struct ctune_AudioOut ctune_AudioOutput = {
-    .name         = &ctune_audio_name,
-    .description  = &ctune_audio_description,
-    .init         = &ctune_audio_initAudioOut,
-    .write        = &ctune_audio_sendToAudioSink,
-    .setVolume    = &ctune_audio_setVolume,
-    .changeVolume = &ctune_audio_changeVolume,
-    .getVolume    = &ctune_audio_getVolume,
-    .shutdown     = &ctune_audio_shutdownAudioOut
+    .name                    = &ctune_audio_name,
+    .description             = &ctune_audio_description,
+    .init                    = &ctune_audio_initAudioOut,
+    .write                   = &ctune_audio_sendToAudioSink,
+    .setVolumeChangeCallback = &ctune_audio_setVolumeChangeCallback,
+    .setVolume               = &ctune_audio_setVolume,
+    .changeVolume            = &ctune_audio_changeVolume,
+    .getVolume               = &ctune_audio_getVolume,
+    .shutdown                = &ctune_audio_shutdownAudioOut
 };
