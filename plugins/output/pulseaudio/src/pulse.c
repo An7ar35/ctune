@@ -37,13 +37,17 @@ static struct {
     /* Event counters */
     uint64_t overflow_count;
 
+    void(* vol_change_cb)( int ); //unused
+
     struct LatencyChanges {
         uint64_t count;
         float    low;
         float    high;
     } latency;
 
-} pulse_audio_server;
+} pulse_audio_server = {
+    .vol_change_cb = NULL,
+};
 
 /**
  * [PRIVATE] Get the equivalent SLD format from a ctune output format
@@ -327,6 +331,14 @@ static void requestStreamWriteCallback( pa_stream * p, size_t nbytes, void * use
         memset( &stream_buffer, 0, nbytes );
         pa_stream_write( pulse_audio_server.stream, &stream_buffer[ 0 ], nbytes, NULL, 0, PA_SEEK_RELATIVE );
     }
+}
+
+/**
+ * Sets the volume refresh callback method (to update the UI/internal state on external vol change events)
+ * @param cb Callback method
+ */
+static void ctune_audio_setVolumeChangeCallback( void(* cb)( int ) ) {
+    pulse_audio_server.vol_change_cb = cb;
 }
 
 /**
@@ -646,12 +658,13 @@ static void ctune_audio_sendToAudioSink( const void * buffer, int buff_size ) {
  * Constructor
  */
 const struct ctune_AudioOut ctune_AudioOutput = {
-    .name         = &ctune_audio_name,
-    .description  = &ctune_audio_description,
-    .init         = &ctune_audio_initAudioOut,
-    .write        = &ctune_audio_sendToAudioSink,
-    .setVolume    = &ctune_audio_setVolume,
-    .changeVolume = &ctune_audio_changeVolume,
-    .getVolume    = &ctune_audio_getVolume,
-    .shutdown     = &ctune_audio_shutdownAudioOut
+    .name                    = &ctune_audio_name,
+    .description             = &ctune_audio_description,
+    .init                    = &ctune_audio_initAudioOut,
+    .write                   = &ctune_audio_sendToAudioSink,
+    .setVolumeChangeCallback = &ctune_audio_setVolumeChangeCallback,
+    .setVolume               = &ctune_audio_setVolume,
+    .changeVolume            = &ctune_audio_changeVolume,
+    .getVolume               = &ctune_audio_getVolume,
+    .shutdown                = &ctune_audio_shutdownAudioOut
 };

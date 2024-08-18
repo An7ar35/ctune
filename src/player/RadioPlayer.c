@@ -254,6 +254,8 @@ static bool ctune_RadioPlayer_loadPlayerPlugin( ctune_Player_t * player ) {
         radio_player.output_plugin = sound_server;
     }
 
+    radio_player.output_plugin->setVolumeChangeCallback( radio_player.cb.volume_change_event_callback );
+
     if( radio_player.player_plugin != NULL && radio_player.player_initialised == false ) {
         radio_player.player_plugin->init( radio_player.output_plugin,
                                           ctune_RadioPlayer_setPlaybackState,

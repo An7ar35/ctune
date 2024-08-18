@@ -17,7 +17,8 @@ if(PULSEAUDIO_FOUND)
             ../../../src/utils/Timeout.c
             ../../../src/audio/AudioOut.h
             ../../../src/datastructure/CircularBuffer.h
-            ../../../src/datastructure/CircularBuffer.c)
+            ../../../src/datastructure/CircularBuffer.c
+    )
 
     set(PULSE_SOURCE_FILES
             src/pulse.c )

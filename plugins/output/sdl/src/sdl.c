@@ -24,6 +24,11 @@ static struct {
 } audio_buff_info;
 
 /**
+ * Volume change callback function
+ */
+void(* vol_change_cb)( int ) = NULL; //unused
+
+/**
  * Audio mixer volume
  */
 static volatile int ctune_audio_mix_volume  =  0;
@@ -65,6 +70,14 @@ static void fillAudioCallbackFunc( void * user_data, Uint8 * stream, int length 
     SDL_MixAudio( stream, audio_buff_info.pos, length, sdl_audio_mix_volume );
     audio_buff_info.pos    += length;
     audio_buff_info.length -= length;
+}
+
+/**
+ * Sets the volume refresh callback method (to update the UI/internal state on external vol change events)
+ * @param cb Callback method
+ */
+static void ctune_audio_setVolumeChangeCallback( void(* cb)( int ) ) {
+    vol_change_cb = cb;
 }
 
 /**
@@ -202,12 +215,13 @@ static void ctune_audio_shutdownAudioOut() {
 }
 
 const struct ctune_AudioOut ctune_AudioOutput = {
-    .name         = &ctune_audio_name,
-    .description  = &ctune_audio_description,
-    .init         = &ctune_audio_initAudioOut,
-    .write        = &ctune_audio_sendToAudioSink,
-    .setVolume    = &ctune_audio_setVolume,
-    .changeVolume = &ctune_audio_changeVolume,
-    .getVolume    = &ctune_audio_getVolume,
-    .shutdown     = &ctune_audio_shutdownAudioOut
+    .name                    = &ctune_audio_name,
+    .description             = &ctune_audio_description,
+    .init                    = &ctune_audio_initAudioOut,
+    .write                   = &ctune_audio_sendToAudioSink,
+    .setVolumeChangeCallback = &ctune_audio_setVolumeChangeCallback,
+    .setVolume               = &ctune_audio_setVolume,
+    .changeVolume            = &ctune_audio_changeVolume,
+    .getVolume               = &ctune_audio_getVolume,
+    .shutdown                = &ctune_audio_shutdownAudioOut
 };

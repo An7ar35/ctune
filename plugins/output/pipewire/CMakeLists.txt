@@ -13,6 +13,8 @@ if(PIPEWIRE_FOUND)
             ../../../src/utils/Timeout.h
             ../../../src/utils/Timeout.c
             ../../../src/audio/AudioOut.h
+            ../../../src/datastructure/CircularBuffer.h
+            ../../../src/datastructure/CircularBuffer.c
     )
 
     set(PW_SOURCE_FILES

@@ -20,9 +20,12 @@ static struct {
     struct sio_par   param;
     struct sio_hdl * handle;
     bool             vol_enable;
+    void             (* vol_change_cb)( int );
+
 } sndio_audio_server = {
-    .handle     = NULL,
-    .vol_enable = true,
+    .handle        = NULL,
+    .vol_enable    = true,
+    .vol_change_cb = NULL,
 };
 
 /**
@@ -49,6 +52,13 @@ static void ctune_audio_translateToSndioFormat( ctune_OutputFmt_e fmt, unsigned 
     }
 }
 
+/**
+ * Sets the volume refresh callback method (to update the UI/internal state on external vol change events)
+ * @param cb Callback method
+ */
+static void ctune_audio_setVolumeChangeCallback( void(* cb)( int ) ) {
+    sndio_audio_server.vol_change_cb = cb;
+}
 
 /**
  * Sets a value to the output volume
@@ -246,12 +256,13 @@ static void ctune_audio_sendToAudioSink( const void * buffer, int buff_size ) {
 
 
 const struct ctune_AudioOut ctune_AudioOutput = {
-    .name         = &ctune_audio_name,
-    .description  = &ctune_audio_description,
-    .init         = &ctune_audio_initAudioOut,
-    .write        = &ctune_audio_sendToAudioSink,
-    .setVolume    = &ctune_audio_setVolume,
-    .changeVolume = &ctune_audio_changeVolume,
-    .getVolume    = &ctune_audio_getVolume,
-    .shutdown     = &ctune_audio_shutdownAudioOut
+    .name                    = &ctune_audio_name,
+    .description             = &ctune_audio_description,
+    .init                    = &ctune_audio_initAudioOut,
+    .write                   = &ctune_audio_sendToAudioSink,
+    .setVolumeChangeCallback = &ctune_audio_setVolumeChangeCallback,
+    .setVolume               = &ctune_audio_setVolume,
+    .changeVolume            = &ctune_audio_changeVolume,
+    .getVolume               = &ctune_audio_getVolume,
+    .shutdown                = &ctune_audio_shutdownAudioOut
 };
