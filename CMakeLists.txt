@@ -284,11 +284,6 @@ add_subdirectory(plugins/input/vlc)
 get_directory_property(FFMPEG_FOUND DIRECTORY plugins/input/ffmpeg DEFINITION FFMPEG_FOUND)
 get_directory_property(VLC_FOUND    DIRECTORY plugins/input/vlc    DEFINITION VLC_FOUND)
 
-#if(PIPEWIRE_FOUND)
-#    link_directories(plugins/output/pipewire)
-#    list(APPEND CTUNE_PLUGIN_LIST_AUDIO_SRV ctune_plugin_pipewire)
-#endif(PIPEWIRE_FOUND)
-
 if(FFMPEG_FOUND)
     link_directories(plugins/input/ffmpeg)
     list(APPEND CTUNE_PLUGIN_LIST_AUDIO_PLAYER ctune_plugin_ffmpeg)
@@ -363,6 +358,11 @@ if(ALSA_FOUND)
     list(APPEND CTUNE_PLUGIN_LIST_AUDIO_SRV ctune_plugin_alsa)
 endif()
 
+if(PIPEWIRE_FOUND)
+    link_directories(plugins/output/pipewire)
+    list(APPEND CTUNE_PLUGIN_LIST_AUDIO_SRV ctune_plugin_pipewire)
+endif(PIPEWIRE_FOUND)
+
 if(SDL2_FOUND)
     link_directories(plugins/output/sdl)
     list(APPEND CTUNE_PLUGIN_LIST_AUDIO_SRV ctune_plugin_sdl)
@@ -426,19 +426,6 @@ target_link_libraries(ctune PRIVATE
         dl                      #(dlfcn.h) for `fs/Plugin.c`
 )
 
-#TODO move tests to own CMakeList.txt
-#add_executable(ctune_tests ${TEST_FILES})
-#add_dependencies(ctune_tests ctune_logger)
-#
-#target_link_libraries(ctune_tests PRIVATE
-#        ctune_logger            #CTUNE_LOG(..)
-#        ${NCURSES_LIBRARIES}    #(ncurses.h) for `ui/*`
-#        ${CURSES_LIBRARIES}     #(ncurses.h) for `ui/*`
-#        panel                   #(panel.h) ncurses panel lib for `ui/*`
-#        form                    #(form.h) ncurses form lib for `ui/*`
-#        pthread                 #threading
-#        cunit
-#)
 #=========================================== INSTALL ==============================================#
 install(TARGETS     ctune
         DESTINATION ${CTUNE_INSTALL_BINDIR})
