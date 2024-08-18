@@ -614,8 +614,9 @@ static void ctune_UI_MainWin_free( ctune_UI_MainWin_t * main ) {
  * @param main_win Pointer to MainWin
  */
 static void ctune_UI_MainWin_resize( void * main_win ) {
-    CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_MainWin_resize( %p )] Resize event called.", main_win );
     ctune_UI_MainWin_t * main = main_win;
+
+    CTUNE_LOG( CTUNE_LOG_MSG, "[ctune_UI_MainWin_resize( %p )] Resize event called (mouse: %s).", main_win, ( main->mouse_ctrl ? "ON" : "OFF" ) );
 
     endwin();
     ctune_UI_MainWin_destroyPanels( main );

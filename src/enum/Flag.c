@@ -9,8 +9,8 @@
  */
 static const char * ctune_Flag_str( ctune_Flag_e id ) {
     static const char * str[3] = {
-        [FLAG_SET_OFF  ] = "SET_ON",
-        [FLAG_SET_ON   ] = "SET_OFF",
+        [FLAG_SET_OFF  ] = "SET_OFF",
+        [FLAG_SET_ON   ] = "SET_ON",
         [FLAG_GET_VALUE] = "GET_VALUE",
     };
 

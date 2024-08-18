@@ -407,6 +407,12 @@ static int ctune_UI_setMouseSupport( ctune_UI_PanelID_e tab, int action_flag_e )
         const bool new_state = ctune_UIConfig.mouse.enabled( ui_config, action_flag_e );
 
         if( old_state != new_state ) {
+            ctune_UI_ContextHelp.setMouseCtrl( new_state );
+            ctune_UI_RSInfo.setMouseCtrl( &ui.dialogs.rsinfo, new_state );
+            ctune_UI_RSEdit.setMouseCtrl( &ui.dialogs.rsedit, new_state );
+            ctune_UI_RSFind.setMouseCtrl( &ui.dialogs.rsfind, new_state );
+            ctune_UI_MainWin.setMouseCtrl( &ui.main_win, new_state );
+
             if( new_state ) { //Turn ON
                 if( mousemask( ALL_MOUSE_EVENTS, NULL ) != 0 ) {
                     CTUNE_LOG( CTUNE_LOG_MSG,
@@ -434,12 +440,6 @@ static int ctune_UI_setMouseSupport( ctune_UI_PanelID_e tab, int action_flag_e )
                 }
             }
         }
-
-        ctune_UI_ContextHelp.setMouseCtrl( new_state );
-        ctune_UI_RSInfo.setMouseCtrl( &ui.dialogs.rsinfo, new_state );
-        ctune_UI_RSEdit.setMouseCtrl( &ui.dialogs.rsedit, new_state );
-        ctune_UI_RSFind.setMouseCtrl( &ui.dialogs.rsfind, new_state );
-        ctune_UI_MainWin.setMouseCtrl( &ui.main_win, new_state );
 
         return new_state;
     }
