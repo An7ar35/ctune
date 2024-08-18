@@ -235,11 +235,9 @@ static void ctune_audio_setVolumeChangeCallback( void(* cb)( int ) ) {
 static int ctune_audio_getVolume() {
     const struct pw_stream_control * ctrl    = pw_stream_get_control( pipewire_server.stream, SPA_PROP_channelVolumes );
     const float                      avg     = ctune_audio_avgVolume( ctrl->values, ctrl->n_values );
-    const uint32_t                   percent = avg * 100;
+    const uint32_t                   percent = (uint32_t) ( avg * 100 );
 
     ctune_audio_mix_volume = (int) percent;
-
-    CTUNE_LOG( CTUNE_LOG_TRACE, "[ctune_audio_getVolume()] avg: %f, percent: %lu%%", avg, percent );
 
     return ctune_audio_mix_volume;
 }
@@ -249,7 +247,10 @@ static int ctune_audio_getVolume() {
  * @param vol Volume (0-100)
  */
 static void ctune_audio_setVolume( int vol ) {
-    CTUNE_LOG( CTUNE_LOG_TRACE, "[ctune_audio_setVolume( %i )] Pipewire mixing volume: %i%%", vol, ctune_audio_mix_volume );
+    CTUNE_LOG( CTUNE_LOG_TRACE,
+               "[ctune_audio_setVolume( %i )] Pipewire mixing volume: %i%% -> %i%%",
+               vol, ctune_audio_mix_volume, vol
+    );
 
     float channel_volumes[pipewire_server.channels];
     float new_vol = 0.f;
@@ -269,8 +270,6 @@ static void ctune_audio_setVolume( int vol ) {
     for( int i = 0; i < pipewire_server.channels; ++i ) {
         channel_volumes[ i ] = new_vol;
     }
-
-    CTUNE_LOG( CTUNE_LOG_TRACE, "[ctune_audio_setVolume()] new_vol: %f, percent: %lu%%", new_vol, vol );
 
     ctune_audio_mix_volume = vol;
 
@@ -377,12 +376,9 @@ static int ctune_audio_initAudioOut( ctune_OutputFmt_e fmt, int sample_rate, uin
 
     pw_init(NULL, NULL);
 
-    int     ret = 0;
-    uint8_t buffer[1024];
-    float   channel_volumes[channels];
-
-    struct       spa_pod_builder pw_spa_pod_builder = SPA_POD_BUILDER_INIT(buffer, sizeof(buffer));
-    const struct spa_pod       * pod_parameters[1];
+    int                    ret = 0;
+    uint8_t                buffer[1024];
+    const struct spa_pod * pod_parameters[1];
 
     if( ( pipewire_server.loop = pw_thread_loop_new( "ctune/output/pw", NULL ) ) == NULL ) {
         CTUNE_LOG( CTUNE_LOG_ERROR,

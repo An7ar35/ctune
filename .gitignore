@@ -158,3 +158,4 @@ dkms.conf
 build/*
 external/*
 tmp/*
+*.cbp
