@@ -5,6 +5,10 @@
 #include <openssl/opensslv.h>
 #include <ncurses.h>
 
+#ifdef PIPEWIRE_FOUND
+#include <pipewire-0.3/pipewire/version.h>
+#endif
+
 #ifdef PULSEAUDIO_FOUND
 #include <pulse/version.h>
 #endif
@@ -69,6 +73,9 @@ static const char * ctune_CLI_version() {
 #endif
 #ifdef VLC_FOUND
                                   "  VLC " XSTR(LIBVLC_VERSION_MAJOR) "." XSTR(LIBVLC_VERSION_MINOR) "." XSTR(LIBVLC_VERSION_REVISION) "\n"
+#endif
+#ifdef PIPEWIRE_FOUND
+                                  "  Pipewire " XSTR(PW_MAJOR) "." XSTR(PW_MINOR) "." XSTR(PW_MICRO) " (API: " PW_API_VERSION ")\n"
 #endif
 #ifdef PULSEAUDIO_FOUND
                                   "  PulseAudio (" XSTR(PA_MAJOR) "." XSTR(PA_MINOR) "." XSTR(PA_MICRO) ")\n"

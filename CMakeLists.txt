@@ -287,11 +287,13 @@ get_directory_property(VLC_FOUND    DIRECTORY plugins/input/vlc    DEFINITION VL
 if(FFMPEG_FOUND)
     link_directories(plugins/input/ffmpeg)
     list(APPEND CTUNE_PLUGIN_LIST_AUDIO_PLAYER ctune_plugin_ffmpeg)
+    add_definitions(-DFFMPEG_FOUND)
 endif(FFMPEG_FOUND)
 
 if(VLC_FOUND)
     link_directories(plugins/input/vlc)
     list(APPEND CTUNE_PLUGIN_LIST_AUDIO_PLAYER ctune_plugin_vlc)
+    add_definitions(-DVLC_FOUND)
 endif(VLC_FOUND)
 
 list(LENGTH CTUNE_PLUGIN_LIST_AUDIO_PLAYER CTUNE_PLUGIN_LIST_AUDIO_PLAYER_COUNT)
@@ -316,11 +318,13 @@ get_directory_property(WAVE_FOUND DIRECTORY plugins/output/wave DEFINITION WAVE_
 if(LAME_FOUND)
     link_directories(plugins/output/mp3)
     list(APPEND CTUNE_PLUGIN_LIST_AUDIO_FILE ctune_plugin_mp3)
+    add_definitions(-DLAME_FOUND)
 endif ()
 
 if(WAVE_FOUND)
     link_directories(plugins/output/wave)
     list(APPEND CTUNE_PLUGIN_LIST_AUDIO_FILE ctune_plugin_wave)
+    add_definitions(-DWAVE_FOUND)
 endif(WAVE_FOUND)
 
 list(LENGTH CTUNE_PLUGIN_LIST_AUDIO_FILE CTUNE_PLUGIN_LIST_AUDIO_FILE_COUNT)
@@ -351,26 +355,31 @@ get_directory_property(SNDIO_FOUND      DIRECTORY plugins/output/sndio      DEFI
 if(PULSEAUDIO_FOUND)
     link_directories(plugins/output/pulseaudio)
     list(APPEND CTUNE_PLUGIN_LIST_AUDIO_SRV ctune_plugin_pulseaudio)
+    add_definitions(-DPULSEAUDIO_FOUND)
 endif(PULSEAUDIO_FOUND)
 
 if(ALSA_FOUND)
     link_directories(plugins/output/alsa)
     list(APPEND CTUNE_PLUGIN_LIST_AUDIO_SRV ctune_plugin_alsa)
+    add_definitions(-DALSA_FOUND)
 endif()
 
 if(PIPEWIRE_FOUND)
     link_directories(plugins/output/pipewire)
     list(APPEND CTUNE_PLUGIN_LIST_AUDIO_SRV ctune_plugin_pipewire)
+    add_definitions(-DPIPEWIRE_FOUND)
 endif(PIPEWIRE_FOUND)
 
 if(SDL2_FOUND)
     link_directories(plugins/output/sdl)
     list(APPEND CTUNE_PLUGIN_LIST_AUDIO_SRV ctune_plugin_sdl)
+    add_definitions(-DSDL2_FOUND)
 endif()
 
 if(SNDIO_FOUND)
     link_directories(plugins/output/sndio)
     list(APPEND CTUNE_PLUGIN_LIST_AUDIO_SRV ctune_plugin_sndio)
+    add_definitions(-DSNDIO_FOUND)
 endif()
 
 list(LENGTH CTUNE_PLUGIN_LIST_AUDIO_SRV CTUNE_PLUGIN_LIST_AUDIO_SRV_COUNT)
@@ -392,11 +401,11 @@ add_subdirectory(docs)
 
 #======================================== CTUNE EXECUTABLE ========================================#
 #(debuging) prints cmake vars
-#get_cmake_property(_variableNames VARIABLES)
-#list (SORT _variableNames)
-#foreach (_variableName ${_variableNames})
-#    message(STATUS "${_variableName}=${${_variableName}}")
-#endforeach()
+get_cmake_property(_variableNames VARIABLES)
+list (SORT _variableNames)
+foreach (_variableName ${_variableNames})
+    message(STATUS "${_variableName}=${${_variableName}}")
+endforeach()
 
 add_executable(ctune ${SOURCE_FILES})
 add_dependencies(ctune ctune_logger libjsonc)
