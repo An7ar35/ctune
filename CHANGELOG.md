@@ -4,7 +4,7 @@
 
 ### v1.3.1
 
-- (Bug) correction of the mouse enable/disable flag not propagating properly to all the widget 
+- (Bug) correction of the mouse enable/disable flag not propagating properly to all the widgets 
 - (Bug) correction of the `Flag` enum string names (displayed in logs)
 
 ### v1.3.0
@@ -18,7 +18,7 @@
 - (Bug) crash on resize resolved with event change queue between the backend and UI callbacks
 - (Bug) pulse audio output broken on `pipewire-pulse` resolved by using a 'pull' paradigm and a `CircularBufffer` on the output plugins
 - (Bug) added a missing volume function to sndio output plugin API
-- (Bug/Network) change network call to use the `curllib` instead and check the returned HTTP code, retry the query on another resolved server on the list and fail gracefully when these are exhausted
+- (Bug/Network) changed network call to use the `curllib` instead and check the returned HTTP code, retry the query on another resolved server on the list and fail gracefully when these are exhausted
 - (Bug) corrected RadioBrowser listing crash when an empty entry is in the list item by adding a check and fallback value in the json parser
 - (Build) `CMakeList.txt` structure overhaul breaking down the plugins and the logger into their own sub-projects
 - (Code) refactoring/cleaning up/minor bugs

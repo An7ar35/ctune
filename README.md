@@ -57,12 +57,12 @@ Click [here](docs/guide/ctune.cfg.md) for a full breakdown of the configuration 
 
 ## Dependencies
 
-| functionality | libraries                              |
-|---------------|----------------------------------------|
-| Network       | OpenSSL, POSIX sockets, Curl           |
-| Playback      | FFMpeg/VLC, SDL2/PulseAudio/ALSA/sndio |
-| Recording     | lame                                   |
-| Parsing       | json-c (static)                        |
+| functionality | libraries                                       |
+|---------------|-------------------------------------------------|
+| Network       | OpenSSL, POSIX sockets, Curl                    |
+| Playback      | FFMpeg/VLC, Pipewire/SDL2/PulseAudio/ALSA/sndio |
+| Recording     | lame                                            |
+| Parsing       | json-c (static)                                 |
 
 
 ## Installation
@@ -76,7 +76,7 @@ Requires the following to be installed on the system first:
 - `ffmpeg`, `vlc` player libraries*
 - `lame` for recording streams to mp3
 - `curl` and `openssl` libraries
-- `sdl2`  or `pulsedaudio` or `alsa` or `sndio` sound library/servers*
+- `sdl2`  or `pulsedaudio` or `alsa` or `sndio` or `pipewire` sound library/servers*
 - `pandoc` and `gzip` for the man page
 
 (*) The relevant plugins will be compiled for whatever libraries can be found on the system.
@@ -124,6 +124,7 @@ sudo apt-get install gcc libncurses5 git cmake cmake-extras make man pandoc gzip
 sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev libavdevice-dev libavfilter-dev libssl-dev libcurl4-openssl-dev libncurses5-dev libbsd-dev libpulse-dev lame
 ```
 
+For more input/output plugins, install the required lib too.
 Once all these are on the system compiling from source should work without hiccups.
 
 ## Docker
@@ -135,17 +136,18 @@ It uses the Arch docker image as base. The `docker-compose.sh` script creates th
 
 Linux x64 with a UTF-8 locale.
 
-As a baseline v1.1.5 works on ArchLinux with:
+As a baseline v1.3.2 works on ArchLinux with:
 
 - FFMpeg (libavformat 59.27.100, libavcodec 59.37.100, libswresample 4.7.100)
-- VLC (3.0.15)
-- PulseAudio (14.2.0)
-- SDL (2.0.14)
-- ALSA (1.2.5)
+- VLC (3.0.21)
+- Pipewire (1:1.2.2)
+- PulseAudio (17.0)
+- SDL (2.30.6)
+- ALSA (1.2.12)
 - sndio (1.7.0)
-- OpenSSL (1.1.1k)
-- Curl (7.77.0)
-- nCurses (6.4.20221231)
+- OpenSSL (3.3.1)
+- Curl (8.9)
+- nCurses (6.5)
 - libbsd
 - lame (3.100)
 
@@ -192,6 +194,6 @@ Thank you.
 
 ## License
 
-Copyright @ 2020-23 E.A.Davison.
+Copyright @ 2020-24 E.A.Davison.
 
 Licensed under [AGPLv3](https://www.gnu.org/licenses/agpl-3.0.en.html)
