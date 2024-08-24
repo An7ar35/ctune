@@ -401,11 +401,11 @@ add_subdirectory(docs)
 
 #======================================== CTUNE EXECUTABLE ========================================#
 #(debuging) prints cmake vars
-get_cmake_property(_variableNames VARIABLES)
-list (SORT _variableNames)
-foreach (_variableName ${_variableNames})
-    message(STATUS "${_variableName}=${${_variableName}}")
-endforeach()
+#get_cmake_property(_variableNames VARIABLES)
+#list (SORT _variableNames)
+#foreach (_variableName ${_variableNames})
+#    message(STATUS "${_variableName}=${${_variableName}}")
+#endforeach()
 
 add_executable(ctune ${SOURCE_FILES})
 add_dependencies(ctune ctune_logger libjsonc)
