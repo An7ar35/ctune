@@ -1099,7 +1099,7 @@ static bool ctune_parser_JSON_parseRadioStationListToJSON( const struct Vector *
     json_object * array       = json_object_new_array_ext( Vector.size( stations ) );
 
     for( size_t i = 0; i < Vector.size( stations ); ++i ) {
-        int err[37] = { 0 };
+        int err[38] = { 0 };
 
         CTUNE_LOG( CTUNE_LOG_DEBUG,
                    "[ctune_parser_JSON_parseRadioStationListToJSON( %p, %p )] "
@@ -1145,12 +1145,13 @@ static bool ctune_parser_JSON_parseRadioStationListToJSON( const struct Vector *
         err[32] = json_object_object_add( station, "ssl_error", json_object_new_int64( ctune_RadioStationInfo.get.sslErrCode( rsi ) ) );
         err[33] = json_object_object_add( station, "geo_lat", json_object_new_double( ctune_RadioStationInfo.get.geoLatitude( rsi ) ) );
         err[34] = json_object_object_add( station, "geo_long", json_object_new_double( ctune_RadioStationInfo.get.geoLongitude( rsi ) ) );
-        err[35] = json_object_object_add( station, "has_extended_info", json_object_new_int( ctune_RadioStationInfo.get.hasExtendedInfo( rsi ) ) );
-        err[36] = json_object_object_add( station, "station_src", json_object_new_int( ctune_RadioStationInfo.get.stationSource( rsi ) ) );
+        err[35] = json_object_object_add( station, "geo_distance", json_object_new_double( ctune_RadioStationInfo.get.geoDistance( rsi ) ) );
+        err[36] = json_object_object_add( station, "has_extended_info", json_object_new_int( ctune_RadioStationInfo.get.hasExtendedInfo( rsi ) ) );
+        err[37] = json_object_object_add( station, "station_src", json_object_new_int( ctune_RadioStationInfo.get.stationSource( rsi ) ) );
         
         json_object_array_add( array, station );
 
-        for( int err_i = 0; err_i < 36; ++err_i ) {
+        for( int err_i = 0; err_i < 37; ++err_i ) {
             if( err[ err_i ] != 0 ) {
                 error_state = true;
 

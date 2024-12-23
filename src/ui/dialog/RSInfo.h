@@ -11,7 +11,7 @@
 #include "../widget/Dialog.h"
 #include "../../dto/RadioStationInfo.h"
 
-#define CTUNE_UI_DIALOG_RSINFO_FIELD_COUNT 33
+#define CTUNE_UI_DIALOG_RSINFO_FIELD_COUNT 34
 
 /**
  * RSInfo object

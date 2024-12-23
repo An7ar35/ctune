@@ -27,6 +27,7 @@ typedef enum {
     LABEL_BITRATE,
     LABEL_BITRATE_UNIT,
     LABEL_COORDINATES,
+    LABEL_COORDINATE_DIST,
     FIELD_UUID,
 
     LABEL_COUNT,
@@ -48,6 +49,7 @@ typedef enum {
     BUTTON_AUTODETECT,
     INPUT_COORDINATE_LAT,
     INPUT_COORDINATE_LONG,
+    INPUT_COORDINATE_DIST,
     BUTTON_CANCEL,
     BUTTON_SAVE,
 
@@ -478,6 +480,29 @@ static bool ctune_UI_RSEdit_packFieldValues( ctune_UI_RSEdit_t * rsedit, ctune_R
         ctune_RadioStationInfo.set.geoCoordinates( rsi, latitude_val, longitude_val );
     }
 
+    if( ctune_UI_Form.field.status( &rsedit->form, INPUT_COORDINATE_DIST ) ) {
+        char * distance_str = ctune_trimspace( ctune_UI_Form.field.buffer( &rsedit->form, INPUT_COORDINATE_DIST ) );
+        double distance_val = 0.0;
+
+        if( distance_str != NULL ) {
+            distance_val = strtod( distance_str, NULL );
+
+            if( errno == ERANGE ) {
+                CTUNE_LOG( CTUNE_LOG_ERROR,
+                           "[ctune_UI_RSEdit_packFieldValues( %p, %p )] Failed string->`double` conversion of distance ('%s').",
+                           rsedit, rsi, distance_str
+                );
+
+            }
+
+            free( distance_str );
+        }
+
+        ctune_RadioStationInfo.set.geoDistance( rsi, distance_val );
+    }
+
+
+
     //check required fields are present
     if( !ctune_UI_RSEdit_validate( rsedit, &rsedit->cache.station ) ) {
         error_state = true;
@@ -501,34 +526,35 @@ static void ctune_UI_RSEdit_initFields( ctune_UI_RSEdit_t * rsedit ) {
 
     const ctune_RadioStationInfo_t * rsi = &rsedit->cache.station; //shortcut ptr
 
-    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_UUID,           rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_STATION_UUID ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_NAME,           rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_STATION_NAME ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_URL,            rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_URL ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_RESOLVED_URL,   rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_URL_RESOLVED ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_HOMEPAGE,       rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_URL_HOMEPAGE ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_TAGS,           rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_TAGS ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_COUNTRY,        rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_COUNTRY ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_COUNTRY_CODE,   rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_COUNTRY_CODE ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_STATE,          rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_STATE ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_LANGUAGE,       rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_LANGUAGE ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_LANGUAGE_CODES, rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_LANGUAGE_CODES ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_CODEC,          rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_CODEC ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_BITRATE,        rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_BITRATE ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_BITRATE_UNIT,   rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_BITRATE_UNIT_LONG ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_COORDINATES,    rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_GEO_COORDS ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_UUID,            rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_STATION_UUID ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_NAME,            rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_STATION_NAME ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_URL,             rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_URL ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_RESOLVED_URL,    rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_URL_RESOLVED ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_HOMEPAGE,        rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_URL_HOMEPAGE ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_TAGS,            rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_TAGS ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_COUNTRY,         rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_COUNTRY ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_COUNTRY_CODE,    rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_COUNTRY_CODE ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_STATE,           rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_STATE ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_LANGUAGE,        rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_LANGUAGE ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_LANGUAGE_CODES,  rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_LANGUAGE_CODES ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_CODEC,           rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_CODEC ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_BITRATE,         rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_BITRATE ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_BITRATE_UNIT,    rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_BITRATE_UNIT_LONG ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_COORDINATES,     rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_GEO_COORDS ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, LABEL_COORDINATE_DIST, rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_GEO_DISTANCE ) );
 
-    ctune_UI_Form.field.setBuffer( &rsedit->form, FIELD_UUID,           ctune_fallbackStr( ctune_RadioStationInfo.get.stationUUID( rsi ), "" ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_NAME,           ctune_fallbackStr( ctune_RadioStationInfo.get.stationName( rsi ), "" ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_URL,            ctune_fallbackStr( ctune_RadioStationInfo.get.stationURL( rsi ), "" ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_RESOLVED_URL,   ctune_fallbackStr( ctune_RadioStationInfo.get.resolvedURL( rsi ), "" ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_HOMEPAGE,       ctune_fallbackStr( ctune_RadioStationInfo.get.homepage( rsi ), "" ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_TAGS,           ctune_fallbackStr( ctune_RadioStationInfo.get.tags( rsi ), "" ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_COUNTRY,        ctune_fallbackStr( ctune_RadioStationInfo.get.country( rsi ), "" ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_COUNTRY_CODE,   ctune_fallbackStr( ctune_RadioStationInfo.get.countryCode_ISO3166_1( rsi ), "" ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_STATE,          ctune_fallbackStr( ctune_RadioStationInfo.get.state( rsi ), "" ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_LANGUAGE,       ctune_fallbackStr( ctune_RadioStationInfo.get.language( rsi ), "" ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_LANGUAGE_CODES, ctune_fallbackStr( ctune_RadioStationInfo.get.languageCodes( rsi ), "" ) );
-    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_CODEC,          ctune_fallbackStr( ctune_RadioStationInfo.get.codec( rsi ), "" ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, FIELD_UUID,            ctune_fallbackStr( ctune_RadioStationInfo.get.stationUUID( rsi ), "" ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_NAME,            ctune_fallbackStr( ctune_RadioStationInfo.get.stationName( rsi ), "" ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_URL,             ctune_fallbackStr( ctune_RadioStationInfo.get.stationURL( rsi ), "" ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_RESOLVED_URL,    ctune_fallbackStr( ctune_RadioStationInfo.get.resolvedURL( rsi ), "" ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_HOMEPAGE,        ctune_fallbackStr( ctune_RadioStationInfo.get.homepage( rsi ), "" ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_TAGS,            ctune_fallbackStr( ctune_RadioStationInfo.get.tags( rsi ), "" ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_COUNTRY,         ctune_fallbackStr( ctune_RadioStationInfo.get.country( rsi ), "" ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_COUNTRY_CODE,    ctune_fallbackStr( ctune_RadioStationInfo.get.countryCode_ISO3166_1( rsi ), "" ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_STATE,           ctune_fallbackStr( ctune_RadioStationInfo.get.state( rsi ), "" ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_LANGUAGE,        ctune_fallbackStr( ctune_RadioStationInfo.get.language( rsi ), "" ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_LANGUAGE_CODES,  ctune_fallbackStr( ctune_RadioStationInfo.get.languageCodes( rsi ), "" ) );
+    ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_CODEC,           ctune_fallbackStr( ctune_RadioStationInfo.get.codec( rsi ), "" ) );
 
     { //Bitrate field (ulong)
         String_t bitrate = String.init();
@@ -546,6 +572,13 @@ static void ctune_UI_RSEdit_initFields( ctune_UI_RSEdit_t * rsedit ) {
         ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_COORDINATE_LONG, longitude._raw );
         String.free( &latitude  );
         String.free( &longitude );
+    }
+
+    { //geo distance filed (double)
+        String_t distance  = String.init();
+        ctune_ftos( ctune_RadioStationInfo.get.geoDistance( rsi ), &distance );
+        ctune_UI_Form.field.setBuffer( &rsedit->form, INPUT_COORDINATE_DIST , distance._raw  );
+        String.free( &distance  );
     }
 
     ctune_UI_Form.field.setBuffer( &rsedit->form, BUTTON_AUTODETECT, rsedit->cb.getDisplayText( CTUNE_UI_TEXT_BUTTON_AUTODETECT_STREAM ) );
@@ -595,6 +628,7 @@ static bool ctune_UI_RSEdit_createFields( ctune_UI_RSEdit_t * rsedit ) {
         rsedit->cache.max_label_width = ctune_max_ul( rsedit->cache.max_label_width, strlen( rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_BITRATE ) ) );
         rsedit->cache.max_label_width = ctune_max_ul( rsedit->cache.max_label_width, strlen( rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_BITRATE_UNIT_LONG ) ) );
         rsedit->cache.max_label_width = ctune_max_ul( rsedit->cache.max_label_width, strlen( rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_GEO_COORDS ) ) );
+        rsedit->cache.max_label_width = ctune_max_ul( rsedit->cache.max_label_width, strlen( rsedit->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_GEO_DISTANCE ) ) );
     }
 
     int  label_col_width = 0;
@@ -648,6 +682,7 @@ static bool ctune_UI_RSEdit_createFields( ctune_UI_RSEdit_t * rsedit ) {
     ret[LABEL_BITRATE        ] = ctune_UI_Form.field.create( &rsedit->form, LABEL_BITRATE,         (WindowProperty_t){ row_height, label_col_width,     24, label_col } );
     ret[LABEL_BITRATE_UNIT   ] = ctune_UI_Form.field.create( &rsedit->form, LABEL_BITRATE_UNIT,    (WindowProperty_t){ row_height, bitrate_unit_width,  24, bitrate_unit_col } );
     ret[LABEL_COORDINATES    ] = ctune_UI_Form.field.create( &rsedit->form, LABEL_COORDINATES,     (WindowProperty_t){ row_height, label_col_width,     26, label_col } );
+    ret[LABEL_COORDINATE_DIST] = ctune_UI_Form.field.create( &rsedit->form, LABEL_COORDINATE_DIST, (WindowProperty_t){ row_height, label_col_width,     28, label_col } );
     ret[FIELD_UUID           ] = ctune_UI_Form.field.create( &rsedit->form, FIELD_UUID,            (WindowProperty_t){ row_height, std_field_width,      0, field_col } );
     //Field inputs                                                                                                     rows        cols                y   x
     ret[INPUT_NAME           ] = ctune_UI_Form.field.create( &rsedit->form, INPUT_NAME,            (WindowProperty_t){ row_height, std_field_width,      2, field_col } );
@@ -664,6 +699,7 @@ static bool ctune_UI_RSEdit_createFields( ctune_UI_RSEdit_t * rsedit ) {
     ret[INPUT_BITRATE        ] = ctune_UI_Form.field.create( &rsedit->form, INPUT_BITRATE,         (WindowProperty_t){ row_height, bitrate_field_width, 24, field_col } );
     ret[INPUT_COORDINATE_LAT ] = ctune_UI_Form.field.create( &rsedit->form, INPUT_COORDINATE_LAT,  (WindowProperty_t){ row_height, bitrate_block_width, 26, field_col } );
     ret[INPUT_COORDINATE_LONG] = ctune_UI_Form.field.create( &rsedit->form, INPUT_COORDINATE_LONG, (WindowProperty_t){ row_height, bitrate_block_width, 26, latitude_field_col } );
+    ret[INPUT_COORDINATE_DIST] = ctune_UI_Form.field.create( &rsedit->form, INPUT_COORDINATE_DIST, (WindowProperty_t){ row_height, bitrate_block_width, 28, field_col } );
 
     const int button_separation     = 6;
     const int max_button_width      = (int) ctune_max_ul( strlen( rsedit->cb.getDisplayText( CTUNE_UI_TEXT_BUTTON_SAVE ) ),
@@ -676,8 +712,8 @@ static bool ctune_UI_RSEdit_createFields( ctune_UI_RSEdit_t * rsedit ) {
     }
     //[ Buttons ]                                          rows                cols                     y                                     x
     ret[BUTTON_AUTODETECT] = ctune_UI_Form.field.create( &rsedit->form, BUTTON_AUTODETECT, (WindowProperty_t){ row_height, autodetect_button_width, 23, autodetect_button_col } );
-    ret[BUTTON_CANCEL    ] = ctune_UI_Form.field.create( &rsedit->form, BUTTON_CANCEL,     (WindowProperty_t){ row_height, max_button_width,        28, button_line_pad } );
-    ret[BUTTON_SAVE      ] = ctune_UI_Form.field.create( &rsedit->form, BUTTON_SAVE,       (WindowProperty_t){ row_height, max_button_width,        28, ( button_line_pad + max_button_width + button_separation ) } );
+    ret[BUTTON_CANCEL    ] = ctune_UI_Form.field.create( &rsedit->form, BUTTON_CANCEL,     (WindowProperty_t){ row_height, max_button_width,        30, button_line_pad } );
+    ret[BUTTON_SAVE      ] = ctune_UI_Form.field.create( &rsedit->form, BUTTON_SAVE,       (WindowProperty_t){ row_height, max_button_width,        30, ( button_line_pad + max_button_width + button_separation ) } );
 
     for( int i = 0; i < FIELD_LAST; ++i ) {
         if( !ret[i] ) {
@@ -685,38 +721,40 @@ static bool ctune_UI_RSEdit_createFields( ctune_UI_RSEdit_t * rsedit ) {
         }
     }
 
-    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_UUID,           O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_NAME,           O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_URL,            O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_RESOLVED_URL,   O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_TAGS,           O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_HOMEPAGE,       O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_COUNTRY,        O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_COUNTRY_CODE,   O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_STATE,          O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_LANGUAGE,       O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_LANGUAGE_CODES, O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_CODEC,          O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_BITRATE,        O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_BITRATE_UNIT,   O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_COORDINATES,    O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_UUID,            O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_NAME,            O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_URL,             O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_RESOLVED_URL,    O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_TAGS,            O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_HOMEPAGE,        O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_COUNTRY,         O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_COUNTRY_CODE,    O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_STATE,           O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_LANGUAGE,        O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_LANGUAGE_CODES,  O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_CODEC,           O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_BITRATE,         O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_BITRATE_UNIT,    O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_COORDINATES,     O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, LABEL_COORDINATE_DIST, O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
 
-    ctune_UI_Form.field.setOptions( &rsedit->form, FIELD_UUID,           O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_NAME,           O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE );
-    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_URL,            O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE );
-    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_RESOLVED_URL,   O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE );
-    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_HOMEPAGE,       O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE );
-    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_TAGS,           O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE );
-    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_COUNTRY,        O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE );
-    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_COUNTRY_CODE,   O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE | O_INPUT_LIMIT | O_NULLOK | O_STATIC );
+    ctune_UI_Form.field.setOptions( &rsedit->form, FIELD_UUID,            O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_NAME,            O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE );
+    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_URL,             O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE );
+    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_RESOLVED_URL,    O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE );
+    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_HOMEPAGE,        O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE );
+    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_TAGS,            O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE );
+    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_COUNTRY,         O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE );
+    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_COUNTRY_CODE,    O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE | O_INPUT_LIMIT | O_NULLOK | O_STATIC );
     set_field_type( ctune_UI_Form.field.get( &rsedit->form, INPUT_COUNTRY_CODE ), TYPE_ALPHA, 2 );
-    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_STATE,          O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE );
-    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_LANGUAGE,       O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE );
-    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_CODEC,          O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
-    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_BITRATE,        O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_STATE,           O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE );
+    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_LANGUAGE,        O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE );
+    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_CODEC,           O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
+    ctune_UI_Form.field.setOptions( &rsedit->form, INPUT_BITRATE,         O_VISIBLE | O_PUBLIC | O_AUTOSKIP );
     set_field_type( ctune_UI_Form.field.get( &rsedit->form, INPUT_BITRATE ), TYPE_INTEGER, 0, 0, CTUNE_RADIOBROSWERFILTER_BITRATE_MAX_DFLT );
-    set_field_type( ctune_UI_Form.field.get( &rsedit->form, INPUT_COORDINATE_LAT ), TYPE_NUMERIC, 6, 0, 0 );
-    set_field_type( ctune_UI_Form.field.get( &rsedit->form, INPUT_COORDINATE_LONG ), TYPE_NUMERIC, 6, 0, 0 );
+    set_field_type( ctune_UI_Form.field.get( &rsedit->form, INPUT_COORDINATE_LAT ), TYPE_NUMERIC, 6, -360., 360. );
+    set_field_type( ctune_UI_Form.field.get( &rsedit->form, INPUT_COORDINATE_LONG ), TYPE_NUMERIC, 6, -360., 360. );
+    set_field_type( ctune_UI_Form.field.get( &rsedit->form, INPUT_COORDINATE_DIST ), TYPE_NUMERIC, 6, 0., 0. );
 
     ctune_UI_Form.field.setOptions( &rsedit->form, BUTTON_AUTODETECT,    O_VISIBLE | O_PUBLIC | O_ACTIVE | O_STATIC );
     ctune_UI_Form.field.setOptions( &rsedit->form, BUTTON_CANCEL,        O_VISIBLE | O_PUBLIC | O_ACTIVE | O_STATIC );

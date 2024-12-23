@@ -60,6 +60,7 @@ static const char * field_str[CTUNE_UI_TEXT_ENUM_COUNT] = {
     [CTUNE_UI_TEXT_LABEL_REVERSE_ORDER              ] = "Reverse order",
     [CTUNE_UI_TEXT_LABEL_EXACT_MATCH                ] = "Exact match",
     [CTUNE_UI_TEXT_LABEL_GEO_COORDS                 ] = "Geo (x,y)",
+    [CTUNE_UI_TEXT_LABEL_GEO_DISTANCE               ] = "Geo distance",
     [CTUNE_UI_TEXT_LABEL_STATION_SOURCE             ] = "Source",
     [CTUNE_UI_TEXT_LABEL_OUTPUT_PATH                ] = "Path",
     [CTUNE_UI_TEXT_ROWSIZE_1X                       ] = "Set row size (1x)",

@@ -1,3 +1,8 @@
+### v1.3.3
+
+- (API change) Added newly added 'geo distance' from RadioBrowser API
+- (bug) Corrected geo coordinate numeric validation in UI editor
+
 ### v1.3.2
 
 - (Build) Added missing pipewire to auto-discovery

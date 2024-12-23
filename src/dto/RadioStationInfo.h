@@ -61,6 +61,7 @@ typedef struct ctune_RadioStationInfo {
     struct {
         double latitude;
         double longitude;
+        double distance;
     } geo;
 
     bool has_extended_info;
@@ -264,6 +265,7 @@ extern const struct ctune_RadioStationInfo_Namespace {
         void (* broken)( ctune_RadioStationInfo_t * rsi, bool state );
         void (* sslErrCode)( ctune_RadioStationInfo_t * rsi, long ssl_err_code );
         void (* geoCoordinates)( ctune_RadioStationInfo_t * rsi, double latitude, double longitude );
+        void (* geoDistance)( ctune_RadioStationInfo_t * rsi, double distance );
         void (* extendedInfoFlag)( ctune_RadioStationInfo_t * rsi, bool state );
         void (* favourite)( ctune_RadioStationInfo_t * rsi, bool state );
         void (* stationSource)( ctune_RadioStationInfo_t * rsi, ctune_StationSrc_e src );
@@ -305,6 +307,7 @@ extern const struct ctune_RadioStationInfo_Namespace {
         long (* sslErrCode)( const ctune_RadioStationInfo_t * rsi );
         double (* geoLatitude)( const ctune_RadioStationInfo_t * rsi );
         double (* geoLongitude)( const ctune_RadioStationInfo_t * rsi );
+        double (* geoDistance)( const ctune_RadioStationInfo_t * rsi );
         bool (* hasExtendedInfo)( const ctune_RadioStationInfo_t * rsi );
         bool (* favourite)( const ctune_RadioStationInfo_t * rsi );
         ctune_StationSrc_e (* stationSource)( const ctune_RadioStationInfo_t * rsi );

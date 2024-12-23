@@ -46,6 +46,7 @@ typedef enum { //Note: don't forget to change the value of `CTUNE_UI_DIALOG_RSIN
     RSI_LABEL_CLICKTREND,
     RSI_LABEL_SSL_ERROR,
     RSI_LABEL_GEO_COORDS,
+    RSI_LABEL_GEO_DIST,
 
     RSI_LABEL_STATION_SOURCE,
 } RSI_Field_e;
@@ -108,6 +109,8 @@ static RSInfoPrintProperties_t ctune_UI_RSInfo_getMaxDimensions( ctune_UI_RSInfo
     field_cols = ctune_max_ul( field_cols, ( ctune_RadioStationInfo.get.codec( rsi ) != NULL ? strlen( ctune_RadioStationInfo.get.codec( rsi ) ) : 0 ) );
     label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_GEO_COORDS] ) );
     field_cols = ctune_max_ul( field_cols, 20 ); //geo coordinates length: "(0.000000, 0.000000)"
+    label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_GEO_DIST] ) );
+    field_cols = ctune_max_ul( field_cols, 8 );  //geo distance length: "0.000000"
     label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_STATION_SOURCE] ) );
     field_cols = ctune_max_ul( field_cols, strlen( ctune_UI_RSInfo_getStationSrcUIText( rsinfo->cb.getDisplayText, ctune_RadioStationInfo.get.stationSource( rsi ) ) ) );
 
@@ -120,7 +123,7 @@ static RSInfoPrintProperties_t ctune_UI_RSInfo_getMaxDimensions( ctune_UI_RSInfo
         String.free( &tmp );
     }
 
-    rows += 7;
+    rows += 8;
 
 
     //OPTIONAL FIELDS
@@ -534,6 +537,11 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
     wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
     mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "(%f, %f)", ctune_RadioStationInfo.get.geoLatitude( rsi ), ctune_RadioStationInfo.get.geoLongitude( rsi ) );
 
+    wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
+    mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_GEO_DIST], rsinfo->col_separator_str );
+    wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
+    mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%f", ctune_RadioStationInfo.get.geoDistance( rsi ) );
+
     //STATION SOURCE
     wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
     mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_STATION_SOURCE], rsinfo->col_separator_str );
@@ -630,6 +638,7 @@ static bool ctune_UI_RSInfo_init( ctune_UI_RSInfo_t * rsinfo, bool mouse_ctrl ) 
     rsinfo->label_txt[ RSI_LABEL_CLICKTREND             ] = rsinfo->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_CLICKTREND );
     rsinfo->label_txt[ RSI_LABEL_SSL_ERROR              ] = rsinfo->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_SSL_ERROR );
     rsinfo->label_txt[ RSI_LABEL_GEO_COORDS             ] = rsinfo->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_GEO_COORDS );
+    rsinfo->label_txt[ RSI_LABEL_GEO_DIST               ] = rsinfo->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_GEO_DISTANCE );
     rsinfo->label_txt[ RSI_LABEL_STATION_SOURCE         ] = rsinfo->cb.getDisplayText( CTUNE_UI_TEXT_LABEL_STATION_SOURCE );
 
     if( rsinfo->cache.max_label_width <= 0 ) {

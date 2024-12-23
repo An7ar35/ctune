@@ -43,6 +43,7 @@ static void ctune_RadioStationInfo_init( void * rsi ) {
 
     ( (struct ctune_RadioStationInfo *) rsi )->geo.latitude          = 0.0;
     ( (struct ctune_RadioStationInfo *) rsi )->geo.longitude         = 0.0;
+    ( (struct ctune_RadioStationInfo *) rsi )->geo.distance          = 0.0;
 
     ( (struct ctune_RadioStationInfo *) rsi )->is_favourite          = false;
     ( (struct ctune_RadioStationInfo *) rsi )->station_src           = CTUNE_STATIONSRC_LOCAL;
@@ -183,8 +184,7 @@ static void ctune_RadioStationInfo_mincopy( const void * lhs, void * rhs ) {
     if( from->iso8601.last_local_check_time )
         dest->iso8601.last_local_check_time = strdup( from->iso8601.last_local_check_time );
 
-    dest->geo       = from->geo;
-
+    dest->geo          = from->geo;
     dest->is_favourite = from->is_favourite;
     dest->station_src  = from->station_src;
 }
@@ -353,6 +353,9 @@ static bool ctune_RadioStationInfo_equal( const void * lhs, const void * rhs ) {
         return false;
 
     if( rsi_a->geo.longitude != rsi_b->geo.longitude )
+        return false;
+
+    if( rsi_a->geo.distance != rsi_b->geo.distance )
         return false;
 
     if( rsi_a->broken != rsi_b->broken )
@@ -578,6 +581,7 @@ static void ctune_RadioStationInfo_print( const ctune_RadioStationInfo_t * rsi, 
     fprintf( out, "clicktrend ......................: %ld\n", rsi->clicktrend );
     fprintf( out, "ssl_error .......................: %ld\n", rsi->ssl_error );
     fprintf( out, "geo coordinates .................: (%f, %f)\n", rsi->geo.latitude, rsi->geo.longitude );
+    fprintf( out, "geo distance ....................: %f\n", rsi->geo.distance );
     fprintf( out, "broken    .......................: %s\n", ( rsi->broken ? "1" : "0" ) );
     fprintf( out, "favourite .......................: %s\n", ( rsi->is_favourite ? "1" : "0" ) );
     fprintf( out, "station source ..................: %i", rsi->station_src );
@@ -1169,6 +1173,12 @@ static void ctune_RadioStationInfo_set_geoCoordinates( ctune_RadioStationInfo_t 
     }
 }
 
+static void ctune_RadioStationInfo_set_geoDistance( ctune_RadioStationInfo_t * rsi, double distance ) {
+    if( rsi != NULL ) {
+        rsi->geo.distance = distance;
+    }
+}
+
 static void ctune_RadioStationInfo_set_extendedInfoFlag( ctune_RadioStationInfo_t * rsi, bool state ) {
     if( rsi != NULL )
         rsi->has_extended_info = state;
@@ -1379,6 +1389,13 @@ static double ctune_RadioStationInfo_get_geoLongitude( const ctune_RadioStationI
     return rsi->geo.longitude;
 }
 
+static double ctune_RadioStationInfo_get_geoDistance( const ctune_RadioStationInfo_t * rsi ) {
+    if( rsi == NULL )
+        return .0;
+    return rsi->geo.distance;
+}
+
+
 static bool ctune_RadioStationInfo_get_hasExtendedInfo( const ctune_RadioStationInfo_t * rsi ) {
     if( rsi == NULL )
         return false;
@@ -1510,7 +1527,10 @@ inline static ctune_Field_t ctune_RadioStationInfo_getField( ctune_RadioStationI
         return (ctune_Field_t){ ._field = &rsi->geo.latitude, ._type = CTUNE_FIELD_DOUBLE };
 
     } else if( strcmp( api_name, "geo_long" ) == 0 ) {
-        return (ctune_Field_t){ ._field = &rsi->geo.longitude, ._type = CTUNE_FIELD_DOUBLE };
+        return ( ctune_Field_t ) { ._field = &rsi->geo.longitude, ._type = CTUNE_FIELD_DOUBLE };
+
+    } else if( strcmp( api_name, "geo_distance" ) == 0 ) {
+        return ( ctune_Field_t ) { ._field = &rsi->geo.distance, ._type = CTUNE_FIELD_DOUBLE };
 
     } else if( strcmp( api_name, "has_extended_info" ) == 0 ) {
         return ( ctune_Field_t ) { ._field = &rsi->has_extended_info, ._type = CTUNE_FIELD_BOOLEAN };
@@ -1580,6 +1600,7 @@ const struct ctune_RadioStationInfo_Namespace ctune_RadioStationInfo = {
         .broken                = &ctune_RadioStationInfo_set_broken,
         .sslErrCode            = &ctune_RadioStationInfo_set_sslErrCode,
         .geoCoordinates        = &ctune_RadioStationInfo_set_geoCoordinates,
+        .geoDistance           = &ctune_RadioStationInfo_set_geoDistance,
         .extendedInfoFlag      = &ctune_RadioStationInfo_set_extendedInfoFlag,
         .favourite             = &ctune_RadioStationInfo_set_favourite,
         .stationSource         = &ctune_RadioStationInfo_set_stationSource,
@@ -1618,6 +1639,7 @@ const struct ctune_RadioStationInfo_Namespace ctune_RadioStationInfo = {
         .sslErrCode            = &ctune_RadioStationInfo_get_sslErrCode,
         .geoLatitude           = &ctune_RadioStationInfo_get_geoLatitude,
         .geoLongitude          = &ctune_RadioStationInfo_get_geoLongitude,
+        .geoDistance           = &ctune_RadioStationInfo_get_geoDistance,
         .hasExtendedInfo       = &ctune_RadioStationInfo_get_hasExtendedInfo,
         .favourite             = &ctune_RadioStationInfo_get_favourite,
         .stationSource         = &ctune_RadioStationInfo_get_stationSource,
