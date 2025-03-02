@@ -79,6 +79,7 @@ ExternalProject_Add(libjsonc
         PREFIX         "${JSONC_DOWNLOAD_PATH}"
         SOURCE_DIR     "${JSONC_DOWNLOAD_PATH}/src/libjsonc-build"
         GIT_REPOSITORY "https://github.com/json-c/json-c.git"
+        GIT_TAG        "json-c-0.18-20240915"
         CMAKE_ARGS     "-DBUILD_STATIC_LIBS=ON"
                        "-DBUILD_SHARED_LIBS=OFF"
                        "-DCMAKE_INSTALL_PREFIX:PATH=${JSONC_INSTALL_PATH}"
