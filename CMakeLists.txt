@@ -89,7 +89,7 @@ ExternalProject_Add(libjsonc
 
 set(JSONC_LIBRARIES
         ${CMAKE_EXTERNAL_OUTPUT_DIRECTORY}/lib/libjson-c.a
-        bsd
+#        bsd
 )
 
 # ============ #
