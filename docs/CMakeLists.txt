@@ -43,10 +43,11 @@ add_custom_command(
         POST_BUILD
         TARGET ctune_documentation
         COMMAND cp
-        ARGS ${MAN_SRC_DIR}/${MAN_OUT_FILENAME_GZ} ${MAN_OUT_DIR}/${MAN_OUT_FILENAME_GZ}
+        ARGS -f ${MAN_SRC_DIR}/${MAN_OUT_FILENAME_GZ} ${MAN_OUT_DIR}/${MAN_OUT_FILENAME_GZ}
 )
 
-install(FILES       ${MAN_OUT_DIR}/${MAN_OUT_FILENAME_GZ}
-        DESTINATION ${CTUNE_INSTALL_MANDIR})
+install(FILES ${MAN_OUT_DIR}/${MAN_OUT_FILENAME_GZ}
+        TYPE  MAN
+)
 
 install(CODE "execute_process(COMMAND ${CMAKE_SOURCE_DIR}/cmake/scripts/update_mandb.sh ARGS ${CMAKE_BUILD_TYPE})")
