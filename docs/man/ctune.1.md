@@ -51,4 +51,4 @@ Please refer to the in-application help dialog (default key: F1) for key binding
 
 # COPYRIGHT
 
-Copyright @ 2020-24 E.A.Davison. License AGPLv3 <https://www.gnu.org/licenses/agpl-3.0.en.html>.
+Copyright @ 2020-25 E.A.Davison. License AGPLv3 <https://www.gnu.org/licenses/agpl-3.0.en.html>.
