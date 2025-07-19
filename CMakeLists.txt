@@ -85,6 +85,7 @@ ExternalProject_Add(libjsonc
                        "-DCMAKE_INSTALL_PREFIX:PATH=${JSONC_INSTALL_PATH}"
                        "-DHAVE_ARC4RANDOM=OFF"
                        "-DCMAKE_BUILD_TYPE=release"
+                       "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
 )
 
 set(JSONC_LIBRARIES
