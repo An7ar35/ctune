@@ -2,11 +2,20 @@ cmake_minimum_required(VERSION 3.17)
 project(ctune_plugin_ffmpeg LANGUAGES C)
 
 include(ExternalProject)
-include(Findffmpeg)
 
-find_package(ffmpeg QUIET)
+find_package(PkgConfig REQUIRED)
 
-if(FFMPEG_FOUND)
+pkg_check_modules(LIBAV REQUIRED IMPORTED_TARGET
+        libavdevice
+        libavfilter
+        libavformat
+        libavcodec
+        libswresample
+        libswscale
+        libavutil
+)
+
+if(LIBAV_FOUND)
     MESSAGE(STATUS "FFMpeg detected")
 
     set(CTUNE_SOURCE_FILES
@@ -25,7 +34,7 @@ if(FFMPEG_FOUND)
     add_library(ctune_plugin_ffmpeg SHARED ${CTUNE_SOURCE_FILES} ${FFMPEG_SOURCE_FILES})
 
     target_link_libraries(ctune_plugin_ffmpeg
-            ${FFMPEG_LIBRARIES}
+            ${LIBAV_LIBRARIES}
             ctune_logger)
 
     set_target_properties(ctune_plugin_ffmpeg
@@ -37,4 +46,4 @@ if(FFMPEG_FOUND)
             EXPORT      ctune_plugin_ffmpeg
             DESTINATION ${CTUNE_INSTALL_LIBDIR}/plugins/input)
 
-endif(FFMPEG_FOUND)
+endif(LIBAV_FOUND)

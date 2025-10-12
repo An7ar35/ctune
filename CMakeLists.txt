@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 project(ctune
         LANGUAGES    C
-        VERSION      1.3.4
+        VERSION      1.3.5
         DESCRIPTION  "Curses based Internet radio tuner"
         HOMEPAGE_URL "eadavison.com")
 
@@ -283,14 +283,14 @@ set(CTUNE_PLUGIN_LIST_AUDIO_PLAYER "")
 add_subdirectory(plugins/input/ffmpeg)
 add_subdirectory(plugins/input/vlc)
 
-get_directory_property(FFMPEG_FOUND DIRECTORY plugins/input/ffmpeg DEFINITION FFMPEG_FOUND)
-get_directory_property(VLC_FOUND    DIRECTORY plugins/input/vlc    DEFINITION VLC_FOUND)
+get_directory_property(LIBAV_FOUND DIRECTORY plugins/input/ffmpeg DEFINITION LIBAV_FOUND)
+get_directory_property(VLC_FOUND   DIRECTORY plugins/input/vlc    DEFINITION VLC_FOUND)
 
-if(FFMPEG_FOUND)
+if(LIBAV_FOUND)
     link_directories(plugins/input/ffmpeg)
     list(APPEND CTUNE_PLUGIN_LIST_AUDIO_PLAYER ctune_plugin_ffmpeg)
-    add_definitions(-DFFMPEG_FOUND)
-endif(FFMPEG_FOUND)
+    add_definitions(-DLIBAV_FOUND)
+endif(LIBAV_FOUND)
 
 if(VLC_FOUND)
     link_directories(plugins/input/vlc)
