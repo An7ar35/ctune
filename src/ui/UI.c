@@ -61,7 +61,6 @@ static const int ACTION_CONFIRMED = 0b10;
 static struct ctune_UI {
     WindowProperty_t     screen_size;
     ctune_UI_MainWin_t   main_win;
-    WINDOW             * stdscr;
 
     bool                 init_stages  [CTUNE_UI_INITSTAGE_COUNT];
     int                  old_cursor;
