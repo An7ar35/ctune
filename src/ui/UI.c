@@ -80,7 +80,6 @@ static struct ctune_UI {
     } cb;
 
 } ui = {
-    .stdscr      = NULL,
     .screen_size = { 0, 0, 0, 0 },
     .init_stages = { false },
 };
@@ -1267,7 +1266,7 @@ static bool ctune_UI_setup( bool show_cursor ) {
 
     ctune_UI_Icons.setUnicode( ctune_UIConfig.unicodeIcons( ctune_Controller.cfg.getUIConfig(), FLAG_GET_VALUE ) );
 
-    if( ( ui.stdscr = initscr() ) == NULL ) {
+    if( initscr() == NULL ) {
         CTUNE_LOG( CTUNE_LOG_FATAL, "[ctune_UI_setup( %i )] Failed `initscr()`.", show_cursor );
         ctune_err.set( CTUNE_ERR_UI );
         return false; //EARLY RETURN
@@ -1319,7 +1318,7 @@ static bool ctune_UI_setup( bool show_cursor ) {
 
     cbreak();
     noecho();
-    keypad( ui.stdscr, TRUE );
+    keypad( stdscr, TRUE );
     halfdelay( 1 );
 
     bool mouse_nav = ctune_UIConfig.mouse.enabled( ui_config, FLAG_GET_VALUE );
@@ -1513,7 +1512,7 @@ static void ctune_UI_teardown() {
         ui.init_stages[CTUNE_UI_INITSTAGE_EVENTQUEUE] = false;
     }
 
-    delwin( ui.stdscr );
+    delwin( stdscr );
     endwin();
     curs_set( ui.old_cursor );
 

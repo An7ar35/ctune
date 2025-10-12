@@ -34,7 +34,7 @@ if(LIBAV_FOUND)
     add_library(ctune_plugin_ffmpeg SHARED ${CTUNE_SOURCE_FILES} ${FFMPEG_SOURCE_FILES})
 
     target_link_libraries(ctune_plugin_ffmpeg
-            ${LIBAV_LIBRARIES}
+            PkgConfig::LIBAV
             ctune_logger)
 
     set_target_properties(ctune_plugin_ffmpeg
