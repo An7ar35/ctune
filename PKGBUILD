@@ -29,7 +29,7 @@ optdepends=('pulseaudio: for PulseAudio plugin support'
 conflicts=('ctune')
 provides=('ctune')
 license=('AGPL3')
-source=(git+https://github.com/An7ar35/ctune.git#tag=v1.3.4)
+source=(git+https://github.com/An7ar35/ctune.git#tag=v1.3.6)
 sha512sums=('SKIP')
 
 build() {
