@@ -83,15 +83,7 @@ include_directories(${CURL_INCLUDE_DIR})
 set(${CURSES_NEED_NCURSES} TRUE)
 set(${CURSES_NEED_WIDE} TRUE)
 find_package(Curses REQUIRED)
-if(Curses_FOUND AND NOT TARGET Curses::Curses)
-    add_library(Curses::Curses INTERFACE IMPORTED)
-    set_target_properties(
-            Curses::Curses
-            PROPERTIES
-            INTERFACE_LINK_LIBRARIES "${CURSES_LIBRARIES}"
-            INTERFACE_INCLUDE_DIRECTORIES "${CURSES_INCLUDE_DIRS}"
-    )
-endif()
+include_directories(${CURSES_INCLUDE_DIRS})
 
 if(NO_NCURSESW OR EXISTS "/etc/arch-release" OR EXISTS "/etc/manjaro-release")
     add_definitions(-DNO_NCURSESW)
@@ -417,9 +409,9 @@ endif(GENERATE_DOCS)
 target_link_libraries(ctune PRIVATE
         ctune_logger            #CTUNE_LOG(..)
         json-c::json-c          #(json-c/*.h) for `parse/JSON.c`
-        Curses::Curses          #(ncurses.h) for `ui/*`
-        panel                   #(panel.h) ncurses panel lib for `ui/*`
-        form                    #(form.h) ncurses form lib for `ui/*`
+        ncursesw                #(ncurses.h) for `ui/*`
+        panelw                  #(panel.h) ncurses panel lib for `ui/*`
+        formw                   #(form.h) ncurses form lib for `ui/*`
         pthread                 #threading
         OpenSSL::SSL            #(openssl/*.h) for `network/NetworkUtils.c`
         OpenSSL::Crypto         #(openssl/*.h) for `network/NetworkUtils.c`
