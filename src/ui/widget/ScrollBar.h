@@ -1,9 +1,15 @@
 #ifndef CTUNE_UI_WIDGET_SCROLLBAR_H
 #define CTUNE_UI_WIDGET_SCROLLBAR_H
 
+#ifdef NO_NCURSESW
+    #include <ncurses.h>
+    #include <panel.h>
+#else
+    #include <ncursesw/ncurses.h>
+    #include <ncursesw/panel.h>
+#endif
+
 #include <stdbool.h>
-#include <ncurses.h>
-#include <panel.h>
 
 #include "../datastructure/WindowProperty.h"
 #include "../types/ScrollMask.h"

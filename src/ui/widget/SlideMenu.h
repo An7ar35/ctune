@@ -11,8 +11,13 @@
 // |     .      |       |     .      |
 // +------------+       +------------+
 
-#include <ncurses.h>
-#include <panel.h>
+#ifdef NO_NCURSESW
+    #include <ncurses.h>
+    #include <panel.h>
+#else
+    #include <ncursesw/ncurses.h>
+    #include <ncursesw/panel.h>
+#endif
 
 #include "../../datastructure/String.h"
 #include "../../datastructure/Vector.h"

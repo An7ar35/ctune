@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 project(ctune
         LANGUAGES    C
-        VERSION      1.3.6
+        VERSION      1.3.7
         DESCRIPTION  "Curses based Internet radio tuner"
         HOMEPAGE_URL "eadavison.com")
 
@@ -51,6 +51,7 @@ include(FetchContent)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 #========================================== PRE-CHECKS ============================================#
+find_package(PkgConfig REQUIRED)
 include(FindGit)
 find_package(Git)
 
@@ -68,30 +69,7 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 # ============== #
 # JSON-C library #
 # ============== #
-set(JSONC_DOWNLOAD_PATH "${TEMP_DIR_PATH}/libjsonc")
-set(JSONC_INSTALL_PATH "${CMAKE_EXTERNAL_OUTPUT_DIRECTORY}")
-
-add_custom_target(make-jsonc-install-dir ALL
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${JSONC_INSTALL_PATH}
-)
-
-ExternalProject_Add(libjsonc
-        PREFIX         "${JSONC_DOWNLOAD_PATH}"
-        SOURCE_DIR     "${JSONC_DOWNLOAD_PATH}/src/libjsonc-build"
-        GIT_REPOSITORY "https://github.com/json-c/json-c.git"
-        GIT_TAG        "json-c-0.18-20240915"
-        CMAKE_ARGS     "-DBUILD_STATIC_LIBS=ON"
-                       "-DBUILD_SHARED_LIBS=OFF"
-                       "-DCMAKE_INSTALL_PREFIX:PATH=${JSONC_INSTALL_PATH}"
-                       "-DHAVE_ARC4RANDOM=OFF"
-                       "-DCMAKE_BUILD_TYPE=release"
-                       "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
-)
-
-set(JSONC_LIBRARIES
-        ${CMAKE_EXTERNAL_OUTPUT_DIRECTORY}/lib/libjson-c.a
-#        bsd
-)
+find_package(json-c REQUIRED)
 
 # ============ #
 # Curl library #
@@ -103,8 +81,23 @@ include_directories(${CURL_INCLUDE_DIR})
 # nCurses - for the user interface #
 # ================================ #
 set(${CURSES_NEED_NCURSES} TRUE)
+set(${CURSES_NEED_WIDE} TRUE)
 find_package(Curses REQUIRED)
-include_directories(${NCURSES_INCLUDEDIR} ${CURSES_INCLUDE_DIR})
+if(Curses_FOUND AND NOT TARGET Curses::Curses)
+    add_library(Curses::Curses INTERFACE IMPORTED)
+    set_target_properties(
+            Curses::Curses
+            PROPERTIES
+            INTERFACE_LINK_LIBRARIES "${CURSES_LIBRARIES}"
+            INTERFACE_INCLUDE_DIRECTORIES "${CURSES_INCLUDE_DIRS}"
+    )
+endif()
+
+if(NO_NCURSESW OR EXISTS "/etc/arch-release" OR EXISTS "/etc/manjaro-release")
+    add_definitions(-DNO_NCURSESW)
+else ()
+    message(STATUS "using ncursesw subdir in include statement paths ('#include ncursesw/ncurses.h')")
+endif()
 
 #========================================== SOURCE FILES ==========================================#
 set(SOURCE_FILES
@@ -410,7 +403,7 @@ add_subdirectory(docs)
 #endforeach()
 
 add_executable(ctune ${SOURCE_FILES})
-add_dependencies(ctune ctune_logger libjsonc)
+add_dependencies(ctune ctune_logger)
 include_directories(${CMAKE_EXTERNAL_OUTPUT_DIRECTORY}/include)
 
 add_dependencies(ctune ${CTUNE_PLUGIN_LIST_AUDIO_PLAYER})
@@ -423,9 +416,8 @@ endif(GENERATE_DOCS)
 
 target_link_libraries(ctune PRIVATE
         ctune_logger            #CTUNE_LOG(..)
-        ${JSONC_LIBRARIES}      #(json-c/*.h) for `parse/JSON.c`
-        ${NCURSES_LIBRARIES}    #(ncurses.h) for `ui/*`
-        ${CURSES_LIBRARIES}     #(ncurses.h) for `ui/*`
+        json-c::json-c          #(json-c/*.h) for `parse/JSON.c`
+        Curses::Curses          #(ncurses.h) for `ui/*`
         panel                   #(panel.h) ncurses panel lib for `ui/*`
         form                    #(form.h) ncurses form lib for `ui/*`
         pthread                 #threading

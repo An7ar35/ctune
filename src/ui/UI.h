@@ -1,7 +1,12 @@
 #ifndef CTUNE_UI_UI_MAIN_H
 #define CTUNE_UI_UI_MAIN_H
 
-#include <ncurses.h>
+#ifdef NO_NCURSESW
+    #include <ncurses.h>
+#else
+    #include <ncursesw/ncurses.h>
+#endif
+
 #include <stdbool.h>
 
 #include "../dto/ArgOptions.h"

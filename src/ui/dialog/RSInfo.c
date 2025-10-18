@@ -1,7 +1,12 @@
 #include "RSInfo.h"
 
+#ifdef NO_NCURSESW
+    #include <panel.h>
+#else
+    #include <ncursesw/panel.h>
+#endif
+
 #include <string.h>
-#include <panel.h>
 
 #include "logger/src/Logger.h"
 #include "../../ctune_err.h"

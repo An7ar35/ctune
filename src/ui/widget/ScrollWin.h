@@ -1,7 +1,11 @@
 #ifndef CTUNE_UI_WIDGET_SCROLLWIN_H
 #define CTUNE_UI_WIDGET_SCROLLWIN_H
 
-#include <ncurses.h>
+#ifdef NO_NCURSESW
+    #include <ncurses.h>
+#else
+    #include <ncursesw/ncurses.h>
+#endif
 
 #include "../datastructure/WindowProperty.h"
 

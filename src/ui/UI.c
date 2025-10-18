@@ -1,6 +1,11 @@
 #include "UI.h"
 
-#include <panel.h>
+#ifdef NO_NCURSESW
+    #include <panel.h>
+#else
+    #include <ncursesw/panel.h>
+#endif
+
 #include <sys/ioctl.h>
 
 #include "../ctune_err.h"

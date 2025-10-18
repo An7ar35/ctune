@@ -1,7 +1,11 @@
 #ifndef CTUNE_UI_DIALOG_SETOUTPUTDIR_H
 #define CTUNE_UI_DIALOG_SETOUTPUTDIR_H
 
-#include <ncurses.h>
+#ifdef NO_NCURSESW
+    #include <ncurses.h>
+#else
+    #include <ncursesw/ncurses.h>
+#endif
 
 #include "../../datastructure/String.h"
 #include "../enum/FormExit.h"

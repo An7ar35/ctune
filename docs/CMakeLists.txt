@@ -36,7 +36,6 @@ if(PANDOC AND GZIP)
 
 else()
     message(WARNING "Could not find pandoc and/or gzip - repo copy of man page will be used instead.")
-
 endif()
 
 add_custom_command(
@@ -47,7 +46,7 @@ add_custom_command(
 )
 
 install(FILES ${MAN_OUT_DIR}/${MAN_OUT_FILENAME_GZ}
-        TYPE  MAN
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/man/man1
 )
 
 install(CODE "execute_process(COMMAND ${CMAKE_SOURCE_DIR}/cmake/scripts/update_mandb.sh ARGS ${CMAKE_BUILD_TYPE})")

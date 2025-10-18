@@ -1,7 +1,11 @@
 #ifndef CTUNE_UI_WIDGET_DIALOG_H
 #define CTUNE_UI_WIDGET_DIALOG_H
 
-#include <panel.h>
+#ifdef NO_NCURSESW
+    #include <panel.h>
+#else
+    #include <ncursesw/panel.h>
+#endif
 
 #include "../types/ScrollMask.h"
 #include "../widget/ScrollWin.h"

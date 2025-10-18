@@ -1,6 +1,10 @@
 #include "ContextHelp.h"
 
-#include <panel.h>
+#ifdef NO_NCURSESW
+    #include <panel.h>
+#else
+    #include <ncursesw/panel.h>
+#endif
 
 #include "logger/src/Logger.h"
 #include "../../datastructure/Vector.h"

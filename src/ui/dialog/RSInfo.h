@@ -1,7 +1,12 @@
 #ifndef CTUNE_UI_DIALOG_RSINFO_H
 #define CTUNE_UI_DIALOG_RSINFO_H
 
-#include <ncurses.h>
+#ifdef NO_NCURSESW
+    #include <ncurses.h>
+#else
+    #include <ncursesw/ncurses.h>
+#endif
+
 #include <sys/ioctl.h>
 
 #include "../enum/TextID.h"

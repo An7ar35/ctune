@@ -1,8 +1,13 @@
 #ifndef CTUNE_UI_WIDGET_BORDERWIN_H
 #define CTUNE_UI_WIDGET_BORDERWIN_H
 
-#include <ncurses.h>
-#include <panel.h>
+#ifdef NO_NCURSESW
+    #include <ncurses.h>
+    #include <panel.h>
+#else
+    #include <ncursesw/ncurses.h>
+    #include <ncursesw/panel.h>
+#endif
 
 #include "../types/WinCtrlMask.h"
 #include "../datastructure/WindowProperty.h"

@@ -1,7 +1,11 @@
 #ifndef CTUNE_UI_WINDOW_RSLISTWIN_H
 #define CTUNE_UI_WINDOW_RSLISTWIN_H
 
-#include <panel.h>
+#ifdef NO_NCURSESW
+    #include <panel.h>
+#else
+    #include <ncursesw/panel.h>
+#endif
 
 #include "../../datastructure/HashMap.h"
 #include "../datastructure/WindowProperty.h"

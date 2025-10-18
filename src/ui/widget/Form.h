@@ -1,7 +1,11 @@
 #ifndef CTUNE_UI_WIDGET_FORM_H
 #define CTUNE_UI_WIDGET_FORM_H
 
-#include <form.h>
+#ifdef NO_NCURSESW
+    #include <form.h>
+#else
+    #include <ncursesw/form.h>
+#endif
 
 #include "Dialog.h"
 #include "../enum/TextID.h"

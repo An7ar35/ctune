@@ -1,7 +1,11 @@
 #ifndef CTUNE_UI_DIALOG_RSFIND_H
 #define CTUNE_UI_DIALOG_RSFIND_H
 
-#include <ncurses.h>
+#ifdef NO_NCURSESW
+    #include <ncurses.h>
+#else
+    #include <ncursesw/ncurses.h>
+#endif
 
 #include "../../dto/RadioBrowserFilter.h"
 #include "../enum/FormExit.h"
