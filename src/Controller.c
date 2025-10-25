@@ -282,8 +282,10 @@ static bool ctune_Controller_playback_startPlayback( const ctune_RadioStationInf
         return false; //EARLY RETURN
     }
 
-    if( ctune_RadioStationInfo.get.resolvedURL( station ) == NULL && ctune_RadioStationInfo.get.stationURL( station ) == NULL ) {
-        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Controller_startPlayback( %p )] Station URL fields are NULL.", station );
+    if( ctune_RadioStationInfo.get.resolvedURL( station ) == NULL && strlen( ctune_RadioStationInfo.get.resolvedURL( station ) ) == 0
+     && ctune_RadioStationInfo.get.stationURL( station )  == NULL && strlen( ctune_RadioStationInfo.get.stationURL( station ) )  == 0 )
+    {
+        CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Controller_startPlayback( %p )] Station URL fields are NULL/empty.", station );
         return false; //EARLY RETURN
     }
 
@@ -307,15 +309,15 @@ static bool ctune_Controller_playback_startPlayback( const ctune_RadioStationInf
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Controller_playback_startPlayback( %p )] Failed to load a sound server plugin." );
         ctune_err.set( CTUNE_ERR_IO_PLUGIN_LOAD );
         return false; //EARLY RETURN
-    };
+    }
 
     if( !ctune_RadioPlayer.loadPlayerPlugin( ctune_Settings.plugins.getPlugin( CTUNE_PLUGIN_IN_STREAM_PLAYER ) ) ) {
         CTUNE_LOG( CTUNE_LOG_ERROR, "[ctune_Controller_playback_startPlayback( %p )] Failed to load a player plugin." );
         ctune_err.set( CTUNE_ERR_IO_PLUGIN_LOAD );
         return false; //EARLY RETURN
-    };
+    }
 
-    const char * url = ( ctune_RadioStationInfo.get.resolvedURL( station ) == NULL
+    const char * url = ( ctune_RadioStationInfo.get.resolvedURL( station ) == NULL || strlen( ctune_RadioStationInfo.get.resolvedURL( station ) ) == 0
                        ? ctune_RadioStationInfo.get.stationURL( station )
                        : ctune_RadioStationInfo.get.resolvedURL( station ) );
 

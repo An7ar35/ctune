@@ -132,77 +132,77 @@ static RSInfoPrintProperties_t ctune_UI_RSInfo_getMaxDimensions( ctune_UI_RSInfo
 
 
     //OPTIONAL FIELDS
-    if( ctune_RadioStationInfo.get.changeUUID( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.changeUUID( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.changeUUID( rsi ) ) > 0 ) {
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_CHANGE_UUID] ) );
         field_cols = ctune_max_ul( field_cols, strlen( ctune_RadioStationInfo.get.changeUUID( rsi ) ) );
         rows += 1;
     }
 
-    if( ctune_RadioStationInfo.get.resolvedURL( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.resolvedURL( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.resolvedURL( rsi ) ) > 0 ) {
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_URL_RESOLVED] ) );
         field_cols = ctune_max_ul( field_cols, strlen( ctune_RadioStationInfo.get.resolvedURL( rsi ) ) );
         rows += 1;
     }
 
-    if( ctune_RadioStationInfo.get.homepage( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.homepage( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.homepage( rsi ) ) > 0 ) {
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_URL_HOMEPAGE] ) );
         field_cols = ctune_max_ul( field_cols, strlen( ctune_RadioStationInfo.get.homepage( rsi ) ) );
         rows += 1;
     }
 
-    if( ctune_RadioStationInfo.get.faviconURL( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.faviconURL( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.faviconURL( rsi ) ) > 0 ) {
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_URL_FAVICON] ) );
         field_cols = ctune_max_ul( field_cols, strlen( ctune_RadioStationInfo.get.faviconURL( rsi ) ) );
         rows += 1;
     }
 
-    if( ctune_RadioStationInfo.get.tags( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.tags( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.tags( rsi ) ) > 0 ) {
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_TAGS] ) );
         field_cols = ctune_max_ul( field_cols, strlen( ctune_RadioStationInfo.get.tags( rsi ) ) );
         rows += 1;
     }
 
-    if( ctune_RadioStationInfo.get.country( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.country( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.country( rsi ) ) > 0 ) {
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_COUNTRY] ) );
         field_cols = ctune_max_ul( field_cols, strlen( ctune_RadioStationInfo.get.country( rsi ) ) );
         rows += 1;
     }
 
-    if( ctune_RadioStationInfo.get.countryCode( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.countryCode( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.countryCode( rsi ) ) > 0 ) {
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_COUNTRY_CODE] ) );
         field_cols = ctune_max_ul( field_cols, strlen( ctune_RadioStationInfo.get.countryCode( rsi ) ) );
         rows += 1;
     }
 
-    if( ctune_RadioStationInfo.get.state( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.state( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.state( rsi ) ) > 0 ) {
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_STATE] ) );
         field_cols = ctune_max_ul( field_cols, strlen( ctune_RadioStationInfo.get.state( rsi ) ) );
         rows += 1;
     }
 
-    if( ctune_RadioStationInfo.get.language( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.language( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.language( rsi ) ) > 0 ) {
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_LANGUAGE] ) );
         field_cols = ctune_max_ul( field_cols, strlen( ctune_RadioStationInfo.get.language( rsi ) ) );
         rows += 1;
     }
 
-    if( ctune_RadioStationInfo.get.languageCodes( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.languageCodes( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.languageCodes( rsi ) ) > 0 ) {
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_LANGUAGE_CODES] ) );
         field_cols = ctune_max_ul( field_cols, strlen( ctune_RadioStationInfo.get.languageCodes( rsi ) ) );
         rows += 1;
     }
 
-    if( ctune_RadioStationInfo.get.lastChangeTS( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.lastChangeTS( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.lastChangeTS( rsi ) ) > 0 ) {
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_LAST_CHANGED_TS_ISO] ) );
         field_cols = ctune_max_ul( field_cols, strlen( ctune_RadioStationInfo.get.lastChangeTS( rsi ) ) );
         rows += 1;
-    } else if ( rsi->last_change_time != NULL ) { //FIXME DEPRECIATED timestamps
+    } else if ( rsi->last_change_time != NULL && strlen( rsi->last_change_time ) > 0 ) { //FIXME DEPRECIATED timestamps
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_LAST_CHANGED_TS] ) );
         field_cols = ctune_max_ul( field_cols, strlen( rsi->last_change_time ) );
         rows += 1;
     }
 
-    if( ctune_RadioStationInfo.get.lastCheckTS( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.lastCheckTS( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.lastCheckTS( rsi ) ) > 0 ) {
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_LAST_CHECK_OK] ) );
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_LAST_CHECK_TS_ISO] ) );
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_LAST_CHECK_OK_TS_ISO] ) );
@@ -214,7 +214,7 @@ static RSInfoPrintProperties_t ctune_UI_RSInfo_getMaxDimensions( ctune_UI_RSInfo
 
         rows += 4; //(inc. ctune_RadioStationInfo.get.lastCheckOK( rsi ))
 
-    } else if( rsi->last_check_time ) { //FIXME DEPRECIATED timestamps
+    } else if( rsi->last_check_time && strlen( rsi->last_check_time ) > 0 ) { //FIXME DEPRECIATED timestamps
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_LAST_CHECK_OK] ) );
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_LAST_CHECK_TS] ) );
         label_cols = ctune_max_ul( label_cols, strlen( rsinfo->label_txt[RSI_LABEL_LAST_CHECK_OK_TS] ) );
@@ -340,7 +340,7 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
     mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_fallbackStr( ctune_RadioStationInfo.get.stationName( rsi ), "" ) );
 
     //Change UUID
-    if( ctune_RadioStationInfo.get.changeUUID( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.changeUUID( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.changeUUID( rsi ) ) > 0 ) {
         wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_CHANGE_UUID], rsinfo->col_separator_str );
         wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
@@ -360,7 +360,7 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
     mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_fallbackStr( ctune_RadioStationInfo.get.stationURL( rsi ), "" )  );
 
     //URL RESOLVED
-    if( ctune_RadioStationInfo.get.resolvedURL( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.resolvedURL( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.resolvedURL( rsi ) ) > 0 ) {
         wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_URL_RESOLVED], rsinfo->col_separator_str );
         wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
@@ -368,7 +368,7 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
     }
 
     //HOMEPAGE URL
-    if( ctune_RadioStationInfo.get.homepage( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.homepage( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.homepage( rsi ) ) > 0 ) {
         wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_URL_HOMEPAGE], rsinfo->col_separator_str );
         wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
@@ -376,7 +376,7 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
     }
 
     //FAVICON URL
-    if( ctune_RadioStationInfo.get.faviconURL( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.faviconURL( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.faviconURL( rsi ) ) > 0 ) {
         wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_URL_FAVICON], rsinfo->col_separator_str );
         wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
@@ -384,7 +384,7 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
     }
 
     //TAGS
-    if( ctune_RadioStationInfo.get.tags( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.tags( rsi ) != NULL && strlen(  ctune_RadioStationInfo.get.tags( rsi ) ) > 0 ) {
         wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_TAGS], rsinfo->col_separator_str );
         wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
@@ -392,7 +392,7 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
     }
 
     //COUNTRY
-    if( ctune_RadioStationInfo.get.country( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.country( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.country( rsi ) ) > 0 ) {
         wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_COUNTRY], rsinfo->col_separator_str );
         wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
@@ -400,7 +400,7 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
     }
 
     //COUNTRY CODE
-    if( ctune_RadioStationInfo.get.countryCode( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.countryCode( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.countryCode( rsi ) ) > 0 ) {
         wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_COUNTRY_CODE], rsinfo->col_separator_str );
         wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
@@ -408,7 +408,7 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
     }
 
     //STATE
-    if( ctune_RadioStationInfo.get.state( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.state( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.state( rsi ) ) > 0 ) {
         wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_STATE], rsinfo->col_separator_str );
         wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
@@ -416,7 +416,7 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
     }
 
     //LANGUAGE
-    if( ctune_RadioStationInfo.get.language( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.language( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.language( rsi ) ) > 0 ) {
         wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LANGUAGE], rsinfo->col_separator_str );
         wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
@@ -424,7 +424,7 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
     }
 
     //LANGUAGE CODE
-    if( ctune_RadioStationInfo.get.languageCodes( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.languageCodes( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.languageCodes( rsi ) ) > 0 ) {
         wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LANGUAGE_CODES], rsinfo->col_separator_str );
         wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
@@ -440,13 +440,13 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
     }
 
     //LAST CHANGE TIMESTAMP
-    if( ctune_RadioStationInfo.get.lastChangeTS( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.lastChangeTS( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.lastChangeTS( rsi ) ) > 0 ) {
         wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LAST_CHANGED_TS_ISO], rsinfo->col_separator_str );
         wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_RadioStationInfo.get.lastChangeTS( rsi ) );
 
-    } else if ( rsi->last_change_time != NULL ) { //FIXME DEPRECIATED timestamps
+    } else if ( rsi->last_change_time != NULL && strlen( rsi->last_change_time ) > 0 ) { //FIXME DEPRECIATED timestamps
         wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, y, x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LAST_CHANGED_TS], rsinfo->col_separator_str );
         wattroff( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
@@ -475,7 +475,7 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
     }
 
     //LAST CHECK TIMESTAMPS (OK FLAG, LAST CHECK, LAST OK CHECK, LAST CHECK LOCAL)
-    if( ctune_RadioStationInfo.get.lastCheckTS( rsi ) != NULL ) {
+    if( ctune_RadioStationInfo.get.lastCheckTS( rsi ) != NULL && strlen( ctune_RadioStationInfo.get.lastCheckTS( rsi ) ) > 0 ) {
         int y_start = y;
         wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y_start++ ), x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LAST_CHECK_OK], rsinfo->col_separator_str );
@@ -488,7 +488,7 @@ static void ctune_UI_RSInfo_printFields( ctune_UI_RSInfo_t * rsinfo, const ctune
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_fallbackStr( ctune_RadioStationInfo.get.lastCheckOkTS( rsi ), "" ) );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y++ ), col_offset, "%s", ctune_fallbackStr( ctune_RadioStationInfo.get.lastLocalCheckTS( rsi ), "" ) );
 
-    } else if( rsi->last_check_time != NULL ) { //FIXME DEPRECIATED timestamps
+    } else if( rsi->last_check_time != NULL && strlen( rsi->last_check_time ) > 0 ) { //FIXME DEPRECIATED timestamps
         int y_start = y;
         wattron( rsinfo->dialog.canvas.pad, ctune_UI_Theme.color( CTUNE_UI_ITEM_FIELD_DFLT ) | A_BOLD );
         mvwprintw( rsinfo->dialog.canvas.pad, ( y_start++ ), x, "%*s%s", max_label_size, rsinfo->label_txt[RSI_LABEL_LAST_CHECK_OK], rsinfo->col_separator_str );
