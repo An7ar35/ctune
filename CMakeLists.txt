@@ -52,12 +52,6 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 #========================================== PRE-CHECKS ============================================#
 find_package(PkgConfig REQUIRED)
-include(FindGit)
-find_package(Git)
-
-if (NOT Git_FOUND)
-    message(FATAL_ERROR "Required package 'Git' not found on system.")
-endif ()
 
 #======================================== LIB IMPORTS =============================================#
 # ======= #

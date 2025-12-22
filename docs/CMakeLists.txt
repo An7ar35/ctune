@@ -46,7 +46,7 @@ add_custom_command(
 )
 
 install(FILES ${MAN_OUT_DIR}/${MAN_OUT_FILENAME_GZ}
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/man/man1
+        DESTINATION ${MAN_INSTALL_DIR}
 )
 
 install(CODE "execute_process(COMMAND ${CMAKE_SOURCE_DIR}/cmake/scripts/update_mandb.sh ARGS ${CMAKE_BUILD_TYPE})")
