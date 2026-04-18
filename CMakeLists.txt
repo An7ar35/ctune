@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.17)
 project(ctune
         LANGUAGES    C
-        VERSION      1.3.9
+        VERSION      1.3.10
         DESCRIPTION  "Curses based Internet radio tuner"
         HOMEPAGE_URL "eadavison.com")
 
 set(PROJECT_AUTHOR "E.A.Davison")
-set(PROJECT_YEARS  "2020-24")
+set(PROJECT_YEARS  "2020-26")
 
 set(CMAKE_C_STANDARD 99         CACHE INTERNAL "")
 set(CMAKE_C_FLAGS "-Wall"       CACHE INTERNAL "")

@@ -356,12 +356,14 @@ static int ctune_audio_initAudioOut( ctune_OutputFmt_e fmt, int sample_rate, uin
                fmt, sample_rate, channels, samples, volume
     );
 
+    const char * pipewire_config_name = pw_check_library_version(1, 3, 81) ? "client.conf" : "client-rt.conf";
+
     pipewire_server.ready                 = false;
     pipewire_server.main_loop_ret_val     = 0;
     pipewire_server.frame_size            = fmt * channels;
     pipewire_server.channels              = channels;
     pipewire_server.volume                = volume;
-    pipewire_server.properties            = pw_properties_new( PW_KEY_CONFIG_NAME, "client-rt.conf",
+    pipewire_server.properties            = pw_properties_new( PW_KEY_CONFIG_NAME, pipewire_config_name,
                                                                PW_KEY_MEDIA_TYPE, "Audio",
                                                                PW_KEY_MEDIA_CATEGORY, "Playback",
                                                                PW_KEY_MEDIA_ROLE, "Music",
